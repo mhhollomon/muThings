@@ -121,15 +121,18 @@ def _landscape_cover_square(config : Any) -> Image.Image :
 
     required_size = config.output.size
     cover_side = required_size.height
+    logger.debug(f"Cover side: {cover_side}")
     crop = cover_cfg.crop
     bg_color = cover_cfg.color
 
     cover_img = Image.open(cover_cfg.path)
     original_width, original_height = cover_img.size
+    logger.debug(f"Original size: {original_width}x{original_height}")
     aspect_ratio = original_width / original_height
 
     # Calculate the new width while keeping the aspect ratio
     new_dimension = int(cover_side * aspect_ratio)
+    logger.debug(f"Aspect ratio: {aspect_ratio}, new dimension: {new_dimension}")
 
     # Resize the image
     cover_img = cover_img.resize((new_dimension, cover_side))
@@ -144,6 +147,8 @@ def _landscape_cover_square(config : Any) -> Image.Image :
         elif crop == 'max':
             offset = (new_dimension - cover_side)
             box = (offset, 0, cover_side + offset, cover_side)
+
+        logger.debug(f"Cropping Box: {box}")
         cover_img = cover_img.crop(box)
 
     elif new_dimension < cover_side:
@@ -156,7 +161,8 @@ def _landscape_cover_square(config : Any) -> Image.Image :
         elif crop == 'max':
             offset = (cover_side - new_dimension)
             origin = (offset, 0)
-        box_img.paste(box_img, origin)
+        logger.debug(f"Paste Origin: {origin}")
+        box_img.paste(cover_img, origin)
         cover_img = box_img
 
 
@@ -313,7 +319,7 @@ def _add_cover(config : Any, output_img : Image.Image) -> None :
 
     logger.info("Adding cover")
 
-    if output_size.is_landscape():
+    if output_size.is_landscape() or output_size.is_square() :
         if cover_cfg.fit == 'cover':
             cover_img = _landscape_cover_fit(config)
         else :

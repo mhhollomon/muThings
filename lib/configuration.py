@@ -302,11 +302,7 @@ def validate_config(config : Config) -> bool :
         if ext not in ('.png', '.jpeg', '.jpg', 'webp'):
             logger.error(f"Unsupported output file type: {ext}")
             return False
-    
-    if config.output.size.is_square() :
-        logger.error("Square output is currently not supported")
-        return False
-    
+        
     width, height = config.output.size.to_tuple()
     if width < 1 or height < 1:
         logger.error("Invalid output size")
