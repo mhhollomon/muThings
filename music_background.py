@@ -115,38 +115,52 @@ def _add_logo(config : Any, output_img : Image.Image) -> None :
 #--------------------------------------------------------------------------------
 # COVER
 #--------------------------------------------------------------------------------
-
-def _landscape_cover_square(config : Any) -> Image.Image :
+def _cover_square(config :Any, ornt : int) -> Image.Image :
     cover_cfg = config.cover
 
+    def other(o : int) -> int :
+        return 1 - o
+
     required_size = config.output.size
-    cover_side = required_size.height
+    cover_side = required_size[ornt]
     logger.debug(f"Cover side: {cover_side}")
     crop = cover_cfg.crop
     bg_color = cover_cfg.color
 
     cover_img = Image.open(cover_cfg.path)
+
+
     original_width, original_height = cover_img.size
     logger.debug(f"Original size: {original_width}x{original_height}")
-    aspect_ratio = original_width / original_height
+    aspect_ratio = cover_img.size[other(ornt)] / cover_img.size[ornt]
 
-    # Calculate the new width while keeping the aspect ratio
+    # Calculate the new height while keeping the aspect ratio
     new_dimension = int(cover_side * aspect_ratio)
     logger.debug(f"Aspect ratio: {aspect_ratio}, new dimension: {new_dimension}")
 
+    new_size = [0, 0]
+    new_size[ornt] = cover_side
+    new_size[other(ornt)] = new_dimension
+
+    logger.debug(f"New size: {new_size}")
     # Resize the image
-    cover_img = cover_img.resize((new_dimension, cover_side))
+    cover_img = cover_img.resize(new_size)
 
     # Crop the image if necessary
     if new_dimension > cover_side:
         if crop == 'min':
-            box = (0, 0, cover_side, cover_side)
-        if crop == 'mid':
+            offset = 0
+        elif crop == 'mid':
             offset = (new_dimension - cover_side) // 2
-            box = (offset, 0, cover_side + offset, cover_side)
         elif crop == 'max':
             offset = (new_dimension - cover_side)
+        else :
+            raise ValueError(f"Invalid crop value: {crop}")
+
+        if ornt :
             box = (offset, 0, cover_side + offset, cover_side)
+        else :
+            box = (0, offset, cover_side, cover_side + offset)
 
         logger.debug(f"Cropping Box: {box}")
         cover_img = cover_img.crop(box)
@@ -154,67 +168,19 @@ def _landscape_cover_square(config : Any) -> Image.Image :
     elif new_dimension < cover_side:
         box_img = Image.new("RGB", (cover_side, cover_side), bg_color)
         if crop == 'min':
-            origin = (0, 0)
+            offset = 0
         if crop == 'mid':
             offset = (cover_side - new_dimension) // 2
-            origin = (offset, 0)
         elif crop == 'max':
             offset = (cover_side - new_dimension)
+
+        if ornt :
             origin = (offset, 0)
+        else :
+            origin = (0, offset)
+
         logger.debug(f"Paste Origin: {origin}")
         box_img.paste(cover_img, origin)
-        cover_img = box_img
-
-
-    return cover_img
-
-def _portrait_cover_square(config :Any) -> Image.Image :
-    cover_cfg = config.cover
-
-    required_size = config.output.size
-    cover_side = required_size.width
-    crop = cover_cfg.crop
-    bg_color = cover_cfg.color
-
-    cover_img = Image.open(cover_cfg.path)
-
-
-    original_width, original_height = cover_img.size
-    aspect_ratio = original_height / original_width
-
-    # Calculate the new width while keeping the aspect ratio
-    new_height = int(cover_side * aspect_ratio)
-
-    # Resize the image
-    cover_img = cover_img.resize((cover_side, new_height))
-
-    # Crop the image if necessary
-    if new_height > cover_side:
-        if crop == 'min':
-            box = (0, 0, cover_side, cover_side)
-        # Crop for the middle
-        elif crop == 'mid':
-            offset = (new_height - cover_side) // 2
-            box = (0, offset, cover_side, cover_side + offset)
-        elif crop == 'max':
-            offset = (new_height - cover_side)
-            box = (0, offset, cover_side, cover_side + offset)
-        else :
-            raise ValueError(f"Invalid crop value: {crop}")
-
-        cover_img = cover_img.crop(box)
-
-    elif new_height < cover_side:
-        box_img = Image.new("RGB", (cover_side, cover_side), bg_color)
-        if crop == 'min':
-            origin = (0, 0)
-        if crop == 'mid':
-            offset = (cover_side - new_height) // 2
-            origin = (0, offset)
-        elif crop == 'max':
-            offset = (cover_side - new_height)
-            origin = (0, offset)
-        box_img.paste(box_img, origin)
         cover_img = box_img
 
     return cover_img
@@ -319,16 +285,14 @@ def _add_cover(config : Any, output_img : Image.Image) -> None :
 
     logger.info("Adding cover")
 
-    if output_size.is_landscape() or output_size.is_square() :
-        if cover_cfg.fit == 'cover':
+    if cover_cfg.fit == 'cover':
+        if output_size.is_landscape() :
             cover_img = _landscape_cover_fit(config)
         else :
-            cover_img = _landscape_cover_square(config)
-    else:
-        if cover_cfg.fit == 'cover':
             cover_img = _portrait_cover_fit(config)
-        else :
-            cover_img = _portrait_cover_square(config)
+    else:
+        cover_img = _cover_square(config,
+                      int(output_size.is_landscape()))
 
     cover_width, cover_height = cover_img.size
 
@@ -390,7 +354,7 @@ def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, out
 
     gutter = config.globals.gutter
 
-    if output_size.is_landscape():
+    if output_size.is_landscape() and not output_size.is_square():
         max_text_width = output_size.width - output_size.height - (gutter * 2)
     else:
         max_text_width = output_size.width - (gutter * 2)

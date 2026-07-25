@@ -11,6 +11,9 @@ class geometry :
 
     def to_tuple(self) -> tuple :
         return (self.width, self.height)
+
+    def __getitem__(self, key) :
+        return self.to_tuple()[key]
     
     @classmethod
     def from_string(cls, s : str | None) -> 'geometry | None' :
@@ -31,7 +34,8 @@ class geometry :
         return self.width < self.height
     
     def is_landscape(self) -> bool :
-        return self.width > self.height
+        # "square" should be treated as landscape
+        return self.width >= self.height
 
 #---------------------------------------------------------
 
