@@ -66,9 +66,10 @@ def _compute_mask(img : Image.Image, mask : str, luminance_img : Image.Image | N
 def _build_logo(config : Any) -> Tuple[Image.Image, Image.Image | None] | None :
     logo_config = config.logo
 
-    logo_path : str = logo_config.path
-    if logo_path is None :
+    if not logo_config.path_valid():
         return None
+
+    logo_path : str = logo_config.path
 
     with Image.open(logo_path) as logo_img:
 
@@ -192,6 +193,8 @@ def _portrait_cover_square(config :Any) -> Image.Image :
         elif crop == 'max':
             offset = (new_height - cover_side)
             box = (0, offset, cover_side, cover_side + offset)
+        else :
+            raise ValueError(f"Invalid crop value: {crop}")
 
         cover_img = cover_img.crop(box)
 

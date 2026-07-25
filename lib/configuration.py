@@ -354,4 +354,12 @@ def validate_config(config : Config) -> bool :
         logger.error("Cover border width must be >= 0")
         return False
 
+    if config.cover.crop not in ('min', 'mid', 'max'):
+        logger.error(f"Invalid cover crop value {config.cover.crop}")
+        return False
+
+    if config.cover.align not in ('min', 'mid', 'max'):
+        logger.error(f"Invalid cover align value {config.cover.align}")
+        return False
+
     return True
