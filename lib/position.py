@@ -198,6 +198,15 @@ class position :
     def offsets(self, output_rect : rectangle, cover_rect : rectangle, border_rect : rectangle, elem_size : geometry, gutter : int) -> Tuple[int, int] :
         if not self.valid():
             raise ValueError("Position is not valid")
+
+        logger.debug(f"""Position Inputs :
+ position = {self.pos_str}
+ output_rec = {output_rect.to_tuple()},
+ cover_rect = {cover_rect.to_tuple()},
+ border_rect = {border_rect.to_tuple()},
+ elem_size = {elem_size.to_tuple()},
+ gutter = {gutter}"""
+    )
         
         if self._side == 'pixel' :
             return self._pixel_offsets(output_rect, elem_size, gutter)
@@ -206,7 +215,9 @@ class position :
             ref_rect = output_rect
         elif self._ref == 'cover' :
             ref_rect = cover_rect
+            gutter = 0
         elif self._ref == 'border' :
+            gutter = 0
             ref_rect = border_rect.copy()
             if self._side == 'left' :
                 ref_rect.extent.width = cover_rect.start.width - ref_rect.start.width
@@ -217,7 +228,9 @@ class position :
                 ref_rect.extent.height = cover_rect.start.height - ref_rect.start.height
             elif self._side == 'bottom' :
                 ref_rect.start.height = cover_rect.start.height + cover_rect.extent.height
-                ref_rect.extent.height = (ref_rect.extent.height - cover_rect.extent.height) // 2
+                ref_rect.extent.height = ref_rect.extent.height - ref_rect.start.height
+
+        logger.debug(f"Updated ref_rect = {ref_rect.to_tuple()}")
         
         # Calculate the offset
         if self.w == 'min':
@@ -234,10 +247,13 @@ class position :
         elif self.h == 'max':
             height_offset = ref_rect.extent.height - elem_size.height - gutter
 
+        logger.debug(f"Offsets = ({width_offset}, {height_offset})")
+
         # Match the references position
         width_offset += ref_rect.start.width
         height_offset += ref_rect.start.height
 
-        logger.debug(f"++ position = {self.pos_str}, elem_size = {elem_size}, gutter = {gutter}, Offset: {width_offset}, {height_offset}")
+        logger.debug(f"Final offsets = ({width_offset}, {height_offset})")
+
         return (width_offset, height_offset)
 

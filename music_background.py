@@ -19,6 +19,7 @@ from lib.configuration import Config, TextSettings, build_config, geometry, vali
 from lib.position import rectangle
 
 COVER_RECT = rectangle(geometry(0,0), geometry(0,0))
+BORDER_RECT = rectangle(geometry(0,0), geometry(0,0))
 
 
 
@@ -105,7 +106,7 @@ def _add_logo(config : Any, output_img : Image.Image) -> None :
     offsets = position.offsets(        
         output_rect=rectangle(geometry(0,0), output_size),
         cover_rect=COVER_RECT,
-        border_rect=rectangle(geometry(0,0), output_size),
+        border_rect=BORDER_RECT,
         elem_size=geometry(logo_width, logo_height), 
         gutter=config.globals.gutter)
 
@@ -296,17 +297,22 @@ def _add_cover(config : Any, output_img : Image.Image) -> None :
 
     cover_width, cover_height = cover_img.size
 
+    logger.debug(f"Cover Size before margin or border: {cover_width}x{cover_height}")
+
     border_size = 0
 
     margin_size = cover_cfg.margin
+    logger.debug(f"Cover Margin Size: {margin_size}")
 
     if cover_cfg.border.exists() :
         border_size = cover_cfg.border.width
         border_color = cover_cfg.border.color
         border_img = Image.new("RGB", (cover_width - margin_size * 2, cover_height - margin_size * 2), border_color)
+        logger.debug(f"Border Image Size: {border_img.size}")
         cover_img = cover_img.resize(
             (cover_width - border_size * 2 - margin_size * 2, 
              cover_height - border_size * 2 - margin_size * 2))
+        logger.debug(f"Cover Image New Size: {cover_img.size}")
         # border_img already has the margin_size baked in so we only need
         # to offset by the border_size.
         border_img.paste(cover_img, (border_size, border_size))
@@ -328,12 +334,20 @@ def _add_cover(config : Any, output_img : Image.Image) -> None :
         raise Exception(f"Invalid cover alignment: {cover_cfg.align}")
 
     # Paste the cover
+    logger.debug(f"Cover Position: {position}")
     output_img.paste(cover_img, position)
 
-    global COVER_RECT
+    global COVER_RECT, BORDER_RECT
 
+    # position already has the margin taken into account.
+    # cover_img does not have the margin in it. so do not need to subtract.
     COVER_RECT = rectangle(geometry(position[0] + border_size + margin_size, position[1] + border_size + margin_size), 
-                           geometry(cover_img.width - 2 * border_size - 2 * margin_size, cover_img.height - 2 * border_size - 2 * margin_size))
+                           geometry(cover_img.width - 2 * border_size, cover_img.height - 2 * border_size))
+
+    # position already has the margin taken into account.
+    # cover_img does not have the margin in it. so do not need to subtract.
+    BORDER_RECT = rectangle(geometry(position[0], position[1]), 
+                            geometry(cover_img.width, cover_img.height))
 
 #--------------------------------------------------------------------------------
 # TITLE
@@ -368,7 +382,7 @@ def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, out
     offsets = text_cfg.position.offsets(
         output_rect=rectangle(geometry(0,0), output_size),
         cover_rect=COVER_RECT,
-        border_rect=rectangle(geometry(0,0), output_size),
+        border_rect=BORDER_RECT,
         elem_size=text_size, 
         gutter=gutter)
 
@@ -378,6 +392,7 @@ def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, out
     else :
         stroke_params = {}
 
+    logger.debug(f"Text Position: {offsets}")
     draw.text(offsets, text_cfg.text, font=title_font, fill=text_cfg.fill, anchor='lt', **stroke_params)
 
 #--------------------------------------------------------------------------------
