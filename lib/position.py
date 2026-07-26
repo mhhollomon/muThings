@@ -67,7 +67,8 @@ POS_MAP = {
 }
 
 POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
-PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?) \s* \)', re.RegexFlag.X)
+# pixel (width, height, [w anchor], [h anchor])
+PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?)  (?: \s*,\s* (\w+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
 class position :
     def __init__(self, pos_str : str ) -> None :
         self.pos_str = pos_str
@@ -76,6 +77,7 @@ class position :
         self._height = ''
         self._ref = ''
         self._side = ''
+        self._anchor = ('min', 'min')
 
         if self.pos_str is None :
             return 
@@ -144,7 +146,11 @@ class position :
         if not m :
             return False
 
-        width, height = m.groups()
+        width, height = m.groups()[0:2]
+        if len(m.groups()) == 3 :
+            self._anchor = (m.groups()[2], 'mid')
+        elif len(m.groups()) == 4 :
+            self._anchor = (m.groups()[2], m.groups()[3])
 
         self._width = width
         self._height = height
@@ -177,8 +183,31 @@ class position :
         else :
             h_offset = int(self._height)
 
+        # h_offset and w_offset are where our anchor should be.
+        # Now, convert the offsets to the top left of the element.
+        if self._anchor[0] == 'max' :
+            w_offset -=  elem_size.width 
+        elif self._anchor[0] == 'mid' :
+            w_offset -= elem_size.width // 2
+        elif self._anchor[0] == 'min' :
+            pass
+        else :
+            raise ValueError(f"Unknown anchor: {self._anchor[0]}")
+
+        logger.debug(f"Anchor offset = {w_offset}, {h_offset}")
+
+        if self._anchor[1] == 'max' :
+            h_offset -= elem_size.height
+        elif self._anchor[1] == 'mid' :
+            h_offset -= elem_size.height // 2
+        elif self._anchor[1] == 'min' :
+            pass
+        else :
+            raise ValueError(f"Unknown anchor: {self._anchor[1]}")
+
+        logger.debug(f"element offset = {w_offset}, {h_offset}")
+
         # Check to make sure the element is fully in the output rec (if possible).
-        # For now, use the top left as the anchor
         if w_offset > output_rect.extent.width - elem_size.width - gutter:
             w_offset = output_rect.extent.width - elem_size.width - gutter
 
@@ -191,7 +220,7 @@ class position :
         if h_offset < gutter:
             h_offset = gutter
 
-        logger.debug(f"++ position = {self.pos_str}, elem_size = {elem_size}, gutter = {gutter}, Offset: {w_offset}, {h_offset}")
+        logger.debug(f"final offset: {w_offset}, {h_offset}")
         return w_offset, h_offset
 
     

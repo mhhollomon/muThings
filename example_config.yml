@@ -54,6 +54,14 @@
 #     Place the element 'x' pixels from the left edge and 'y' pixels from the top edge.
 #    pixel(x%, y%)
 #     Place the element x% of the way from the left edge and y% of the way from the top edge.
+#
+#   pixel can also take 4 paramters to set the anchor point in the element.
+#     pixel(x, y, anchor_x, anchor_y)
+#     pixel(x%, y%, anchor_x, anchor_y)
+#     The default is 'min' for both.
+#
+#   anchor_x is one of 'min', 'mid', or 'max'
+#   anchor_y is one of 'min', 'mid', or 'max'
 
 
 #---------------------------------
