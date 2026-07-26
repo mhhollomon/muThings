@@ -216,10 +216,11 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     if new_cfg['text_blocks'] is not None :
         blocks = new_cfg['text_blocks']
         for block in blocks :
+            block = NoneDict(block)
             font = block['font'] if 'font' in block else ''
             bpos = block['position'] if 'position' in block else 'center-center'
-            swidth = block['stroke.width'] if 'stroke.width' in block else 0
-            scolor = block['stroke.color'] if 'stroke.color' in block else '#000000'
+            swidth = block['stroke.width'] or 0
+            scolor = block['stroke.color'] or '#000000'
             block_config = TextSettings(block['text'], block['size'], font, 
                                         position(bpos), 
                                         block['fill'], 

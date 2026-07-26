@@ -269,12 +269,24 @@ class position :
         elif self.w == 'max':
             width_offset = ref_rect.extent.width - elem_size.width - gutter
 
+        if width_offset > ref_rect.extent.width - elem_size.width - gutter:
+            width_offset = ref_rect.extent.width - elem_size.width - gutter
+
+        if width_offset < 1:
+            width_offset = 1
+
         if self.h == 'min':
             height_offset = gutter
         elif self.h == 'mid':
             height_offset = (ref_rect.extent.height - elem_size.height) // 2
         elif self.h == 'max':
             height_offset = ref_rect.extent.height - elem_size.height - gutter
+
+        if height_offset > ref_rect.extent.height - elem_size.height - gutter:
+            height_offset = ref_rect.extent.height - elem_size.height - gutter
+
+        if height_offset < 1:
+            height_offset = 1
 
         logger.debug(f"Offsets = ({width_offset}, {height_offset})")
 

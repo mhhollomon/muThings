@@ -393,7 +393,10 @@ def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, out
         stroke_params = {}
 
     logger.debug(f"Text Position: {offsets}")
-    draw.text(offsets, text_cfg.text, font=title_font, fill=text_cfg.fill, anchor='lt', **stroke_params)
+    if "\n" in text_cfg.text:
+        draw.multiline_text(offsets, text_cfg.text, font=title_font, fill=text_cfg.fill, **stroke_params)
+    else :
+        draw.text(offsets, text_cfg.text, font=title_font, fill=text_cfg.fill, anchor='lt', **stroke_params)
 
 #--------------------------------------------------------------------------------
 # TOP LEVEL FUNCTION
