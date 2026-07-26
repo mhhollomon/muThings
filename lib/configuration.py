@@ -162,7 +162,18 @@ def _build_default_config() -> Config :
                                 StrokeSettings('#ffffff', 0)),
     )
 
-def _add_supplied_config(config : Config, new_cfg : NoneDict) :
+def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) -> Config :
+
+    if new_cfg['include'] is not None :
+        file = new_cfg['include']
+        if not os.path.isabs(file) :
+            file = os.path.abspath(os.path.join(parent_dir, file))
+        with open(file, "r") as f:
+            included_config = yaml.safe_load(f)
+
+        config = _add_supplied_config(config, NoneDict(included_config), os.path.dirname(file))
+
+
     config.globals.override('gutter', new_cfg['gutter'])
     config.globals.override('font', new_cfg['font'])
 
@@ -260,7 +271,7 @@ def build_config(args : argparse.Namespace) -> Config:
         with open(args.config_file, "r") as f:
             supplied_config = yaml.safe_load(f)
 
-        retval = _add_supplied_config(retval, NoneDict(supplied_config))
+        retval = _add_supplied_config(retval, NoneDict(supplied_config), os.path.dirname(args.config_file))
 
     retval = _add_args(retval, args)
 
