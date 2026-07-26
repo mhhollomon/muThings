@@ -6,7 +6,7 @@ import logging.config
 
 from lib.logconfig import LOGGING_CONFIG
 
-logger = logging.getLogger()
+logger = logging.getLogger('app')
 
 import argparse
 from typing import Any, Tuple
@@ -529,7 +529,7 @@ def run() :
     print(f"++ Setting log level to {new_level}")
 
     lc= LOGGING_CONFIG
-    lc['loggers']['']['level'] = new_level
+    lc['loggers']['app']['level'] = new_level
     lc['loggers']['lib']['level'] = new_level
     logging.config.dictConfig(lc)
     logger.setLevel(new_level)

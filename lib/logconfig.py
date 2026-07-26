@@ -15,7 +15,7 @@ LOGGING_CONFIG = {
     },
     'loggers': {
         '': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'handlers': ['console'],
         },
         'PIL': {
@@ -25,7 +25,12 @@ LOGGING_CONFIG = {
         'lib': {
             'level': 'DEBUG',
             'handlers': ['console'],
-            'propagate': True
+            'propagate': False
         },
+        'app': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False
+        }
     },
 }

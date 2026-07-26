@@ -64,9 +64,7 @@ class Settings :
     
     def override(self, key : str, new_value : Any) :
         """Update the value of the attribute if the NEW value is NOT None."""
-        logger.debug(f"--- override ??? : {key} ??? {new_value}")
         if self.valid_value(new_value) :
-            logger.debug(f"--- override !!! : set {key} to {new_value}")
             setattr(self, key, new_value)
 
     def default(self, key : str, new_value : Any) :

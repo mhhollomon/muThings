@@ -3,6 +3,11 @@ from dataclasses import dataclass
 import re
 from typing import Tuple
 
+import logging
+logger = logging.getLogger(__name__)
+
+#---------------------------------------------------------
+
 GEOMETRY_PATTERN = re.compile(r'(\d+)x(\d+)')
 @dataclass
 class geometry :
@@ -61,7 +66,8 @@ POS_MAP = {
     'left' : 'min'
 }
 
-POS_PATTERN = re.compile(r'(\w+) \( (\w+) \s*,\s* (\w+) (?: \s*,\s* (\w+))? \)', re.RegexFlag.X)
+POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
+PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?) \s* \)', re.RegexFlag.X)
 class position :
     def __init__(self, pos_str : str ) -> None :
         self.pos_str = pos_str
@@ -102,6 +108,10 @@ class position :
             self._valid = True
 
     def _parse_function(self) :
+
+        if self._parse_pixel() :
+            return
+        
         m = POS_PATTERN.fullmatch(self.pos_str)
         if not m :
             raise ValueError(f"Invalid function position string: {self.pos_str}")
@@ -129,6 +139,21 @@ class position :
         self._valid = True
         self._side = side or ''
 
+    def _parse_pixel(self) :
+        m = PIXEL_PATTERN.fullmatch(self.pos_str)
+        if not m :
+            return False
+
+        width, height = m.groups()
+
+        self._width = width
+        self._height = height
+        self._ref = 'output'
+        self._side = 'pixel'
+
+        self._valid = True
+        return True
+
     def valid(self) -> bool:
         return self._valid
     
@@ -141,9 +166,41 @@ class position :
         return self._height
     
 
+    def _pixel_offsets(self, output_rect : rectangle, elem_size : geometry, gutter : int) -> Tuple[int, int] :
+        if '%' in self._width :
+            w_offset = int(self._width[:-1]) * output_rect.extent.width // 100
+        else :
+            w_offset = int(self._width)
+
+        if '%' in self._height :
+            h_offset = int(self._height[:-1]) * output_rect.extent.height // 100
+        else :
+            h_offset = int(self._height)
+
+        # Check to make sure the element is fully in the output rec (if possible).
+        # For now, use the top left as the anchor
+        if w_offset > output_rect.extent.width - elem_size.width - gutter:
+            w_offset = output_rect.extent.width - elem_size.width - gutter
+
+        if w_offset < gutter:
+            w_offset = gutter
+
+        if h_offset > output_rect.extent.height - elem_size.height - gutter:
+            h_offset = output_rect.extent.height - elem_size.height - gutter
+
+        if h_offset < gutter:
+            h_offset = gutter
+
+        logger.debug(f"++ position = {self.pos_str}, elem_size = {elem_size}, gutter = {gutter}, Offset: {w_offset}, {h_offset}")
+        return w_offset, h_offset
+
+    
     def offsets(self, output_rect : rectangle, cover_rect : rectangle, border_rect : rectangle, elem_size : geometry, gutter : int) -> Tuple[int, int] :
         if not self.valid():
             raise ValueError("Position is not valid")
+        
+        if self._side == 'pixel' :
+            return self._pixel_offsets(output_rect, elem_size, gutter)
         
         if self._ref == 'output' :
             ref_rect = output_rect
@@ -181,6 +238,6 @@ class position :
         width_offset += ref_rect.start.width
         height_offset += ref_rect.start.height
 
-        #print(f"++ position = {self.pos_str}, elem_size = {elem_size}, gutter = {gutter}, Offset: {width_offset}, {height_offset}")
+        logger.debug(f"++ position = {self.pos_str}, elem_size = {elem_size}, gutter = {gutter}, Offset: {width_offset}, {height_offset}")
         return (width_offset, height_offset)
 
