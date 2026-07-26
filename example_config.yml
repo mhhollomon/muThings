@@ -220,3 +220,18 @@ album :
     color : "hsv(0,0%,100%)" # --album_stroke_color
     width : 2 # --album_stroke_width
 
+#---------------------------------
+# Text Block Configuration
+#---------------------------------
+# arbitrary text blocks can be added.
+# The configuration items are the same as for title and album.
+# The default position is "center-center"
+# otherwise, the other defaults are the same as title and album.
+text_blocks :
+  - text : "This is a text block"
+    size : 200
+    position : "pixel(40%, 40%)"
+
+  - text : "This is another text block"
+    size : 200
+    position : "pixel(60%, 60%)"

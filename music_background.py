@@ -422,6 +422,9 @@ def build_image(config : Config) :
     text_to_image(config, config.title, 'track', output_img)
     text_to_image(config, config.album, 'album', output_img)
 
+    for i, block in enumerate(config.text_blocks):
+        text_to_image(config, block, f'block[{i}]', output_img)
+
     # Save the image
     output_img.save(output_path)
 

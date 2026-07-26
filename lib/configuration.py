@@ -1,7 +1,7 @@
 import argparse
 import os
 import yaml
-from typing import Any
+from typing import Any, List
 from dataclasses import dataclass
 import re
 
@@ -143,6 +143,7 @@ class Config(Settings) :
     logo    : LogoSettings
     title   : TextSettings
     album   : TextSettings
+    text_blocks  : List[TextSettings]
 
 def _build_default_config() -> Config :
 
@@ -160,6 +161,7 @@ def _build_default_config() -> Config :
                                 position('right-center'), 
                                 '#ffffff', 
                                 StrokeSettings('#ffffff', 0)),
+        text_blocks  = []
     )
 
 def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) -> Config :
@@ -210,6 +212,19 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.album.override('fill', new_cfg['album.fill'])
     config.album.stroke.override('color', new_cfg['album.stroke.color'])
     config.album.stroke.override('width', new_cfg['album.stroke.width'])
+
+    if new_cfg['text_blocks'] is not None :
+        blocks = new_cfg['text_blocks']
+        for block in blocks :
+            font = block['font'] if 'font' in block else ''
+            bpos = block['position'] if 'position' in block else 'center-center'
+            swidth = block['stroke.width'] if 'stroke.width' in block else 0
+            scolor = block['stroke.color'] if 'stroke.color' in block else '#000000'
+            block_config = TextSettings(block['text'], block['size'], font, 
+                                        position(bpos), 
+                                        block['fill'], 
+                                        StrokeSettings(scolor, swidth))
+            config.text_blocks.append(block_config)
 
     return config
 
@@ -288,6 +303,8 @@ def build_config(args : argparse.Namespace) -> Config:
     # update the other fonts to use this if needed.
     retval.title.default('font', retval.globals.font) 
     retval.album.default('font', retval.globals.font) 
+    for block in retval.text_blocks :
+        block.default('font', retval.globals.font)
 
     print("++ Using configuration:")
     dump = yaml.dump(retval, default_flow_style=False, sort_keys=False)
