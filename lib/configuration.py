@@ -1,13 +1,12 @@
 import argparse
 import os
 import yaml
-from typing import Any, List
-from dataclasses import dataclass
+from typing import Any
 import re
 
 from lib.paths import resolve_path
 
-from .position import position, geometry
+from .settings import *
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,7 +17,6 @@ IMAGE_WIDTH = 1920
 LOGO_SIZE = 200
 TITLE_FONT_SIZE = 200
 GUTTER_SIZE = 10
-
 
 class NoneDict :
     """Alway return None if the key is not found.
@@ -42,110 +40,6 @@ class NoneDict :
     def __contains__(self, key) :
         return key in self.config
 
-
-
-class Settings :
-
-    def valid_value(self, value : Any) -> bool :
-
-        if value is None :
-            return False
-        
-        if isinstance(value, str) :
-            return value.strip() != ''
-        
-        try :
-            return value.valid()
-        except AttributeError :
-            pass
-
-        return True
-    
-    def valid_attr(self, key : str) -> bool :
-        return self.valid_value(getattr(self, key))
-    
-    def override(self, key : str, new_value : Any) :
-        """Update the value of the attribute if the NEW value is NOT None."""
-        if self.valid_value(new_value) :
-            setattr(self, key, new_value)
-
-    def default(self, key : str, new_value : Any) :
-        """Update the value of the attribute if the OLD value is None."""
-        old_value = getattr(self, key)
-        if not self.valid_value(old_value) :
-            setattr(self, key, new_value)
-
-class PathSetting(Settings) :
-    def path_valid(self) -> bool :
-        path = getattr(self, 'path')
-        return path is not None and path != ''
-
-@dataclass
-class GlobalSettings(Settings) :
-    gutter : int
-    font : str
-
-@dataclass
-class OutputSettings(PathSetting) :
-    path : str
-    size : geometry
-    color : str
-    background : str
-
-@dataclass
-class BorderSettings(Settings) :
-    color : str
-    width : int
-
-    def exists(self) -> bool :
-        return self.width > 0
-
-@dataclass
-class CoverSettings(PathSetting) :
-    path : str
-    align : str
-    crop : str
-    fit : str
-    color : str | None # This is a convenience attribute
-    border : BorderSettings
-    margin : int
-
-@dataclass
-class LogoSettings(PathSetting) :
-    path : str
-    size : int
-    mask : str
-    position : position
-
-@ dataclass
-class StrokeSettings(Settings) :
-    color : str
-    width : int
-
-    def exists(self) -> bool :
-        return self.width > 0
-
-@dataclass 
-class TextSettings(Settings) :
-    text : str
-    size : int
-    font : str
-    position : position
-    fill : str
-    stroke : StrokeSettings
-
-    def has_text(self) -> bool :
-        return self.text is not None and self.text != ''
-
-@dataclass
-class Config(Settings) :
-    globals : GlobalSettings
-    output  : OutputSettings
-    cover   : CoverSettings
-    logo    : LogoSettings
-    title   : TextSettings
-    album   : TextSettings
-    text_blocks  : List[TextSettings]
 
 def _build_default_config() -> Config :
 
