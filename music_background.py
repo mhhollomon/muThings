@@ -26,9 +26,8 @@ BORDER_RECT = rectangle(geometry(0,0), geometry(0,0))
 
 
 def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geometry:
-    img = Image.new("RGB", (1, 1))
-    draw = ImageDraw.Draw(img)
-    box = draw.multiline_textbbox((0,0), text=text, font=font)
+
+    box = font.getbbox(text)
     size = geometry(int(box[2]-box[0]), int(box[3]-box[1]))
     return size
 
