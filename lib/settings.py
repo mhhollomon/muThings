@@ -70,7 +70,7 @@ class CoverSettings(PathSetting) :
     margin : int
 
 @dataclass
-class LogoSettings(PathSetting) :
+class GraphicSettings(PathSetting) :
     path : str
     size : int
     mask : str
@@ -102,7 +102,7 @@ class Config(Settings) :
     globals : GlobalSettings
     output  : OutputSettings
     cover   : CoverSettings
-    logo    : LogoSettings
+    logo    : GraphicSettings
     title   : TextSettings
     album   : TextSettings
     text_blocks  : List[TextSettings]

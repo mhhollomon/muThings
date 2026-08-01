@@ -5,6 +5,7 @@ import sys
 import logging
 import logging.config
 
+from lib.element import OutputElement
 from lib.logconfig import LOGGING_CONFIG
 
 logger = logging.getLogger('app')
@@ -408,20 +409,12 @@ def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, out
 #--------------------------------------------------------------------------------
 
 def build_image(config : Config) :
-    # Open the image
+
+    output_elem = OutputElement('output', config.output)
+    output_img = output_elem.generate()
+
     output_path = config.output.path
-    output_size = config.output.size
-
-    if config.output.valid_attr('background'):
-        logger.info("Using background image")
-        output_img = Image.open(resolve_path(config.output.background))
-        output_img = output_img.resize(output_size.to_tuple())
-        if output_img.mode != 'RGB':
-            output_img = output_img.convert('RGB')
-    else:
-        logger.info("Creating color background")
-        output_img = Image.new("RGB", output_size.to_tuple(), color=config.output.color)
-
+    ref_dict = { 'output' : output_elem }
 
     _add_cover(config, output_img)
 

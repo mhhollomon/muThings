@@ -48,7 +48,7 @@ def _build_default_config() -> Config :
         output  = OutputSettings("", geometry(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
                                 BorderSettings('#000000', 0), margin=0),
-        logo    = LogoSettings('', LOGO_SIZE, 'black', position('right-bottom')),
+        logo    = GraphicSettings('', LOGO_SIZE, 'black', position('right-bottom')),
         title   = TextSettings('', TITLE_FONT_SIZE, '', 
                                 position('right-top'), 
                                 '#ffffff', 
