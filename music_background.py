@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import logging
 import logging.config
@@ -17,6 +18,7 @@ from PIL import ImageFont
 
 from lib.configuration import Config, TextSettings, build_config, geometry, validate_config
 from lib.position import rectangle
+from lib.paths import resolve_path, set_resolve_path
 
 COVER_RECT = rectangle(geometry(0,0), geometry(0,0))
 BORDER_RECT = rectangle(geometry(0,0), geometry(0,0))
@@ -29,6 +31,7 @@ def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geometry:
     box = draw.multiline_textbbox((0,0), text=text, font=font)
     size = geometry(int(box[2]-box[0]), int(box[3]-box[1]))
     return size
+
 
 #--------------------------------------------------------------------------------
 # LOGO
@@ -70,7 +73,7 @@ def _build_logo(config : Any) -> Tuple[Image.Image, Image.Image | None] | None :
     if not logo_config.path_valid():
         return None
 
-    logo_path : str = logo_config.path
+    logo_path : str = resolve_path(logo_config.path)
 
     with Image.open(logo_path) as logo_img:
 
@@ -128,7 +131,7 @@ def _cover_square(config :Any, ornt : int) -> Image.Image :
     crop = cover_cfg.crop
     bg_color = cover_cfg.color
 
-    cover_img = Image.open(cover_cfg.path)
+    cover_img = Image.open(resolve_path(cover_cfg.path))
 
 
     original_width, original_height = cover_img.size
@@ -192,7 +195,7 @@ def _landscape_cover_fit(config : Any) -> Image.Image:
     required_size = config.output.size
     crop = cover_cfg.crop
 
-    cover_img = Image.open(cover_cfg.path)
+    cover_img = Image.open(resolve_path(cover_cfg.path))
 
     orig_width, orig_height = cover_img.size
     aspect_ratio = orig_width / orig_height
@@ -238,7 +241,7 @@ def _portrait_cover_fit(config : Any) -> Image.Image:
     required_size = config.output.size
     crop = cover_cfg.crop
 
-    cover_img = Image.open(cover_cfg.path)
+    cover_img = Image.open(resolve_path(cover_cfg.path))
 
     orig_width, orig_height = cover_img.size
     aspect_ratio = orig_height / orig_width
@@ -281,6 +284,9 @@ def _portrait_cover_fit(config : Any) -> Image.Image:
 def _add_cover(config : Any, output_img : Image.Image) -> None :
 
     cover_cfg = config.cover
+    if not cover_cfg.path_valid():
+        logger.info("Skipping cover")
+        return
 
     output_size = config.output.size
 
@@ -409,7 +415,7 @@ def build_image(config : Config) :
 
     if config.output.valid_attr('background'):
         logger.info("Using background image")
-        output_img = Image.open(config.output.background)
+        output_img = Image.open(resolve_path(config.output.background))
         output_img = output_img.resize(output_size.to_tuple())
         if output_img.mode != 'RGB':
             output_img = output_img.convert('RGB')
@@ -429,7 +435,7 @@ def build_image(config : Config) :
         text_to_image(config, block, f'block[{i}]', output_img)
 
     # Save the image
-    output_img.save(output_path)
+    output_img.save(resolve_path(output_path))
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -555,7 +561,11 @@ def run() :
     logging.config.dictConfig(lc)
     logger.setLevel(new_level)
 
-    config = build_config(args)
+    config_file = args.config_file
+    if args.config_file is not None:
+        set_resolve_path(os.path.dirname(os.path.abspath(args.config_file)))
+
+    config = build_config(args, config_file)
     if not validate_config(config):
         sys.exit(1)
 

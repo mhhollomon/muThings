@@ -5,6 +5,8 @@ from typing import Any, List
 from dataclasses import dataclass
 import re
 
+from lib.paths import resolve_path
+
 from .position import position, geometry
 
 import logging
@@ -279,15 +281,15 @@ def _get_default_font() :
     else:
         return 'Arial'
 
-def build_config(args : argparse.Namespace) -> Config:
+def build_config(args : argparse.Namespace, config_path : str | None = None) -> Config:
 
     retval = _build_default_config()
 
-    if args.config_file is not None:
-        with open(args.config_file, "r") as f:
+    if config_path is not None:
+        with open(resolve_path(config_path), "r") as f:
             supplied_config = yaml.safe_load(f)
 
-        retval = _add_supplied_config(retval, NoneDict(supplied_config), os.path.dirname(args.config_file))
+        retval = _add_supplied_config(retval, NoneDict(supplied_config), os.path.dirname(config_path))
 
     retval = _add_args(retval, args)
 
@@ -320,7 +322,7 @@ def validate_config(config : Config) -> bool :
         logger.error("No output path specified")
         return False
     else :
-        output_path = config.output.path
+        output_path = resolve_path(config.output.path)
         dirname = os.path.dirname(output_path)
         if dirname != "" and not os.path.exists(dirname) :
             logger.error(f"The directory {dirname} does not exist.")
@@ -336,19 +338,19 @@ def validate_config(config : Config) -> bool :
         return False
     
     if config.output.valid_attr('background'):
-        path = config.output.background
+        path = resolve_path(config.output.background)
         if not os.path.isfile(path):
             logger.error(f"The background image file {path} does not exist.")
             return False
 
     if config.cover.path_valid():
-        cover_path = config.cover.path
+        cover_path = resolve_path(config.cover.path)
         if not os.path.isfile(cover_path):
             logger.error(f"The cover image file {cover_path} does not exist.")
             return False
 
     if config.logo.path_valid():
-        logo_path = config.logo.path
+        logo_path = resolve_path(config.logo.path)
         if not os.path.isfile(logo_path):
             logger.error(f"The logo image file {logo_path} does not exist.")
             return False
