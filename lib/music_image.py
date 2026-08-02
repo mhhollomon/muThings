@@ -11,10 +11,26 @@ class MusicImage :
         self.elements : Dict[str, ImageElement] = {}
 
     def generate(self) :
-        output_elem = OutputElement('output', self.config.output, self)
-        output_img = output_elem.generate()
+        ele = OutputElement('output', self.config.output, self)
+        output_img = ele.generate()
 
         self.img = output_img
+
+        ele = CoverElement('cover', self.config.cover, self)
+        ele.generate()
+        
+        ele = GraphicElement('logo', self.config.logo, self)
+        ele.generate()
+
+        ele = TextElement('title', self.config.title, self)
+        ele.generate()
+
+        ele = TextElement('album', self.config.album, self)
+        ele.generate()
+
+        for i, block in enumerate(self.config.text_blocks):
+            ele = TextElement(f'block[{i}]', block, self)
+            ele.generate()
 
         return output_img
 
