@@ -13,12 +13,13 @@ class ImageElement :
     generated = False
     _bbox = rectangle(geometry(0,0), geometry(0,0))
 
-    def __init__(self, name : str, parent : 'MusicImage') :
+    def __init__(self, name : str, parent : 'MusicImage', add_to_parent : bool = True) :
         self.name = name
         self.parent = parent
         self._settings : Any = {}
 
-        parent._add_element(self)
+        if add_to_parent :
+            parent._add_element(self)
 
 
     @property
@@ -46,6 +47,7 @@ class ImageElement :
             raise ValueError("ImageElement bbox cannot be None")
         if bbox.extent.width == 0 or bbox.extent.height == 0 :
             raise ValueError("ImageElement bbox cannot be empty")
+        logger.debug(f"Setting bbox for {self.name} to {bbox}")
         self._bbox = bbox
         self.generated = True
 
@@ -123,18 +125,20 @@ class ImageElement :
         if pos._ref == 'cover' :
             gutter = 0
         elif pos._ref == 'border' :
+            # This stuff really needs to be done by the border element itself
+            # since it know how wide it is supposed to be.
             gutter = 0
-            orig = ref_rect
+            cover_rect = self.parent.get_elem('cover').bbox
             ref_rect = ref_rect.copy()
             if pos._side == 'left' :
-                ref_rect.extent.width = orig.start.width - ref_rect.start.width
+                ref_rect.extent.width = cover_rect.start.width - ref_rect.start.width
             elif pos._side == 'right' :
-                ref_rect.start.width = orig.start.width + orig.extent.width
-                ref_rect.extent.width = (ref_rect.extent.width - orig.extent.width) // 2
+                ref_rect.start.width = cover_rect.start.width + cover_rect.extent.width
+                ref_rect.extent.width = (ref_rect.extent.width - cover_rect.extent.width) // 2
             elif pos._side == 'top' :
-                ref_rect.extent.height = orig.start.height - ref_rect.start.height
+                ref_rect.extent.height = cover_rect.start.height - ref_rect.start.height
             elif pos._side == 'bottom' :
-                ref_rect.start.height = orig.start.height + orig.extent.height
+                ref_rect.start.height = cover_rect.start.height + cover_rect.extent.height
                 ref_rect.extent.height = ref_rect.extent.height - ref_rect.start.height
 
         logger.debug(f"Updated ref_rect = {ref_rect.to_tuple()}")

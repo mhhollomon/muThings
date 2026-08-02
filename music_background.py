@@ -12,27 +12,16 @@ from lib.logconfig import LOGGING_CONFIG
 logger = logging.getLogger('app')
 
 import argparse
-from typing import Any, Tuple
+from typing import Any
 
 from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
 
-from lib.configuration import Config, TextSettings, build_config, geometry, validate_config
+from lib.configuration import Config, build_config, geometry, validate_config
 from lib.position import rectangle
 from lib.paths import resolve_path, set_resolve_path
 
 COVER_RECT = rectangle(geometry(0,0), geometry(0,0))
 BORDER_RECT = rectangle(geometry(0,0), geometry(0,0))
-
-
-
-def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geometry:
-
-    box = font.getbbox(text)
-    size = geometry(int(box[2]-box[0]), int(box[3]-box[1]))
-    return size
-
 
 #--------------------------------------------------------------------------------
 # COVER
@@ -274,55 +263,6 @@ def _add_cover(config : Any, output_img : Image.Image) -> None :
                             geometry(cover_img.width, cover_img.height))
 
 #--------------------------------------------------------------------------------
-# TITLE
-#--------------------------------------------------------------------------------
-
-def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, output_img : Image.Image) -> None :
-    if not text_cfg.has_text():
-        logger.info(f"Skipping {text_type} text")
-        return
-    
-    logger.info(f"Adding {text_type} text")
-
-    output_size = config.output.size
-
-    draw = ImageDraw.Draw(output_img)
-    title_font = ImageFont.truetype(text_cfg.font, text_cfg.size)
-    text_size = _get_text_size(text_cfg.text, title_font)
-
-    gutter = config.globals.gutter
-
-    if output_size.is_landscape() and not output_size.is_square():
-        max_text_width = output_size.width - output_size.height - (gutter * 2)
-    else:
-        max_text_width = output_size.width - (gutter * 2)
-
-    if (text_size.width > max_text_width):
-        # The text is too long, so we need to scale it down
-        new_size = text_cfg.size * (max_text_width / text_size.width)
-        title_font = ImageFont.truetype(text_cfg.font, new_size)
-        text_size = _get_text_size(text_cfg.text, title_font)
-
-    offsets = text_cfg.position.offsets(
-        output_rect=rectangle(geometry(0,0), output_size),
-        cover_rect=COVER_RECT,
-        border_rect=BORDER_RECT,
-        elem_size=text_size, 
-        gutter=gutter)
-
-    if text_cfg.stroke.exists():
-        stroke_params = { 'stroke_fill' : text_cfg.stroke.color,
-                          'stroke_width' : text_cfg.stroke.width }
-    else :
-        stroke_params = {}
-
-    logger.debug(f"Text Position: {offsets}")
-    if "\n" in text_cfg.text:
-        draw.multiline_text(offsets, text_cfg.text, font=title_font, fill=text_cfg.fill, **stroke_params)
-    else :
-        draw.text(offsets, text_cfg.text, font=title_font, fill=text_cfg.fill, anchor='lt', **stroke_params)
-
-#--------------------------------------------------------------------------------
 # TOP LEVEL FUNCTION
 #--------------------------------------------------------------------------------
 
@@ -346,11 +286,15 @@ def build_image(config : Config) :
     ele = GraphicElement('logo', config.logo, final)
     ele.generate()
 
-    text_to_image(config, config.title, 'track', output_img)
-    text_to_image(config, config.album, 'album', output_img)
+    ele = TextElement('title', config.title, final)
+    ele.generate()
+
+    ele = TextElement('album', config.album, final)
+    ele.generate()
 
     for i, block in enumerate(config.text_blocks):
-        text_to_image(config, block, f'block[{i}]', output_img)
+        ele = TextElement(f'block[{i}]', block, final)
+        ele.generate()
 
     # Save the image
     output_img.save(resolve_path(output_path))
@@ -361,7 +305,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     # --- Application Level Arguments ---
     parser.add_argument("--config_file", "-c", type=str, required=False, default=None,
                         help="yaml file containing configuration values. Most can then be overridden on the command line.")
-    parser.add_argument("--log_level", "-l", type=str, required=False, default=None)
+    parser.add_argument("--debug", "-d", action='store_true', required=False, default=False)
 
     # --- GLOBAL ARGUMENTS ---
     parser.add_argument("--gutter", type=int, required=False, default=None,
@@ -448,36 +392,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     
     return parser
 
-_LEVELS = {
-    'debug' : logging.DEBUG,
-    'info' : logging.INFO,
-    'warning' : logging.WARNING,
-    'error' : logging.ERROR,
-    'critical' : logging.CRITICAL
-}
-
 def run() :
     args = build_arg_parser().parse_args()
 
-    new_level = logging.INFO
+    log_level = logging.DEBUG if args.debug else logging.INFO
 
-    if args.log_level is not None:
-        new_level = args.log_level.lower()
-        if new_level not in _LEVELS:
-            if new_level.isnumeric():
-                new_level = int(new_level)
-            else :
-                raise Exception(f"Invalid log level: {args.log_level}")
-        else :
-            new_level = _LEVELS[new_level]
             
-    print(f"++ Setting log level to {new_level}")
+    print(f"++ Setting log level to {log_level}")
 
     lc= LOGGING_CONFIG
-    lc['loggers']['app']['level'] = new_level
-    lc['loggers']['lib']['level'] = new_level
+    lc['loggers']['app']['level'] = log_level
+    lc['loggers']['lib']['level'] = log_level
     logging.config.dictConfig(lc)
-    logger.setLevel(new_level)
+    logger.setLevel(log_level)
 
     config_file = args.config_file
     if args.config_file is not None:

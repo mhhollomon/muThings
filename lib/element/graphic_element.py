@@ -87,7 +87,6 @@ class GraphicElement(ImageElement):
         logger.info("Adding logo")
         logo_img, mask_img = logo_img
         logo_width, logo_height = logo_img.size
-        output_size = self.parent.get_elem('output')._settings.size
         position = self._settings.position
 
         offsets =  self.offsets_for_position(

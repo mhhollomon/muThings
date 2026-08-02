@@ -1,9 +1,9 @@
 
 from dataclasses import dataclass
 import re
-from typing import Tuple
 
 import logging
+from typing import Tuple
 logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------
@@ -65,10 +65,12 @@ POS_MAP = {
     'right' : 'max',
     'left' : 'min'
 }
-
+# reference(width, height, [side]) -- side only for border.
 POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
+
 # pixel (width, height, [w anchor], [h anchor])
 PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?)  (?: \s*,\s* (\w+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
+
 class position :
     def __init__(self, pos_str : str ) -> None :
         self.pos_str = pos_str
@@ -77,7 +79,7 @@ class position :
         self._height = ''
         self._ref = ''
         self._side = ''
-        self._anchor = ('min', 'min')
+        self._anchor : Tuple[str, str] = ('min', 'min')
 
         if self.pos_str is None :
             return 
@@ -171,130 +173,3 @@ class position :
     def h(self) -> str :
         return self._height
     
-
-    def _pixel_offsets(self, output_rect : rectangle, elem_size : geometry, gutter : int) -> Tuple[int, int] :
-        if '%' in self._width :
-            w_offset = int(self._width[:-1]) * output_rect.extent.width // 100
-        else :
-            w_offset = int(self._width)
-
-        if '%' in self._height :
-            h_offset = int(self._height[:-1]) * output_rect.extent.height // 100
-        else :
-            h_offset = int(self._height)
-
-        # h_offset and w_offset are where our anchor should be.
-        # Now, convert the offsets to the top left of the element.
-        if self._anchor[0] == 'max' :
-            w_offset -=  elem_size.width 
-        elif self._anchor[0] == 'mid' :
-            w_offset -= elem_size.width // 2
-        elif self._anchor[0] == 'min' :
-            pass
-        else :
-            raise ValueError(f"Unknown anchor: {self._anchor[0]}")
-
-        logger.debug(f"Anchor offset = {w_offset}, {h_offset}")
-
-        if self._anchor[1] == 'max' :
-            h_offset -= elem_size.height
-        elif self._anchor[1] == 'mid' :
-            h_offset -= elem_size.height // 2
-        elif self._anchor[1] == 'min' :
-            pass
-        else :
-            raise ValueError(f"Unknown anchor: {self._anchor[1]}")
-
-        logger.debug(f"element offset = {w_offset}, {h_offset}")
-
-        # Check to make sure the element is fully in the output rec (if possible).
-        if w_offset > output_rect.extent.width - elem_size.width - gutter:
-            w_offset = output_rect.extent.width - elem_size.width - gutter
-
-        if w_offset < gutter:
-            w_offset = gutter
-
-        if h_offset > output_rect.extent.height - elem_size.height - gutter:
-            h_offset = output_rect.extent.height - elem_size.height - gutter
-
-        if h_offset < gutter:
-            h_offset = gutter
-
-        logger.debug(f"final offset: {w_offset}, {h_offset}")
-        return w_offset, h_offset
-
-    
-    def offsets(self, output_rect : rectangle, cover_rect : rectangle, border_rect : rectangle, elem_size : geometry, gutter : int) -> Tuple[int, int] :
-        if not self.valid():
-            raise ValueError("Position is not valid")
-
-        logger.debug(f"""Position Inputs :
- position = {self.pos_str}
- output_rec = {output_rect.to_tuple()},
- cover_rect = {cover_rect.to_tuple()},
- border_rect = {border_rect.to_tuple()},
- elem_size = {elem_size.to_tuple()},
- gutter = {gutter}"""
-    )
-        
-        if self._side == 'pixel' :
-            return self._pixel_offsets(output_rect, elem_size, gutter)
-        
-        if self._ref == 'output' :
-            ref_rect = output_rect
-        elif self._ref == 'cover' :
-            ref_rect = cover_rect
-            gutter = 0
-        elif self._ref == 'border' :
-            gutter = 0
-            ref_rect = border_rect.copy()
-            if self._side == 'left' :
-                ref_rect.extent.width = cover_rect.start.width - ref_rect.start.width
-            elif self._side == 'right' :
-                ref_rect.start.width = cover_rect.start.width + cover_rect.extent.width
-                ref_rect.extent.width = (ref_rect.extent.width - cover_rect.extent.width) // 2
-            elif self._side == 'top' :
-                ref_rect.extent.height = cover_rect.start.height - ref_rect.start.height
-            elif self._side == 'bottom' :
-                ref_rect.start.height = cover_rect.start.height + cover_rect.extent.height
-                ref_rect.extent.height = ref_rect.extent.height - ref_rect.start.height
-
-        logger.debug(f"Updated ref_rect = {ref_rect.to_tuple()}")
-        
-        # Calculate the offset
-        if self.w == 'min':
-            width_offset = gutter
-        elif self.w == 'mid':
-            width_offset = (ref_rect.extent.width - elem_size.width) // 2
-        elif self.w == 'max':
-            width_offset = ref_rect.extent.width - elem_size.width - gutter
-
-        if width_offset > ref_rect.extent.width - elem_size.width - gutter:
-            width_offset = ref_rect.extent.width - elem_size.width - gutter
-
-        if width_offset < 1:
-            width_offset = 1
-
-        if self.h == 'min':
-            height_offset = gutter
-        elif self.h == 'mid':
-            height_offset = (ref_rect.extent.height - elem_size.height) // 2
-        elif self.h == 'max':
-            height_offset = ref_rect.extent.height - elem_size.height - gutter
-
-        if height_offset > ref_rect.extent.height - elem_size.height - gutter:
-            height_offset = ref_rect.extent.height - elem_size.height - gutter
-
-        if height_offset < 1:
-            height_offset = 1
-
-        logger.debug(f"Offsets = ({width_offset}, {height_offset})")
-
-        # Match the references position
-        width_offset += ref_rect.start.width
-        height_offset += ref_rect.start.height
-
-        logger.debug(f"Final offsets = ({width_offset}, {height_offset})")
-
-        return (width_offset, height_offset)
-
