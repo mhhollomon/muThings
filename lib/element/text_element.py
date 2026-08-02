@@ -38,7 +38,7 @@ class TextElement(ImageElement) :
         
         logger.info(f"Adding {self.name} text")
 
-        output_size = self.parent.config.output.size
+        output_size = self.parent.output_size
 
         draw = ImageDraw.Draw(self.parent.img)
         title_font = ImageFont.truetype(self._settings.font, self._settings.size)
@@ -78,4 +78,3 @@ class TextElement(ImageElement) :
             draw.text(offsets, self._settings.text, font=title_font, fill=self._settings.fill, anchor='lt', **stroke_params)
 
         self.bbox = rectangle(geometry(*offsets), text_size)
-        

@@ -142,8 +142,8 @@ def main() :
     logger.setLevel(log_level)
 
     config_file = args.config_file
-    if args.config_file is not None:
-        set_resolve_path(os.path.dirname(os.path.abspath(args.config_file)))
+    if config_file is not None:
+        set_resolve_path(os.path.dirname(os.path.abspath(config_file)))
 
     config = build_config(args, config_file)
     if not validate_config(config):

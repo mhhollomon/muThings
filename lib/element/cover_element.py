@@ -31,7 +31,7 @@ class CoverElement(ImageElement) :
         def other(o : int) -> int :
             return 1 - o
 
-        required_size = self.parent.config.output.size
+        required_size = self.parent.output_size
         cover_side = required_size[ornt]
         logger.debug(f"Cover side: {cover_side}")
         crop = cover_cfg.crop
@@ -98,7 +98,7 @@ class CoverElement(ImageElement) :
     def _landscape_cover_fit(self) -> Image.Image:
         cover_cfg = self._settings
 
-        required_size = self.parent.config.output.size
+        required_size = self.parent.output_size
         crop = cover_cfg.crop
 
         cover_img = Image.open(resolve_path(cover_cfg.path))
@@ -144,7 +144,7 @@ class CoverElement(ImageElement) :
     def _portrait_cover_fit(self) -> Image.Image:
         cover_cfg = self._settings
 
-        required_size = self.parent.config.output.size
+        required_size = self.parent.output_size
         crop = cover_cfg.crop
 
         cover_img = Image.open(resolve_path(cover_cfg.path))
@@ -195,7 +195,7 @@ class CoverElement(ImageElement) :
             logger.info("Skipping cover")
             return
 
-        output_size = self.parent.config.output.size
+        output_size = self.parent.output_size
 
         logger.info("Adding cover")
 

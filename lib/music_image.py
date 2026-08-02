@@ -9,6 +9,8 @@ class MusicImage :
     def __init__(self, config : Config) -> None:
         self.config = config
         self.elements : Dict[str, ImageElement] = {}
+        
+        self.output_size = self.config.output.size
 
     def generate(self) :
         ele = OutputElement('output', self.config.output, self)
