@@ -5,7 +5,8 @@ import sys
 import logging
 import logging.config
 
-from lib.element import OutputElement
+from lib.music_image import MusicImage
+from lib.element import *
 from lib.logconfig import LOGGING_CONFIG
 
 logger = logging.getLogger('app')
@@ -32,89 +33,6 @@ def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geometry:
     size = geometry(int(box[2]-box[0]), int(box[3]-box[1]))
     return size
 
-
-#--------------------------------------------------------------------------------
-# LOGO
-#--------------------------------------------------------------------------------
-
-def _compute_mask(img : Image.Image, mask : str, luminance_img : Image.Image | None = None) -> Image.Image | None :
-    
-    if luminance_img is None:
-        luminance_img = img.convert('L')
-
-    if mask == 'self':
-        # use the luminance of the image as-is
-        gray_img = luminance_img
-
-    elif mask == 'black':
-        # clamp the luminance to black
-        gray_img = luminance_img.point(lambda x : 0 if x < 10 else 255) # type: ignore
-
-    elif mask == 'none' :
-        # no mask
-        gray_img = None
-
-    elif mask == 'alpha' :
-        # use the alpha channel
-        gray_img = img
-
-    else : # auto
-        # use alpha if it is there otherwise use black
-        if 'A' in img.mode or 'a' in img.mode:
-            gray_img = img
-        else:
-            gray_img = _compute_mask(img, 'black', luminance_img)
-
-    return gray_img
-
-def _build_logo(config : Any) -> Tuple[Image.Image, Image.Image | None] | None :
-    logo_config = config.logo
-
-    if not logo_config.path_valid():
-        return None
-
-    logo_path : str = resolve_path(logo_config.path)
-
-    with Image.open(logo_path) as logo_img:
-
-        logo_width, logo_height = logo_img.size
-        needed_size : int = logo_config.size
-
-        if logo_width > logo_height:
-            # Landscape
-            new_size = (needed_size, int( needed_size * (logo_height / logo_width)))
-        else:
-            # Portrait
-            new_size = (int(needed_size * (logo_width / logo_height)), needed_size)
-
-        logo_img = logo_img.resize(new_size)
-
-        gray_img = _compute_mask(logo_img, logo_config.mask)
-
-
-        return (logo_img, gray_img)
-    
-def _add_logo(config : Any, output_img : Image.Image) -> None :
-    logo_img = _build_logo(config)
-    if logo_img is None:
-        logger.info("Skipping logo")
-        return
-    
-    logger.info("Adding logo")
-    logo_img, mask_img = logo_img
-    logo_width, logo_height = logo_img.size
-    output_size = config.output.size
-    position = config.logo.position
-
-    offsets = position.offsets(        
-        output_rect=rectangle(geometry(0,0), output_size),
-        cover_rect=COVER_RECT,
-        border_rect=BORDER_RECT,
-        elem_size=geometry(logo_width, logo_height), 
-        gutter=config.globals.gutter)
-
-    # Paste the logo
-    output_img.paste(logo_img, offsets, mask=mask_img)
 
 #--------------------------------------------------------------------------------
 # COVER
@@ -410,15 +328,23 @@ def text_to_image(config : Config, text_cfg : TextSettings, text_type : str, out
 
 def build_image(config : Config) :
 
-    output_elem = OutputElement('output', config.output)
-    output_img = output_elem.generate()
+    final = MusicImage(config)
+
+    output_img = final.generate()
 
     output_path = config.output.path
-    ref_dict = { 'output' : output_elem }
 
     _add_cover(config, output_img)
 
-    _add_logo(config, output_img)
+    # For now we will "fake" the cover and border elements.
+    ele = CoverElement('cover', config.cover, final)
+    ele.bbox = COVER_RECT
+
+    ele = BorderElement('border', config.cover.border, final)
+    ele.bbox = BORDER_RECT
+    
+    ele = GraphicElement('logo', config.logo, final)
+    ele.generate()
 
     text_to_image(config, config.title, 'track', output_img)
     text_to_image(config, config.album, 'album', output_img)
