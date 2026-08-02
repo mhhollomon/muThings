@@ -92,6 +92,7 @@ class TextSettings(Settings) :
     position : position
     fill : str
     stroke : StrokeSettings
+    rotation : int
 
     def has_text(self) -> bool :
         return self.text is not None and self.text != ''

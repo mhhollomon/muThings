@@ -52,11 +52,13 @@ def _build_default_config() -> Config :
         title   = TextSettings('', TITLE_FONT_SIZE, '', 
                                 position('right-top'), 
                                 '#ffffff', 
-                                StrokeSettings('#ffffff', 0)),
+                                StrokeSettings('#ffffff', 0),
+                                rotation=0),
         album   = TextSettings('', TITLE_FONT_SIZE // 2, '', 
                                 position('right-center'), 
                                 '#ffffff', 
-                                StrokeSettings('#ffffff', 0)),
+                                StrokeSettings('#ffffff', 0),
+                                rotation=0),
         text_blocks  = []
     )
 
@@ -120,7 +122,8 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
             block_config = TextSettings(block['text'], block['size'], font, 
                                         position(bpos), 
                                         block['fill'], 
-                                        StrokeSettings(scolor, swidth))
+                                        StrokeSettings(scolor, swidth),
+                                        rotation=block['rotation'] or 0)
             config.text_blocks.append(block_config)
 
     return config
@@ -260,9 +263,17 @@ def validate_config(config : Config) -> bool :
             logger.error("Title stroke width must be >= 0")
             return False
         
+        if config.title.rotation not in [-90, 0, 90, 180]:
+            logger.error(f"Invalid title rotation value {config.title.rotation}")
+            return False
+        
     if config.album.has_text():
         if config.album.stroke.width < 0:
             logger.error("Album stroke width must be >= 0")
+            return False
+        
+        if config.album.rotation not in [-90, 0, 90, 180]:
+            logger.error(f"Invalid album rotation value {config.album.rotation}")
             return False
         
     if config.globals.gutter < 0:
@@ -280,5 +291,10 @@ def validate_config(config : Config) -> bool :
     if config.cover.align not in ('min', 'mid', 'max'):
         logger.error(f"Invalid cover align value {config.cover.align}")
         return False
+
+    for block in config.text_blocks:
+        if block.rotation not in [-90, 0, 90, 180]:
+            logger.error(f"Invalid text block rotation value {block.rotation}")
+            return False
 
     return True

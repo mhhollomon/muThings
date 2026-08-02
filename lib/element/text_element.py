@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from typing import TYPE_CHECKING
 
-from PIL import ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 if TYPE_CHECKING:
     from ..music_image import MusicImage
@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------
 
 def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geometry:
-
-    box = font.getbbox(text)
+    # Using ImageFont.getbbox is not good enough for multiline text
+    img = Image.new("L", (1, 1))
+    draw = ImageDraw.Draw(img)
+    box = draw.multiline_textbbox((0,0), text=text, font=font)
     size = geometry(int(box[2]-box[0]), int(box[3]-box[1]))
     return size
 
@@ -40,7 +42,6 @@ class TextElement(ImageElement) :
 
         output_size = self.parent.output_size
 
-        draw = ImageDraw.Draw(self.parent.img)
         title_font = ImageFont.truetype(self._settings.font, self._settings.size)
         text_size = _get_text_size(self._settings.text, title_font)
 
@@ -52,15 +53,21 @@ class TextElement(ImageElement) :
             max_text_width = output_size.width - (gutter * 2)
 
         if (text_size.width > max_text_width):
+            # TODO : Need to retink this. What should max_text_width be?
             # The text is too long, so we need to scale it down
             new_size = self._settings.size * (max_text_width / text_size.width)
             title_font = ImageFont.truetype(self._settings.font, new_size)
             text_size = _get_text_size(self._settings.text, title_font)
 
+        if self._settings.rotation in [90, -90]:
+            final_text_size = geometry(text_size.height, text_size.width)
+        else:
+            final_text_size = text_size
+
         position = self._settings.position
         offsets =  self.offsets_for_position(
             pos=position,
-            elem_size=text_size,
+            elem_size=final_text_size,
             gutter=self.parent.config.globals.gutter
             )
 
@@ -71,10 +78,30 @@ class TextElement(ImageElement) :
         else :
             stroke_params = {}
 
-        logger.debug(f"Text Position: {offsets}")
         if "\n" in self._settings.text:
-            draw.multiline_text(offsets, self._settings.text, font=title_font, fill=self._settings.fill, **stroke_params)
+            anchor_params = {}
         else :
-            draw.text(offsets, self._settings.text, font=title_font, fill=self._settings.fill, anchor='lt', **stroke_params)
+            anchor_params = { 'anchor' : 'lt' }
 
-        self.bbox = rectangle(geometry(*offsets), text_size)
+
+        logger.debug(f"Text Position: {offsets}")
+
+        text_image = None
+
+        if self._settings.rotation == 0 :
+            draw = ImageDraw.Draw(self.parent.img)
+            draw_offsets = offsets
+
+        else :
+            text_image = Image.new("RGBA", text_size.to_tuple())
+            draw = ImageDraw.Draw(text_image)
+            draw_offsets = (0,0)
+
+        draw.text(draw_offsets, self._settings.text, font=title_font, fill=self._settings.fill, **anchor_params, **stroke_params)
+
+        if text_image is not None:
+            text_image = text_image.rotate(-self._settings.rotation, expand=1, resample=Image.Resampling.BILINEAR)
+            self.parent.img.paste(text_image, offsets, mask=text_image)
+
+
+        self.bbox = rectangle(geometry(*offsets), final_text_size)
