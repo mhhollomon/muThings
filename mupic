@@ -1,0 +1,7 @@
+#!/bin/env bash
+
+exe_dir=$(dirname "$0")
+
+export PYTHONPATH="${PYTHONPATH}:${exe_dir}/src"
+
+python -m MuPic.main "$@"

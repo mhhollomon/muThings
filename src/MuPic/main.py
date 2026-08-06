@@ -5,8 +5,8 @@ import sys
 import logging
 import logging.config
 
-from src.MuPic.music_image import MusicImage
-from src.MuPic.logconfig import LOGGING_CONFIG
+from .music_image import MusicImage
+from .logconfig import LOGGING_CONFIG
 
 logger = logging.getLogger('app')
 
