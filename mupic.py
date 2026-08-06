@@ -5,15 +5,15 @@ import sys
 import logging
 import logging.config
 
-from lib.music_image import MusicImage
-from lib.logconfig import LOGGING_CONFIG
+from src.MuPic.music_image import MusicImage
+from src.MuPic.logconfig import LOGGING_CONFIG
 
 logger = logging.getLogger('app')
 
 import argparse
 
-from lib.configuration import Config, build_config, validate_config
-from lib.paths import resolve_path, set_resolve_path
+from src.MuPic.configuration import Config, build_config, validate_config
+from src.MuPic.paths import resolve_path, set_resolve_path
 
 
 #--------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ def main() :
 
     lc= LOGGING_CONFIG
     lc['loggers']['app']['level'] = log_level
-    lc['loggers']['lib']['level'] = log_level
+    lc['loggers']['src']['level'] = log_level
     logging.config.dictConfig(lc)
     logger.setLevel(log_level)
 

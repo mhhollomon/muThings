@@ -4,8 +4,7 @@ import yaml
 from typing import Any
 import re
 
-from lib.paths import resolve_path
-
+from .paths import resolve_path
 from .settings import *
 
 import logging

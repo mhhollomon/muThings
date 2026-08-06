@@ -22,7 +22,7 @@ LOGGING_CONFIG = {
             'level': 'WARNING',
             'handlers': ['console'],
         },
-        'lib': {
+        'src': {
             'level': 'DEBUG',
             'handlers': ['console'],
             'propagate': False
