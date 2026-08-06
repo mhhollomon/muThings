@@ -244,6 +244,8 @@ def validate_config(config : Config) -> bool :
         if not os.path.isfile(cover_path):
             logger.error(f"The cover image file {cover_path} does not exist.")
             return False
+        config.cover.border.validate()
+    
 
     if config.logo.path_valid():
         logo_path = resolve_path(config.logo.path)

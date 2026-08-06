@@ -51,6 +51,13 @@ class ImageElement :
         self._bbox = bbox
         self.generated = True
 
+    def get_bbox(self, **kwargs) :
+        """
+        Returns the element's bbox. 
+        Basically here to allow overrides in subclasses.
+        """
+        return self.bbox
+
 
     def _pixel_offsets(self, pos : position, elem_size : geometry, gutter : int) -> Tuple[int, int] :
 
@@ -120,28 +127,19 @@ class ImageElement :
         if pos._side == 'pixel' :
             return self._pixel_offsets(pos, elem_size, gutter)
 
-        ref_rect = self.parent.get_elem(pos._ref).bbox
+        ref_elem = self.parent.get_elem(pos._ref)
+
+        if pos._ref == 'border' :
+            ref_rect = ref_elem.get_bbox(side=pos._side[0])
+        else :
+            ref_rect = ref_elem.bbox
         
         if pos._ref == 'cover' :
             gutter = 0
         elif pos._ref == 'border' :
-            # This stuff really needs to be done by the border element itself
-            # since it know how wide it is supposed to be.
             gutter = 0
-            cover_rect = self.parent.get_elem('cover').bbox
-            ref_rect = ref_rect.copy()
-            if pos._side == 'left' :
-                ref_rect.extent.width = cover_rect.start.width - ref_rect.start.width
-            elif pos._side == 'right' :
-                ref_rect.start.width = cover_rect.start.width + cover_rect.extent.width
-                ref_rect.extent.width = (ref_rect.extent.width - cover_rect.extent.width) // 2
-            elif pos._side == 'top' :
-                ref_rect.extent.height = cover_rect.start.height - ref_rect.start.height
-            elif pos._side == 'bottom' :
-                ref_rect.start.height = cover_rect.start.height + cover_rect.extent.height
-                ref_rect.extent.height = ref_rect.extent.height - ref_rect.start.height
 
-        logger.debug(f"Updated ref_rect = {ref_rect.to_tuple()}")
+        logger.debug(f"ref_rect = {ref_rect.to_tuple()}")
         
         # Calculate the offset
         if pos.w == 'min':

@@ -22,7 +22,7 @@ LOGGING_CONFIG = {
             'level': 'WARNING',
             'handlers': ['console'],
         },
-        'src': {
+        'MuPic': {
             'level': 'DEBUG',
             'handlers': ['console'],
             'propagate': False

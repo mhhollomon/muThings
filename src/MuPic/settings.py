@@ -55,9 +55,20 @@ class OutputSettings(PathSetting) :
 class BorderSettings(Settings) :
     color : str
     width : int
+    sides : str = 'lrtb'
 
     def exists(self) -> bool :
         return self.width > 0
+
+    def validate(self) -> bool :
+        if self.width < 0 :
+            raise ValueError("Border width cannot be negative")
+
+        for side in self.sides :
+            if side not in ('l', 'r', 't', 'b') :
+                raise ValueError(f"Invalid border side: {side}")
+
+        return True
 
 @dataclass
 class CoverSettings(PathSetting) :

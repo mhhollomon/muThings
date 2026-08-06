@@ -12,8 +12,8 @@ logger = logging.getLogger('app')
 
 import argparse
 
-from src.MuPic.configuration import Config, build_config, validate_config
-from src.MuPic.paths import resolve_path, set_resolve_path
+from .configuration import Config, build_config, validate_config
+from .paths import resolve_path, set_resolve_path
 
 
 #--------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ def main() :
 
     lc= LOGGING_CONFIG
     lc['loggers']['app']['level'] = log_level
-    lc['loggers']['src']['level'] = log_level
+    lc['loggers']['MuPic']['level'] = log_level
     logging.config.dictConfig(lc)
     logger.setLevel(log_level)
 
