@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 # Configuration file
 
-See documentation in the [example configuration file](./example_config.yml)
+See documentation in the [example configuration file](../example_config.yml)
 
 # Usage
 
@@ -32,7 +32,7 @@ all listed in the [example configuration file](../example_config.yml). The examp
 configuration file also has information on defaults.
 
 ```
-./mupic.py --help
+./mupic --help
 ```
 
 ## Ways to use
@@ -48,7 +48,7 @@ So, an album of 6 tracks could be set up like :
 Then each track would give the title and output file.
 
 ```
-./mupic.py -c album.yml --title 'Cool Track 1' --output_path ./track1.jpg
+./mupic-c album.yml --title 'Cool Track 1' --output_path ./track1.jpg
 ```
 
 Of, course it could be done all on the command line - or have a config file per track.

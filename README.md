@@ -2,7 +2,7 @@
 
 A couple of tools to help with creating music videos
 
-## mupic.py - static background creator 
+## mupic- static background creator 
 Create a static background by compositing images and text.
 
 Multiple font support, image masking, include files, etc.
