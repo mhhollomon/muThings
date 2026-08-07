@@ -1,6 +1,12 @@
-*.jpg
-*.png
+# if it is in tests, assume we want it.
+#!/tests/
+
+/*.jpg
 .venv
-*.yml
+/*.yml
+/*.png
+
+!example_config.yml
+
 
 __pycache__/
