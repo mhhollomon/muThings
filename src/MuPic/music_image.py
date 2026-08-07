@@ -30,8 +30,8 @@ class MusicImage :
         ele = TextElement('album', self.config.album, self)
         ele.generate()
 
-        for i, block in enumerate(self.config.text_blocks):
-            ele = TextElement(f'block[{i}]', block, self)
+        for block in self.config.text_blocks:
+            ele = TextElement(block.name, block, self)
             ele.generate()
 
         return output_img

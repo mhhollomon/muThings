@@ -75,25 +75,25 @@ class ImageElement :
 
         # h_offset and w_offset are where our anchor should be.
         # Now, convert the offsets to the top left of the element.
-        if pos._anchor[0] == 'max' :
+        if pos.anchor[0] == 'max' :
             w_offset -=  elem_size.width 
-        elif pos._anchor[0] == 'mid' :
+        elif pos.anchor[0] == 'mid' :
             w_offset -= elem_size.width // 2
-        elif pos._anchor[0] == 'min' :
+        elif pos.anchor[0] == 'min' :
             pass
         else :
-            raise ValueError(f"Unknown anchor: {pos._anchor[0]}")
+            raise ValueError(f"Unknown anchor: {pos.anchor[0]}")
 
         logger.debug(f"Anchor offset = {w_offset}, {h_offset}")
 
-        if pos._anchor[1] == 'max' :
+        if pos.anchor[1] == 'max' :
             h_offset -= elem_size.height
-        elif pos._anchor[1] == 'mid' :
+        elif pos.anchor[1] == 'mid' :
             h_offset -= elem_size.height // 2
-        elif pos._anchor[1] == 'min' :
+        elif pos.anchor[1] == 'min' :
             pass
         else :
-            raise ValueError(f"Unknown anchor: {pos._anchor[1]}")
+            raise ValueError(f"Unknown anchor: {pos.anchor[1]}")
 
         logger.debug(f"element offset = {w_offset}, {h_offset}")
 
@@ -113,31 +113,79 @@ class ImageElement :
         logger.debug(f"final offset: {w_offset}, {h_offset}")
         return w_offset, h_offset
 
+    def _attach_offsets(self, pos : position, elem_size : geom, gutter : int) -> Tuple[int, int]:
+        ref_bbox =  self.parent.get_elem(pos.ref).bbox
+
+        logger.debug(f"attach : ref_bbox = {ref_bbox}")
+        logger.debug(f"attach : elem_size = {elem_size}")
+
+        side = pos.side[0].lower()
+        logger.debug(f"attach : side = {side}")
+        offset = int(pos.offset)
+        logger.debug(f"attach : offset = {offset}")
+
+        if side == 'l' :
+            w_ref = ref_bbox.start.width
+            l_ref = ref_bbox.start.height + ref_bbox.extent.height // 2
+            standoff = geom(-offset, 0)
+            ele_offset = geom(-elem_size.width, -elem_size.height // 2)
+        elif side == 'r' :
+            w_ref = ref_bbox.start.width + ref_bbox.extent.width
+            l_ref = ref_bbox.start.height + ref_bbox.extent.height // 2
+            standoff = geom(offset, 0)
+            ele_offset = geom(0, -elem_size.height // 2)
+        elif side == 't' :
+            w_ref = ref_bbox.start.width + ref_bbox.extent.width // 2
+            l_ref = ref_bbox.start.height
+            standoff = geom(0, -offset)
+            ele_offset = geom(elem_size.width // 2, 0)
+        elif side == 'b' :
+            w_ref = ref_bbox.start.width + ref_bbox.extent.width // 2
+            l_ref = ref_bbox.start.height + ref_bbox.extent.height
+            standoff = geom(0, offset)
+            ele_offset = geom(-elem_size.width // 2, 0)
+        else :
+            raise ValueError(f"Invalid side: {side}")
+
+        ref_point = geom(w_ref, l_ref)
+        logger.debug(f"attach : ref_point = {ref_point.to_tuple()}")
+        logger.debug(f"attach : standoff = {standoff.to_tuple()}")
+
+        point = ref_point + standoff + ele_offset
+
+        logger.debug(f"attach : point = {point.to_tuple()}")
+
+        return point.to_tuple()
     
-    def offsets_for_position(self, pos : position, elem_size : geom, gutter : int) -> Tuple[int, int] :
+    def offsets_for_position(self, pos : position, elem_size : geom, 
+                             gutter : int, ex_gutter : int = 0) -> Tuple[int, int] :
         if not pos.valid():
             raise ValueError("Position is not valid")
 
         logger.debug(f"""Position Inputs :
  position = {pos.pos_str}
  elem_size = {elem_size.to_tuple()},
- gutter = {gutter}"""
+ gutter = {gutter}
+ ex_gutter = {ex_gutter}
+ """
     )
         
-        if pos._side == 'pixel' :
+        if pos.ptype == 'pixel' :
             return self._pixel_offsets(pos, elem_size, gutter)
+        elif pos.ptype == 'attach' :
+            return self._attach_offsets(pos, elem_size, ex_gutter)
 
-        ref_elem = self.parent.get_elem(pos._ref)
+        ref_elem = self.parent.get_elem(pos.ref)
 
-        if pos._ref == 'border' :
-            ref_rect = ref_elem.get_bbox(side=pos._side[0])
+        if pos.ref == 'border' :
+            ref_rect = ref_elem.get_bbox(side=pos.side[0])
         else :
             ref_rect = ref_elem.bbox
         
-        if pos._ref == 'cover' :
+        if pos.ref == 'cover' :
             gutter = 0
-        elif pos._ref == 'border' :
-            gutter = 0
+        elif pos.ref == 'border' :
+            gutter = ex_gutter
 
         logger.debug(f"ref_rect = {ref_rect.to_tuple()}")
         

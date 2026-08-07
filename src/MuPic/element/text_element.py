@@ -68,7 +68,8 @@ class TextElement(ImageElement) :
         offsets =  self.offsets_for_position(
             pos=position,
             elem_size=final_text_size,
-            gutter=self.parent.config.globals.gutter
+            gutter=self.parent.config.globals.gutter,
+            ex_gutter=self._settings.gutter
             )
 
 

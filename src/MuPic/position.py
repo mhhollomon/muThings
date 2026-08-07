@@ -100,15 +100,33 @@ POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\w+))? 
 # pixel (width, height, [w anchor], [h anchor])
 PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?)  (?: \s*,\s* (\w+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
 
+# attach (ref, side, offset)
+ATTACH_PATTERN = re.compile(r'attach \s* \( \s* (\w+) \s*,\s* (\w+) \s*,\s* (\d+) \s* \)', re.RegexFlag.X)
+
 class position :
     def __init__(self, pos_str : str ) -> None :
         self.pos_str = pos_str
+        self.ptype = ''
+
+        # valid() method to query
         self._valid = False
+
+        # relative (min, mid, max) used by simple
+        # use w and h porperties to query
         self._width = ''
         self._height = ''
-        self._ref = ''
-        self._side = ''
-        self._anchor : Tuple[str, str] = ('min', 'min')
+
+        # offset for the position (int) used by attach
+        self.offset = 0
+
+        # reference item - used by attach and function
+        self.ref = ''
+
+        # side of the reference item - used by attach and border
+        self.side = ''
+
+        # what part of the item to use hwen calculating position
+        self.anchor : Tuple[str, str] = ('min', 'min')
 
         if self.pos_str is None :
             return 
@@ -137,12 +155,29 @@ class position :
         
             self._width = POS_MAP[w]
             self._height = POS_MAP[h]
-            self._ref = 'output'
+            self.ref = 'output'
             self._valid = True
+            self.ptype = 'simple'
+
+    def _parse_attach(self) :
+        m = ATTACH_PATTERN.fullmatch(self.pos_str)
+        if not m :
+            raise ValueError(f"Invalid attach position string: {self.pos_str}")
+
+        self.ref = m.groups()[0]
+        self.side = m.groups()[1]
+        self.ptype = 'attach'
+        self.offset = m.groups()[2]
+        self._valid = True
 
     def _parse_function(self) :
 
-        if self._parse_pixel() :
+        if self.pos_str.startswith('pixel') :
+            self._parse_pixel()
+            return
+
+        if self.pos_str.startswith('attach') :
+            self._parse_attach()
             return
         
         m = POS_PATTERN.fullmatch(self.pos_str)
@@ -168,9 +203,10 @@ class position :
 
         self._width = width
         self._height = height
-        self._ref = ref
+        self.ref = ref
         self._valid = True
-        self._side = side or ''
+        self.side = side or ''
+        self.ptype = 'function'
 
     def _parse_pixel(self) :
         m = PIXEL_PATTERN.fullmatch(self.pos_str)
@@ -179,16 +215,16 @@ class position :
 
         width, height = m.groups()[0:2]
         if len(m.groups()) == 3 :
-            self._anchor = (m.groups()[2], 'mid')
+            self.anchor = (m.groups()[2], 'mid')
         elif len(m.groups()) == 4 :
-            self._anchor = (m.groups()[2], m.groups()[3])
+            self.anchor = (m.groups()[2], m.groups()[3])
 
         self._width = width
         self._height = height
-        self._ref = 'output'
-        self._side = 'pixel'
+        self.ref = 'output'
 
         self._valid = True
+        self.ptype = 'pixel'
         return True
 
     def valid(self) -> bool:

@@ -50,13 +50,15 @@ def _build_default_config() -> Config :
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
                                 BorderSettings('#000000', 0), margin=0),
         logo    = GraphicSettings('', LOGO_SIZE, 'black', position('right-bottom')),
-        title   = TextSettings('', TITLE_FONT_SIZE, '', 
-                                position('right-top'), 
+        title   = TextSettings('title', '', TITLE_FONT_SIZE, '', 
+                                position('right-top'),
+                                0, 
                                 '#ffffff', 
                                 StrokeSettings('#ffffff', 0),
                                 rotation=0),
-        album   = TextSettings('', TITLE_FONT_SIZE // 2, '', 
+        album   = TextSettings('album', '', TITLE_FONT_SIZE // 2, '', 
                                 position('right-center'), 
+                                0,
                                 '#ffffff', 
                                 StrokeSettings('#ffffff', 0),
                                 rotation=0),
@@ -103,6 +105,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.title.override('position', position(new_cfg['title.position']))
     config.title.override('fill', new_cfg['title.fill'])
     config.title.override('rotation', new_cfg['title.rotation'])
+    config.title.override('gutter', new_cfg['title.gutter'])
     config.title.stroke.override('color', new_cfg['title.stroke.color'])
     config.title.stroke.override('width', new_cfg['title.stroke.width'])
 
@@ -112,19 +115,22 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.album.override('position', position(new_cfg['album.position']))
     config.album.override('fill', new_cfg['album.fill'])
     config.album.override('rotation', new_cfg['album.rotation'])
+    config.album.override('gutter', new_cfg['album.gutter'])
     config.album.stroke.override('color', new_cfg['album.stroke.color'])
     config.album.stroke.override('width', new_cfg['album.stroke.width'])
 
     if new_cfg['text_blocks'] is not None :
         blocks = new_cfg['text_blocks']
-        for block in blocks :
+        for index, block in enumerate(blocks) :
             block = NoneDict(block)
             font = block['font'] or ''
             bpos = block['position'] or 'center-center'
             swidth = block['stroke.width'] or 0
             scolor = block['stroke.color'] or '#000000'
-            block_config = TextSettings(block['text'], block['size'], font, 
-                                        position(bpos), 
+            name = block['name'] or f'block_{index}'
+            block_config = TextSettings(name, block['text'], block['size'], font, 
+                                        position(bpos),
+                                        block['gutter'] or 0, 
                                         block['fill'], 
                                         StrokeSettings(scolor, swidth),
                                         rotation=block['rotation'] or 0)

@@ -97,10 +97,12 @@ class StrokeSettings(Settings) :
 
 @dataclass 
 class TextSettings(Settings) :
+    name : str
     text : str
     size : int
     font : str
     position : position
+    gutter : int
     fill : str
     stroke : StrokeSettings
     rotation : int
@@ -110,9 +112,11 @@ class TextSettings(Settings) :
 
     def validate(self) :
         if self.rotation not in (-90, 0, 90, 180) :
-            raise ValueError(f"Invalid rotation {self.rotation} for text ")
+            raise ValueError(f"Invalid rotation '{self.rotation}' for text ")
         if self.size is None or self.size < 1 :
             raise ValueError(f"Invalid size '{self.size}' for text")
+        if self.gutter < 0 :
+            raise ValueError(f"Invalid gutter setting '{self.gutter}' for text")
 
 
 @dataclass
