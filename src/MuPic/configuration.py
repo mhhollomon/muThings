@@ -102,6 +102,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.title.override('font', new_cfg['title.font'])
     config.title.override('position', position(new_cfg['title.position']))
     config.title.override('fill', new_cfg['title.fill'])
+    config.title.override('rotation', new_cfg['title.rotation'])
     config.title.stroke.override('color', new_cfg['title.stroke.color'])
     config.title.stroke.override('width', new_cfg['title.stroke.width'])
 
@@ -110,6 +111,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.album.override('font', new_cfg['album.font'])
     config.album.override('position', position(new_cfg['album.position']))
     config.album.override('fill', new_cfg['album.fill'])
+    config.album.override('rotation', new_cfg['album.rotation'])
     config.album.stroke.override('color', new_cfg['album.stroke.color'])
     config.album.stroke.override('width', new_cfg['album.stroke.width'])
 
@@ -275,11 +277,9 @@ def validate_config(config : Config) -> bool :
         if config.title.stroke.width < 0:
             logger.error("Title stroke width must be >= 0")
             return False
-        
-        if config.title.rotation not in [-90, 0, 90, 180]:
-            logger.error(f"Invalid title rotation value {config.title.rotation}")
-            return False
-        
+
+        config.title.validate()
+                
     if config.album.has_text():
         if config.album.stroke.width < 0:
             logger.error("Album stroke width must be >= 0")
@@ -306,8 +306,6 @@ def validate_config(config : Config) -> bool :
         return False
 
     for block in config.text_blocks:
-        if block.rotation not in [-90, 0, 90, 180]:
-            logger.error(f"Invalid text block rotation value {block.rotation}")
-            return False
+        block.validate()
 
     return True

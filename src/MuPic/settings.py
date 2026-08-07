@@ -108,6 +108,12 @@ class TextSettings(Settings) :
     def has_text(self) -> bool :
         return self.text is not None and self.text != ''
 
+    def validate(self) :
+        if self.rotation not in (-90, 0, 90, 180) :
+            raise ValueError(f"Invalid rotation {self.rotation} for text ")
+        if self.size is None or self.size < 1 :
+            raise ValueError(f"Invalid size '{self.size}' for text")
+
 
 @dataclass
 class Config(Settings) :
