@@ -1,12 +1,11 @@
-# if it is in tests, assume we want it.
-#!/tests/
-
+# local debug stuff
 /*.jpg
-.venv
 /*.yml
 /*.png
 
+# but we do want the "doc" yml
 !example_config.yml
 
-
+# infrastructure
 __pycache__/
+.venv/
