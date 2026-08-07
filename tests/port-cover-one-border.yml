@@ -1,0 +1,18 @@
+# ./mupic -c ./tests/port-cover-one-border.yml -o ./test-out/port-cover-one-border.png
+
+# landscape cover to square on portrait output with margin and border.
+# but only one boder side
+
+output :
+  size : 1080x1920
+  color : "black"
+
+cover :
+  fit : square
+  path : "resources/landscape-mode.png"
+  margin : 100
+  crop : mid
+  border :
+    width : 100
+    color : "blue"
+    sides : "l"

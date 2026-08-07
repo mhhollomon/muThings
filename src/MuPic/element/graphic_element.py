@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from .element import ImageElement
 from ..settings import GraphicSettings
 from ..paths import resolve_path
-from ..position import geometry, rectangle
+from ..position import geom, rect
 
 from PIL import Image
 
@@ -91,11 +91,11 @@ class GraphicElement(ImageElement):
 
         offsets =  self.offsets_for_position(
             pos=position,
-            elem_size=geometry(logo_width, logo_height),
+            elem_size=geom(logo_width, logo_height),
             gutter=self.parent.config.globals.gutter
             )
 
         # Paste the logo
         self.parent.img.paste(logo_img, offsets, mask=mask_img)
 
-        self.bbox = rectangle(geometry(*offsets), geometry(logo_width, logo_height))
+        self.bbox = rect(geom(*offsets), geom(logo_width, logo_height))

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, List
 
-from .position import position, geometry
+from .position import position, geom
 
 class Settings :
 
@@ -47,7 +47,7 @@ class GlobalSettings(Settings) :
 @dataclass
 class OutputSettings(PathSetting) :
     path : str
-    size : geometry
+    size : geom
     color : str
     background : str
 
@@ -64,7 +64,7 @@ class BorderSettings(Settings) :
         if self.width < 0 :
             raise ValueError("Border width cannot be negative")
 
-        for side in self.sides :
+        for side in self.sides.lower() :
             if side not in ('l', 'r', 't', 'b') :
                 raise ValueError(f"Invalid border side: {side}")
 

@@ -10,7 +10,7 @@ from .element import ImageElement
 
 from ..settings import OutputSettings
 from ..paths import resolve_path
-from ..position import geometry, rectangle
+from ..position import geom, rect
 
 
 import logging
@@ -36,6 +36,6 @@ class OutputElement(ImageElement) :
             logger.info("Creating color background")
             output_img = Image.new("RGB", output_size.to_tuple(), color=self._settings.color)
 
-        self.bbox = rectangle(geometry(0,0), output_size)
+        self.bbox = rect(geom(0,0), output_size)
 
         return output_img

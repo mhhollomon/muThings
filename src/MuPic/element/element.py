@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Tuple
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
-from ..position import geometry, position, rectangle
+from ..position import geom, position, rect
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ImageElement :
     generated = False
-    _bbox = rectangle(geometry(0,0), geometry(0,0))
+    _bbox = rect(geom(0,0), geom(0,0))
 
     def __init__(self, name : str, parent : 'MusicImage', add_to_parent : bool = True) :
         self.name = name
@@ -42,7 +42,7 @@ class ImageElement :
         return self._bbox
 
     @bbox.setter
-    def bbox(self, bbox : rectangle) :
+    def bbox(self, bbox : rect) :
         if bbox is None :
             raise ValueError("ImageElement bbox cannot be None")
         if bbox.extent.width == 0 or bbox.extent.height == 0 :
@@ -59,7 +59,7 @@ class ImageElement :
         return self.bbox
 
 
-    def _pixel_offsets(self, pos : position, elem_size : geometry, gutter : int) -> Tuple[int, int] :
+    def _pixel_offsets(self, pos : position, elem_size : geom, gutter : int) -> Tuple[int, int] :
 
         output_rect = self.parent.get_elem('output').bbox
 
@@ -114,7 +114,7 @@ class ImageElement :
         return w_offset, h_offset
 
     
-    def offsets_for_position(self, pos : position, elem_size : geometry, gutter : int) -> Tuple[int, int] :
+    def offsets_for_position(self, pos : position, elem_size : geom, gutter : int) -> Tuple[int, int] :
         if not pos.valid():
             raise ValueError("Position is not valid")
 

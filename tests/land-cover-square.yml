@@ -1,0 +1,17 @@
+# ./mupic -c ./tests/land-cover-square.yml -o ./test-out/land-cover-square.png
+
+# landscape cover to square on landscape output with margin and border.
+
+output :
+  size : 1920x1080
+  color : "black"
+
+cover :
+  fit : square
+  path : "resources/landscape-mode.png"
+  margin : 100
+  align : max
+  crop : mid
+  border :
+    width : 100
+    color : "blue"

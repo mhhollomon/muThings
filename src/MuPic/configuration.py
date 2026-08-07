@@ -1,7 +1,7 @@
 import argparse
 import os
 import yaml
-from typing import Any
+from typing import Any, Set
 import re
 
 from .paths import resolve_path
@@ -16,6 +16,8 @@ IMAGE_WIDTH = 1920
 LOGO_SIZE = 200
 TITLE_FONT_SIZE = 200
 GUTTER_SIZE = 10
+
+CONFIG_FILE_LIST : Set[str] = set()
 
 class NoneDict :
     """Alway return None if the key is not found.
@@ -44,7 +46,7 @@ def _build_default_config() -> Config :
 
     return Config(
         globals = GlobalSettings(GUTTER_SIZE, ''),
-        output  = OutputSettings("", geometry(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
+        output  = OutputSettings("", geom(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
                                 BorderSettings('#000000', 0), margin=0),
         logo    = GraphicSettings('', LOGO_SIZE, 'black', position('right-bottom')),
@@ -77,7 +79,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.globals.override('font', new_cfg['font'])
 
     config.output.override('path', new_cfg['output.path'])
-    config.output.override('size', geometry.from_string(new_cfg['output.size']))
+    config.output.override('size', geom.from_string(new_cfg['output.size']))
     config.output.override('color', new_cfg['output.color'])
     config.output.override('background', new_cfg['output.background'])
 
@@ -87,6 +89,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.cover.override('fit', new_cfg['cover.fit'])
     config.cover.border.override('color', new_cfg['cover.border.color'])
     config.cover.border.override('width', new_cfg['cover.border.width'])
+    config.cover.border.override('sides', new_cfg['cover.border.sides'])   
     config.cover.override('margin', new_cfg['cover.margin'])
 
     config.logo.override('path', new_cfg['logo.path'])
@@ -132,7 +135,7 @@ def _add_args(config : Config, args : argparse.Namespace) :
     config.globals.override('font', args.font)
 
     config.output.override('path', args.output_path)
-    config.output.override('size', geometry.from_string(args.output_size))
+    config.output.override('size', geom.from_string(args.output_size))
     config.output.override('color', args.output_color)
     config.output.override('background', args.output_background)
 
@@ -182,7 +185,16 @@ def build_config(args : argparse.Namespace, config_path : str | None = None) -> 
     retval = _build_default_config()
 
     if config_path is not None:
-        with open(resolve_path(config_path), "r") as f:
+        if CONFIG_FILE_LIST :
+            # use the resolver to find the file
+            path = os.path.abspath(resolve_path(config_path))
+        else :
+            # At the top, so let the os decide.
+            path = os.path.abspath(config_path)
+        if path in CONFIG_FILE_LIST :
+            raise RuntimeError(f"cycle detected in config file includes at {config_path}")
+        CONFIG_FILE_LIST.add(path)
+        with open(path, "r") as f:
             supplied_config = yaml.safe_load(f)
 
         retval = _add_supplied_config(retval, NoneDict(supplied_config), os.path.dirname(config_path))

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 GEOMETRY_PATTERN = re.compile(r'(\d+)x(\d+)')
 @dataclass
-class geometry :
+class geom :
     width : int
     height : int
 
@@ -19,9 +19,13 @@ class geometry :
 
     def __getitem__(self, key) :
         return self.to_tuple()[key]
+
+    @classmethod
+    def from_tuple(cls, t : Tuple[int | float, int | float]) -> 'geom' :
+        return geom(int(t[0]), int(t[1]))
     
     @classmethod
-    def from_string(cls, s : str | None) -> 'geometry | None' :
+    def from_string(cls, s : str | None) -> 'geom | None' :
         if s is None :
             return None
         
@@ -42,19 +46,44 @@ class geometry :
         # "square" should be treated as landscape
         return self.width >= self.height
 
+    def copy(self) -> 'geom' :
+        return geom(self.width, self.height)
+
+    def __add__(self, other) :
+
+        if isinstance(other, geom) :
+            return geom(self.width + other.width, self.height + other.height)
+        elif isinstance(other, tuple) :
+            return geom(self.width + other[0], self.height + other[1])
+        elif isinstance(other, (int, float)) :
+            return geom(int(self.width + other), int(self.height + other))
+        else :
+            raise TypeError(f"Unsupported type for addition with geometry: {type(other)}")
+
+    def __sub__(self, other) :
+
+        if isinstance(other, geom) :
+            return geom(self.width - other.width, self.height - other.height)
+        elif isinstance(other, tuple) :
+            return geom(self.width - other[0], self.height - other[1])
+        elif isinstance(other, (int, float)) :
+            return geom(int(self.width - other), int(self.height - other))
+        else :
+            raise TypeError(f"Unsupported type for subtraction with geometry: {type(other)}")
+
 #---------------------------------------------------------
 
 @ dataclass
-class rectangle :
-    start : geometry
-    extent: geometry
+class rect :
+    start : geom
+    extent: geom
 
     def to_tuple(self) -> tuple :
         return (self.start.to_tuple(), self.extent.to_tuple())
     
-    def copy(self) -> 'rectangle' :
-        return rectangle(geometry(self.start.width, self.start.height), 
-                         geometry(self.extent.width, self.extent.height)) 
+    def copy(self) -> 'rect' :
+        return rect(geom(self.start.width, self.start.height), 
+                    geom(self.extent.width, self.extent.height)) 
 
 #---------------------------------------------------------
 

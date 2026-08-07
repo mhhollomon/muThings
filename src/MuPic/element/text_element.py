@@ -10,19 +10,19 @@ if TYPE_CHECKING:
 
 from .element import ImageElement
 from ..settings import TextSettings
-from ..position import geometry, rectangle
+from ..position import geom, rect
 
 import logging
 logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------
 
-def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geometry:
+def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> geom:
     # Using ImageFont.getbbox is not good enough for multiline text
     img = Image.new("L", (1, 1))
     draw = ImageDraw.Draw(img)
     box = draw.multiline_textbbox((0,0), text=text, font=font)
-    size = geometry(int(box[2]-box[0]), int(box[3]-box[1]))
+    size = geom(int(box[2]-box[0]), int(box[3]-box[1]))
     return size
 
 #---------------------------------------------------------
@@ -60,7 +60,7 @@ class TextElement(ImageElement) :
             text_size = _get_text_size(self._settings.text, title_font)
 
         if self._settings.rotation in [90, -90]:
-            final_text_size = geometry(text_size.height, text_size.width)
+            final_text_size = geom(text_size.height, text_size.width)
         else:
             final_text_size = text_size
 
@@ -104,4 +104,4 @@ class TextElement(ImageElement) :
             self.parent.img.paste(text_image, offsets, mask=text_image)
 
 
-        self.bbox = rectangle(geometry(*offsets), final_text_size)
+        self.bbox = rect(geom(*offsets), final_text_size)
