@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from ..music_image import MusicImage
 
 from ..settings import *
-from ..paths import resolve_path
 from ..position import rect
 
 from .element import ImageElement
@@ -73,7 +72,7 @@ class CoverElement(ImageElement) :
         logger.debug(f"calculated cover size = {cover_size.to_tuple()}")
         logger.debug(f"Calculated cover offsets = {cover_rect.start.to_tuple()}")
 
-        cover_img = Image.open(resolve_path(cfg.path))
+        cover_img = Image.open(cfg.path)
         cover_img_size = geom.from_tuple(cover_img.size)
 
         if cover_img_size.is_landscape() :

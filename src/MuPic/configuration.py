@@ -247,6 +247,7 @@ def validate_config(config : Config) -> bool :
         if ext not in ('.png', '.jpeg', '.jpg', 'webp'):
             logger.error(f"Unsupported output file type: {ext}")
             return False
+        config.output.path = output_path
         
     width, height = config.output.size.to_tuple()
     if width < 1 or height < 1:
@@ -258,6 +259,7 @@ def validate_config(config : Config) -> bool :
         if not os.path.isfile(path):
             logger.error(f"The background image file {path} does not exist.")
             return False
+        config.output.background = path
 
     if config.cover.path_valid():
         cover_path = resolve_path(config.cover.path)
@@ -265,6 +267,7 @@ def validate_config(config : Config) -> bool :
             logger.error(f"The cover image file {cover_path} does not exist.")
             return False
         config.cover.border.validate()
+        config.cover.path = cover_path
     
 
     if config.logo.path_valid():
@@ -278,6 +281,7 @@ def validate_config(config : Config) -> bool :
         if config.logo.mask not in ('self', 'black', 'alpha', 'auto', 'none'):
             logger.error("Invalid logo mask value")
             return False
+        config.logo.path = logo_path
 
     if config.title.has_text():
         if config.title.stroke.width < 0:

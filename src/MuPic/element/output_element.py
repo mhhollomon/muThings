@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 from .element import ImageElement
 
 from ..settings import OutputSettings
-from ..paths import resolve_path
 from ..position import geom, rect
 
 
@@ -28,7 +27,7 @@ class OutputElement(ImageElement) :
 
         if self._settings.valid_attr('background'):
             logger.info("Using background image")
-            output_img = Image.open(resolve_path(self._settings.background))
+            output_img = Image.open(self._settings.background)
             output_img = output_img.resize(output_size.to_tuple())
             if output_img.mode != 'RGB':
                 output_img = output_img.convert('RGB')

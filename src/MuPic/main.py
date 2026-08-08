@@ -13,7 +13,7 @@ logger = logging.getLogger('app')
 import argparse
 
 from .configuration import Config, build_config, validate_config
-from .paths import resolve_path, set_resolve_path
+from .paths import set_resolve_path
 
 
 #--------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ def build_image(config : Config) :
     output_path = config.output.path
 
     # Save the image
-    output_img.save(resolve_path(output_path))
+    output_img.save(output_path)
 
 #--------------------------------------------------------------------------------
 # ARGUMENT PARSING

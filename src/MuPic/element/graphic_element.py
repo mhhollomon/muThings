@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
 from .element import ImageElement
 from ..settings import GraphicSettings
-from ..paths import resolve_path
 from ..position import geom, rect
 
 from PIL import Image
@@ -54,7 +53,7 @@ class GraphicElement(ImageElement):
 
     def _build_logo(self) -> Tuple[Image.Image, Image.Image | None] | None :
 
-        logo_path : str = resolve_path(self._settings.path)
+        logo_path : str = self._settings.path
 
         with Image.open(logo_path) as logo_img:
 
