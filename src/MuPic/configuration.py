@@ -6,6 +6,7 @@ import re
 
 from .paths import resolve_path
 from .settings import *
+from .none_dict import NoneDict
 
 import logging
 logger = logging.getLogger(__name__)
@@ -19,29 +20,6 @@ GUTTER_SIZE = 10
 
 CONFIG_FILE_LIST : Set[str] = set()
 
-class NoneDict :
-    """Alway return None if the key is not found.
-    Also, support path keys like 'a.b.c'
-    """
-    def __init__(self, config : dict) :
-        self.config = config
-
-    def __getitem__(self, key) -> Any :
-        keys = key.split('.')
-        value = self.config
-        for k in keys :
-            if k in value :
-                value = value[k]
-            else :
-                return None
-            if not isinstance(value, dict) :
-                return value
-        return value
-
-    def __contains__(self, key) :
-        return key in self.config
-
-
 def _build_default_config() -> Config :
 
     return Config(
@@ -50,27 +28,50 @@ def _build_default_config() -> Config :
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
                                 BorderSettings('#000000', 0), margin=0),
         logo    = GraphicSettings('', LOGO_SIZE, 'black', position('right-bottom')),
-        title   = TextSettings('title', '', TITLE_FONT_SIZE, '', 
-                                position('right-top'),
-                                0, 
-                                '#ffffff', 
-                                StrokeSettings('#ffffff', 0),
-                                rotation=0),
-        album   = TextSettings('album', '', TITLE_FONT_SIZE // 2, '', 
-                                position('right-center'), 
-                                0,
-                                '#ffffff', 
-                                StrokeSettings('#ffffff', 0),
-                                rotation=0),
         text_blocks  = []
     )
+
+def _merge_blocks(old : List[TextSettings], new : List[dict]) -> List[TextSettings] :
+
+    retlist : List[TextSettings] = []
+    seen_names : Set[str] = set()
+    for block in old :
+        if  block.named() :
+            for new_block in new :
+                if new_block['name'] == block.name :
+                    seen_names.add(new_block['name'])
+                    block.merge(new_block)
+
+
+        retlist.append(block)
+
+    logger.debug(f"_merge_blocks: Seen names: {seen_names}")
+    for new_block in new :
+        if new_block['name'] == '' or new_block['name'] not in seen_names :
+            # need to find a better way to do this
+            block = NoneDict(new_block)
+            font = block['font'] or ''
+            bpos = block['position'] or 'center-center'
+            swidth = block['stroke.width'] or 0
+            scolor = block['stroke.color'] or '#000000'
+            name = block['name'] or f'block_{len(retlist)}'
+            settings = TextSettings(name, block['text'], block['size'] or 0, font, 
+                                        position(bpos),
+                                        block['gutter'] or 0, 
+                                        block['fill'], 
+                                        StrokeSettings(scolor, swidth),
+                                        rotation=block['rotation'] or 0)
+            retlist.append(settings)
+
+    return retlist
+
+
 
 def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) -> Config :
 
     if new_cfg['include'] is not None :
         file = new_cfg['include']
-        if not os.path.isabs(file) :
-            file = os.path.abspath(os.path.join(parent_dir, file))
+        file = os.path.abspath(resolve_path(file, parent_dir))
         with open(file, "r") as f:
             included_config = yaml.safe_load(f)
 
@@ -99,42 +100,9 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.logo.override('mask', new_cfg['logo.mask'])
     config.logo.override('position', position(new_cfg['logo.position']))
 
-    config.title.override('text', new_cfg['title.text'])
-    config.title.override('size', new_cfg['title.size'])
-    config.title.override('font', new_cfg['title.font'])
-    config.title.override('position', position(new_cfg['title.position']))
-    config.title.override('fill', new_cfg['title.fill'])
-    config.title.override('rotation', new_cfg['title.rotation'])
-    config.title.override('gutter', new_cfg['title.gutter'])
-    config.title.stroke.override('color', new_cfg['title.stroke.color'])
-    config.title.stroke.override('width', new_cfg['title.stroke.width'])
-
-    config.album.override('text', new_cfg['album.text'])
-    config.album.override('size', new_cfg['album.size'])
-    config.album.override('font', new_cfg['album.font'])
-    config.album.override('position', position(new_cfg['album.position']))
-    config.album.override('fill', new_cfg['album.fill'])
-    config.album.override('rotation', new_cfg['album.rotation'])
-    config.album.override('gutter', new_cfg['album.gutter'])
-    config.album.stroke.override('color', new_cfg['album.stroke.color'])
-    config.album.stroke.override('width', new_cfg['album.stroke.width'])
-
     if new_cfg['text_blocks'] is not None :
         blocks = new_cfg['text_blocks']
-        for index, block in enumerate(blocks) :
-            block = NoneDict(block)
-            font = block['font'] or ''
-            bpos = block['position'] or 'center-center'
-            swidth = block['stroke.width'] or 0
-            scolor = block['stroke.color'] or '#000000'
-            name = block['name'] or f'block_{index}'
-            block_config = TextSettings(name, block['text'], block['size'], font, 
-                                        position(bpos),
-                                        block['gutter'] or 0, 
-                                        block['fill'], 
-                                        StrokeSettings(scolor, swidth),
-                                        rotation=block['rotation'] or 0)
-            config.text_blocks.append(block_config)
+        config.text_blocks = _merge_blocks(config.text_blocks, blocks)
 
     return config
 
@@ -160,22 +128,6 @@ def _add_args(config : Config, args : argparse.Namespace) :
     config.logo.override('mask', args.logo_mask)
     config.logo.override('position', position(args.logo_position))
     
-    config.title.override('text', args.title)
-    config.title.override('size', args.title_size)
-    config.title.override('font', args.title_font)
-    config.title.override('position', position(args.title_position))
-    config.title.override('fill', args.title_fill)
-    config.title.stroke.override('color', args.title_stroke_color)
-    config.title.stroke.override('width', args.title_stroke_width)
-
-    config.album.override('text', args.album)
-    config.album.override('size', args.album_size)
-    config.album.override('font', args.album_font)
-    config.album.override('position', position(args.album_position))
-    config.album.override('fill', args.album_fill)
-    config.album.stroke.override('color', args.album_stroke_color)
-    config.album.stroke.override('width', args.album_stroke_width)
-
     return config
 
 def _get_default_font() :
@@ -220,8 +172,6 @@ def build_config(args : argparse.Namespace, config_path : str | None = None) -> 
     retval.globals.default('font', _get_default_font())
 
     # update the other fonts to use this if needed.
-    retval.title.default('font', retval.globals.font) 
-    retval.album.default('font', retval.globals.font) 
     for block in retval.text_blocks :
         block.default('font', retval.globals.font)
 
@@ -282,22 +232,6 @@ def validate_config(config : Config) -> bool :
             logger.error("Invalid logo mask value")
             return False
         config.logo.path = logo_path
-
-    if config.title.has_text():
-        if config.title.stroke.width < 0:
-            logger.error("Title stroke width must be >= 0")
-            return False
-
-        config.title.validate()
-                
-    if config.album.has_text():
-        if config.album.stroke.width < 0:
-            logger.error("Album stroke width must be >= 0")
-            return False
-        
-        if config.album.rotation not in [-90, 0, 90, 180]:
-            logger.error(f"Invalid album rotation value {config.album.rotation}")
-            return False
         
     if config.globals.gutter < 0:
         logger.error("Gutter must be >= 0")

@@ -2,7 +2,14 @@ from dataclasses import dataclass
 from typing import Any, List
 
 from .position import position, geom
+from .none_dict import NoneDict
 
+import logging
+logger = logging.getLogger(__name__)
+
+# -------------------------------------------------------------------------
+# BASE CLASS Settings
+# -------------------------------------------------------------------------
 class Settings :
 
     def valid_value(self, value : Any) -> bool :
@@ -34,15 +41,21 @@ class Settings :
         if not self.valid_value(old_value) :
             setattr(self, key, new_value)
 
+# -------------------------------------------------------------------------
+
 class PathSetting(Settings) :
     def path_valid(self) -> bool :
         path = getattr(self, 'path')
         return path is not None and path != ''
 
+# -------------------------------------------------------------------------
+
 @dataclass
 class GlobalSettings(Settings) :
     gutter : int
     font : str
+
+# -------------------------------------------------------------------------
 
 @dataclass
 class OutputSettings(PathSetting) :
@@ -50,6 +63,8 @@ class OutputSettings(PathSetting) :
     size : geom
     color : str
     background : str
+
+# -------------------------------------------------------------------------
 
 @dataclass
 class BorderSettings(Settings) :
@@ -70,6 +85,8 @@ class BorderSettings(Settings) :
 
         return True
 
+# -------------------------------------------------------------------------
+
 @dataclass
 class CoverSettings(PathSetting) :
     path : str
@@ -80,12 +97,16 @@ class CoverSettings(PathSetting) :
     border : BorderSettings
     margin : int
 
+# -------------------------------------------------------------------------
+
 @dataclass
 class GraphicSettings(PathSetting) :
     path : str
     size : int
     mask : str
     position : position
+
+# -------------------------------------------------------------------------
 
 @ dataclass
 class StrokeSettings(Settings) :
@@ -94,6 +115,17 @@ class StrokeSettings(Settings) :
 
     def exists(self) -> bool :
         return self.width > 0
+
+    def merge(self, new_block : Any) :
+        new_block = NoneDict(new_block)
+        self.override('color', new_block['color'])
+        self.override('width', new_block['width'])
+
+    def validate(self) :
+        if self.width < 0 :
+            raise ValueError("Stroke width cannot be negative")
+
+# -------------------------------------------------------------------------
 
 @dataclass 
 class TextSettings(Settings) :
@@ -107,10 +139,31 @@ class TextSettings(Settings) :
     stroke : StrokeSettings
     rotation : int
 
+    @classmethod
+    def from_dict(cls, d : dict) :
+        return TextSettings(**d)
+
     def has_text(self) -> bool :
         return self.text is not None and self.text != ''
 
-    def validate(self) :
+    def named(self) -> bool :
+        return self.name is not None and self.name != ''
+
+    def merge(self, new_block : Any) :
+        logger.debug(f"TextSettings.merge: {self.name} input = {new_block}")
+        new_block = NoneDict(new_block)
+        self.override('text', new_block['text'])
+        self.override('size', new_block['size'])
+        self.override('font', new_block['font'])
+        self.override('position', new_block['position'])
+        self.override('gutter', new_block['gutter'])
+        self.override('fill', new_block['fill'])
+        self.override('rotation', new_block['rotation'])
+
+        self.stroke.merge(new_block['stroke'])
+        logger.debug(f"TextSettings.merge: {self.name} final = {self}")
+
+    def validate(self) -> bool:
         if self.rotation not in (-90, 0, 90, 180) :
             raise ValueError(f"Invalid rotation '{self.rotation}' for text ")
         if self.size is None or self.size < 1 :
@@ -118,6 +171,13 @@ class TextSettings(Settings) :
         if self.gutter < 0 :
             raise ValueError(f"Invalid gutter setting '{self.gutter}' for text")
 
+        self.stroke.validate()
+
+        return True
+
+# -------------------------------------------------------------------------
+# CONFIG CLASS
+# -------------------------------------------------------------------------
 
 @dataclass
 class Config(Settings) :
@@ -125,6 +185,4 @@ class Config(Settings) :
     output  : OutputSettings
     cover   : CoverSettings
     logo    : GraphicSettings
-    title   : TextSettings
-    album   : TextSettings
     text_blocks  : List[TextSettings]

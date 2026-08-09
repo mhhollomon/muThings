@@ -41,6 +41,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config_file", "-c", type=str, required=False, default=None,
                         help="yaml file containing configuration values. Most can then be overridden on the command line.")
     parser.add_argument("--debug", "-d", action='store_true', required=False, default=False)
+    parser.add_argument("--noaction", "-n", action='store_true', required=False, default=False)
 
     # --- GLOBAL ARGUMENTS ---
     parser.add_argument("--gutter", type=int, required=False, default=None,
@@ -91,38 +92,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--logo_position", type=str, required=False, default='',
                         help="The position of the logo on the output image. Must be in the format 'WIDTH-HEIGHT'.")
 
-    # --- TRACK TITLE ARGUMENTS ---
-    parser.add_argument("--title", type=str, required=False, default=None,
-                        help="The text to display in the title. If not specified, no title will be added.")
-    parser.add_argument("--title_size", type=int, required=False, default=None,
-                        help="The size of the title text. If not specified, the title will be scaled to 200 pixels.")
-    parser.add_argument("--title_font", type=str, required=False, default=None,
-                        help="The font to use for the title text. If not specified, the default font will be used.")
-    parser.add_argument("--title_position", type=str, required=False, default='',
-                        help="The position of the title on the output image. Must be in the format 'WIDTH-HEIGHT'.")
-    parser.add_argument("--title_fill", type=str, required=False, default=None,
-                        help="The fill color for the title text.")
-    parser.add_argument("--title_stroke_color", type=str, required=False, default=None,
-                        help="The stroke color for the title text.")
-    parser.add_argument("--title_stroke_width", type=int, required=False, default=None,
-                        help="The stroke width for the title text.")
-    
-    
-    # --- ALBUM TITLE ARGUMENTS ---
-    parser.add_argument("--album", type=str, required=False, default=None,
-                        help="The text to display in the album. If not specified, no album will be added.")
-    parser.add_argument("--album_size", type=int, required=False, default=None,
-                        help="The size of the album text. If not specified, the album will be scaled to 200 pixels.")
-    parser.add_argument("--album_font", type=str, required=False, default=None,
-                        help="The font to use for the album text. If not specified, the default font will be used.")
-    parser.add_argument("--album_position", type=str, required=False, default='',
-                        help="The position of the album text on the output image. Must be in the format 'WIDTH-HEIGHT'.")
-    parser.add_argument("--album_fill", type=str, required=False, default=None,
-                        help="The fill color for the album text.")
-    parser.add_argument("--album_stroke_color", type=str, required=False, default=None,
-                        help="The stroke color for the album text.")
-    parser.add_argument("--album_stroke_width", type=int, required=False, default=None,
-                        help="The stroke width for the album text.")
 
     
     return parser
@@ -148,6 +117,10 @@ def main() :
     config = build_config(args, config_file)
     if not validate_config(config):
         sys.exit(1)
+
+    if args.noaction:
+        logger.info("No action requested. Exiting.")
+        sys.exit(0)
 
     build_image(config)
 

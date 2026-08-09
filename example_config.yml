@@ -4,11 +4,10 @@
 # but different titles and output files.
 
 # The image is built in the following order
-# 1.The background
+# 1. The background
 # 2. The cover image
 # 3. The logo
-# 4. The title text
-# 5. The album text
+# 4. text_blocks
 
 # ---------------------------------
 # COLORS
@@ -62,6 +61,15 @@
 #
 #   anchor_x is one of 'min', 'mid', or 'max'
 #   anchor_y is one of 'min', 'mid', or 'max'
+#
+#  Attach Function :
+#   The attach() function is used to place an element relative to another element.
+#   The element will be placed using the `offset` parameter as a standoff
+#   from the edge of the reference.
+#   attach(ref, side, offset)
+#     ref is the element that is used as a reference.
+#     side is one of 'left', 'right', 'top', 'bottom'
+#     offset is the standoff from the reference element.
 
 
 #---------------------------------
@@ -87,15 +95,15 @@ font : 'My Cool Font' # --font
 output :
   # Only PNG, JPG (or JPEG), and WEBP outputs are currently supported.
   # The extension on the filename will be used to determine the format.
-  path : "/path/to/output/file.png" # --output_path
+  path : "/path/to/output/file.png" # -o or --output_path
 
   # This is the size of the output image in WIDTHxHEIGHT format.
-  size : 1980x1080 # ---output_size
+  size : 1980x1080
 
   # This is the base color of the output image. It will be the
   # color of any area that isn't otherwise covered by the various elements.
   # 'black' is the default.
-  color : "rgb(0,0,0)" # --output_color
+  color : "rgb(0,0,0)"
 
 #---------------------------------
 # Cover Image Configuration
@@ -103,12 +111,12 @@ output :
 cover :
   # The path to the image.
   # The image can be any type supported by the `pillow` module.
-  path : "/path/to/cover/file.png" # --cover_path
+  path : "/path/to/cover/file.png"
 
   # How the cover is resized to fit on the background.
   # 'square' will resize the cover, then crop to a square.
   # 'cover' will resize the cover, then crop to fit the output image.
-  fit : square # --cover_fit
+  fit : square
 
   # One of 'min, 'mid', or 'max'
   # Aligning depends on the orientation of the output - landscape or portrait.
@@ -117,7 +125,7 @@ cover :
   # If portrait then it is relative to the height of the output image.
   #   (min = top, mid = center, max = bottom)
   # This is not used if the fit is `cover`.
-  align : min # --cover_align
+  align : min
 
   # One of 'min, 'mid', or 'max'
   # If the resized image needs to be cropped, this sets what area will be retained.
@@ -128,13 +136,14 @@ cover :
   # square the image will be placed.
   # This will happen, for instance, if a portrait image is used
   # as a cover in a landscape formatted output.
-  crop : mid # --cover_crop
+  crop : mid
 
   # border for the cover image
   # If the width is zero, then no border will be drawn. This is the default.
   border :
-    color : "rgb(0,0,0)" # --cover_border_color
-    width : 0 # --cover_border_width
+    color : "rgb(0,0,0)"
+    width : 0
+    sides : "lrtb"
 
 #---------------------------------
 # Logo Image Configuration
@@ -142,7 +151,7 @@ cover :
 logo :
   # The path to the logo image
   # The image can be any type supported by the `pillow` module.
-  path : "/path/to/image/file.jpg" # --logo
+  path : "/path/to/image/file.jpg"
 
   # size in pixels for the logo. aspect ratio will be preserved.
   # The largest dimension of the logo will be scaled to this size.
@@ -157,82 +166,60 @@ logo :
   # "alpha" - uses the alpha channel of the image as a mask.
   # "auto" - automatically chooses between "alpha" and "black". This is the default.
   # "none" : No masking is done.
-  mask : auto # --logo_mask
+  mask : auto
 
   # Position for the logo on the output.
   # See above for details
   # right-bottom is the default
-  position : right-bottom # --logo_position
-
-#---------------------------------
-# Track Title Configuration
-#---------------------------------
-title :
-  text : "This is the title" # --title
-
-  # Size of the text in pixels (not points)
-  # This size is a maximum. If the text does not fit, it will be scaled down.
-  size : 200 # --title_size
-
-  # Font to use for the title.
-  # defaults to the global font setting if not given (see above).
-  font : 'DejaVuSans.ttf' # --title_font
-
-  # Position for the title on the output.
-  # See above for details
-  # right-top is the default
-  position : right-top # --title_position
-
-  # Fill color for the title
-  # see above for color formats.
-  # White is the default
-  fill : "hsv(0,0%,100%)" # --title_fill
-
-  # Control the stroke.
-  # See above for color formats.
-  # If width is 0, no stroke is drawn (the default).
-  # Default stroke color is white.
-  stroke :
-    color : "hsv(0,0%,100%)" # --title_stroke_color
-    width : 2 # --title_stroke_width
-
-  # Control Rotation
-  # The default is 0 (no rotation)
-  # For text, only values allowed are :
-  # -90 - text reads bottom to top
-  #   0 - text reads left to right
-  #  90 - text reads top to bottom
-  # 180 - text reads right to left (and upside down)
-  rotation : 0
-
-#---------------------------------
-# Album Title Configuration
-# This is the same as the title except for the default position
-#---------------------------------
-album :
-  text : "This is the album name" # --album
-  size : 200 # --size_size
-  font : 'DejaVuSans.ttf' # --album_font
-  position : right-center # --album_position
-  fill : "hsv(0,0%,100%)" # --album_fill
-  stroke :
-    color : "hsv(0,0%,100%)" # --album_stroke_color
-    width : 2 # --album_stroke_width
-  rotation : 0
+  position : right-bottom
 
 #---------------------------------
 # Text Block Configuration
 #---------------------------------
 # arbitrary text blocks can be added.
-# The configuration items are the same as for title and album.
-# The default position is "center-center"
-# otherwise, the other defaults are the same as title and album.
 text_blocks :
-  - text : "This is a text block"
-    size : 200
-    position : "pixel(40%, 40%)"
-    rotation : -90
+    # The reference name for the text block for use when positioning.
+    # It must be unique. dashes and spaces cannot be used.
+    # If not given, a unique name will be assigned.
+  - name : "title"
 
-  - text : "This is another text block"
+    # The actual text. Multiple lines can be given using "\n" to denote the end of the line.
+    text : "This is the title"
+
+    # Size of the text in pixels (not points)
+    # This size is a maximum. If the text does not fit, it will be scaled down.
+    size : 200
+
+    # Position for the text on the output.
+    # See above for details
+    position : "pixel(40%, 40%)"
+
+    # Font to use for the text.
+    # defaults to the global font setting if not given (see above).
+    font : 'DejaVuSans.ttf'
+
+    # Fill color for the text
+    # see above for color formats.
+    # White is the default
+    fill : "hsv(0,0%,100%)"
+  
+    # Control the stroke.
+    # See above for color formats.
+    # If width is 0, no stroke is drawn (the default).
+    # Default stroke color is white.
+    stroke :
+      color : "hsv(0,0%,100%)"
+      width : 2
+  
+    # Control Rotation
+    # The default is 0 (no rotation)
+    # For text, only values allowed are :
+    # -90 - text reads bottom to top
+    #   0 - text reads left to right
+    #  90 - text reads top to bottom
+    # 180 - text reads right to left (and upside down)
+    rotation : 0
+
+  - text : "This is another text block\nWith multiple lines."
     size : 200
     position : "pixel(60%, 60%)"
