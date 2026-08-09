@@ -134,7 +134,6 @@ class TextSettings(Settings) :
     size : int
     font : str
     position : position
-    gutter : int
     fill : str
     stroke : StrokeSettings
     rotation : int
@@ -156,7 +155,6 @@ class TextSettings(Settings) :
         self.override('size', new_block['size'])
         self.override('font', new_block['font'])
         self.override('position', new_block['position'])
-        self.override('gutter', new_block['gutter'])
         self.override('fill', new_block['fill'])
         self.override('rotation', new_block['rotation'])
 
@@ -168,8 +166,6 @@ class TextSettings(Settings) :
             raise ValueError(f"Invalid rotation '{self.rotation}' for text ")
         if self.size is None or self.size < 1 :
             raise ValueError(f"Invalid size '{self.size}' for text")
-        if self.gutter < 0 :
-            raise ValueError(f"Invalid gutter setting '{self.gutter}' for text")
 
         self.stroke.validate()
 

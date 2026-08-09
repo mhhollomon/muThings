@@ -86,7 +86,8 @@ class rect :
                     geom(self.extent.width, self.extent.height)) 
 
 #---------------------------------------------------------
-
+# POSITION
+#---------------------------------------------------------
 POS_MAP = {
     'bottom' : 'max',
     'center' : 'mid',
@@ -94,8 +95,8 @@ POS_MAP = {
     'right' : 'max',
     'left' : 'min'
 }
-# reference(width, height, [side]) -- side only for border.
-POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
+# reference(width, height, [offset], [side]) -- side only for border.
+POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\d+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
 
 # pixel (width, height, [w anchor], [h anchor])
 PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?)  (?: \s*,\s* (\w+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
@@ -116,7 +117,7 @@ class position :
         self._width = ''
         self._height = ''
 
-        # offset for the position (int) used by attach
+        # offset for the position (int) used by attach and function
         self.offset = 0
 
         # reference item - used by attach and function
@@ -167,7 +168,7 @@ class position :
         self.ref = m.groups()[0]
         self.side = m.groups()[1]
         self.ptype = 'attach'
-        self.offset = m.groups()[2]
+        self.offset = int(m.groups()[2] or 0)
         self._valid = True
 
     def _parse_function(self) :
@@ -184,7 +185,7 @@ class position :
         if not m :
             raise ValueError(f"Invalid function position string: {self.pos_str}")
 
-        ref, width, height, side = m.groups()
+        ref, width, height, offset, side = m.groups()
 
         if ref not in ('output', 'cover', 'border') :
             raise ValueError(f"Invalid reference in position string: {self.pos_str}")
@@ -204,6 +205,7 @@ class position :
         self._width = width
         self._height = height
         self.ref = ref
+        self.offset = int(offset or 0)
         self._valid = True
         self.side = side or ''
         self.ptype = 'function'

@@ -38,10 +38,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
     # --- Application Level Arguments ---
-    parser.add_argument("--config_file", "-c", type=str, required=False, default=None,
-                        help="yaml file containing configuration values. Most can then be overridden on the command line.")
-    parser.add_argument("--debug", "-d", action='store_true', required=False, default=False)
-    parser.add_argument("--noaction", "-n", action='store_true', required=False, default=False)
+    parser.add_argument("--config_file", "-c", type=str, required=True, default=None,
+                        help="yaml file containing configuration values.")
+    parser.add_argument("--debug", "-d", action='store_true', required=False, default=False,
+                        help="Enable debug logging.")
+    parser.add_argument("--noaction", "-n", action='store_true', required=False, default=False,
+                        help="Print the configuration and exit.")
+    parser.add_argument("--print_config", "-p", action='store_true', required=False, default=False,
+                        help="Print the configuration")
 
     # --- GLOBAL ARGUMENTS ---
     parser.add_argument("--gutter", type=int, required=False, default=None,
@@ -104,6 +108,8 @@ def main() :
 
     log_level = logging.DEBUG if args.debug else logging.INFO
 
+    print_config = args.debug or args.print_config or args.noaction
+
     lc= LOGGING_CONFIG
     lc['loggers']['app']['level'] = log_level
     lc['loggers']['MuPic']['level'] = log_level
@@ -111,10 +117,9 @@ def main() :
     logger.setLevel(log_level)
 
     config_file = args.config_file
-    if config_file is not None:
-        set_resolve_path(os.path.dirname(os.path.abspath(config_file)))
+    set_resolve_path(os.path.dirname(os.path.abspath(config_file)))
 
-    config = build_config(args, config_file)
+    config = build_config(args, config_file, print_config)
     if not validate_config(config):
         sys.exit(1)
 

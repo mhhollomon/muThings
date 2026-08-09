@@ -56,6 +56,7 @@ class TextElement(ImageElement) :
             # TODO : Need to retink this. What should max_text_width be?
             # The text is too long, so we need to scale it down
             new_size = self._settings.size * (max_text_width / text_size.width)
+            logger.debug(f"Scaling text size from {self._settings.size} to {new_size}")
             title_font = ImageFont.truetype(self._settings.font, new_size)
             text_size = _get_text_size(self._settings.text, title_font)
 
@@ -68,8 +69,7 @@ class TextElement(ImageElement) :
         offsets =  self.offsets_for_position(
             pos=position,
             elem_size=final_text_size,
-            gutter=self.parent.config.globals.gutter,
-            ex_gutter=self._settings.gutter
+            gutter=self.parent.config.globals.gutter
             )
 
 

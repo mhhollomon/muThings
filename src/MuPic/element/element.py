@@ -113,7 +113,7 @@ class ImageElement :
         logger.debug(f"final offset: {w_offset}, {h_offset}")
         return w_offset, h_offset
 
-    def _attach_offsets(self, pos : position, elem_size : geom, gutter : int) -> Tuple[int, int]:
+    def _attach_offsets(self, pos : position, elem_size : geom) -> Tuple[int, int]:
         ref_bbox =  self.parent.get_elem(pos.ref).bbox
 
         logger.debug(f"attach : ref_bbox = {ref_bbox}")
@@ -158,7 +158,7 @@ class ImageElement :
         return point.to_tuple()
     
     def offsets_for_position(self, pos : position, elem_size : geom, 
-                             gutter : int, ex_gutter : int = 0) -> Tuple[int, int] :
+                             gutter : int) -> Tuple[int, int] :
         if not pos.valid():
             raise ValueError("Position is not valid")
 
@@ -166,14 +166,13 @@ class ImageElement :
  position = {pos.pos_str}
  elem_size = {elem_size.to_tuple()},
  gutter = {gutter}
- ex_gutter = {ex_gutter}
  """
     )
         
         if pos.ptype == 'pixel' :
             return self._pixel_offsets(pos, elem_size, gutter)
         elif pos.ptype == 'attach' :
-            return self._attach_offsets(pos, elem_size, ex_gutter)
+            return self._attach_offsets(pos, elem_size)
 
         ref_elem = self.parent.get_elem(pos.ref)
 
@@ -181,37 +180,32 @@ class ImageElement :
             ref_rect = ref_elem.get_bbox(side=pos.side[0])
         else :
             ref_rect = ref_elem.bbox
-        
-        if pos.ref == 'cover' :
-            gutter = 0
-        elif pos.ref == 'border' :
-            gutter = ex_gutter
 
         logger.debug(f"ref_rect = {ref_rect.to_tuple()}")
         
         # Calculate the offset
         if pos.w == 'min':
-            width_offset = gutter
+            width_offset = pos.offset
         elif pos.w == 'mid':
             width_offset = (ref_rect.extent.width - elem_size.width) // 2
         elif pos.w == 'max':
-            width_offset = ref_rect.extent.width - elem_size.width - gutter
+            width_offset = ref_rect.extent.width - elem_size.width - pos.offset
 
-        if width_offset > ref_rect.extent.width - elem_size.width - gutter:
-            width_offset = ref_rect.extent.width - elem_size.width - gutter
+        if width_offset > ref_rect.extent.width - elem_size.width - pos.offset:
+            width_offset = ref_rect.extent.width - elem_size.width - pos.offset
 
         if width_offset < 1:
             width_offset = 1
 
         if pos.h == 'min':
-            height_offset = gutter
+            height_offset = pos.offset
         elif pos.h == 'mid':
             height_offset = (ref_rect.extent.height - elem_size.height) // 2
         elif pos.h == 'max':
-            height_offset = ref_rect.extent.height - elem_size.height - gutter
+            height_offset = ref_rect.extent.height - elem_size.height - pos.offset
 
-        if height_offset > ref_rect.extent.height - elem_size.height - gutter:
-            height_offset = ref_rect.extent.height - elem_size.height - gutter
+        if height_offset > ref_rect.extent.height - elem_size.height - pos.offset:
+            height_offset = ref_rect.extent.height - elem_size.height - pos.offset
 
         if height_offset < 1:
             height_offset = 1

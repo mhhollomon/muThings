@@ -56,8 +56,7 @@ def _merge_blocks(old : List[TextSettings], new : List[dict]) -> List[TextSettin
             scolor = block['stroke.color'] or '#000000'
             name = block['name'] or f'block_{len(retlist)}'
             settings = TextSettings(name, block['text'], block['size'] or 0, font, 
-                                        position(bpos),
-                                        block['gutter'] or 0, 
+                                        position(bpos), 
                                         block['fill'], 
                                         StrokeSettings(scolor, swidth),
                                         rotation=block['rotation'] or 0)
@@ -140,7 +139,7 @@ def _get_default_font() :
     else:
         return 'Arial'
 
-def build_config(args : argparse.Namespace, config_path : str | None = None) -> Config:
+def build_config(args : argparse.Namespace, config_path : str, print_config : bool) -> Config:
 
     retval = _build_default_config()
 
@@ -175,10 +174,12 @@ def build_config(args : argparse.Namespace, config_path : str | None = None) -> 
     for block in retval.text_blocks :
         block.default('font', retval.globals.font)
 
-    print("++ Using configuration:")
-    dump = yaml.dump(retval, default_flow_style=False, sort_keys=False)
-    dump = re.sub(r'\s?!![^\n]*\n', '\n', dump)
-    print(dump)
+    if print_config :
+        print("++++++ Using configuration:")
+        dump = yaml.dump(retval, default_flow_style=False, sort_keys=False)
+        dump = re.sub(r'\s?!![^\n]*\n', '\n', dump)
+        print(dump)
+        print("++++++")
 
 
     return retval
