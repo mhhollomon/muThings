@@ -124,26 +124,39 @@ class ImageElement :
         offset = int(pos.offset)
         logger.debug(f"attach : offset = {offset}")
 
+        if pos.ref_anchor == 'min' :
+            anchor_factor = 0
+        elif pos.ref_anchor == 'mid' :
+            anchor_factor = 0.5
+        elif pos.ref_anchor == 'max' :
+            anchor_factor = 1
+        else :
+            raise ValueError(f"Unknown ref_anchor: {pos.ref_anchor}")
+
         if side == 'l' :
             w_ref = ref_bbox.start.width
-            l_ref = ref_bbox.start.height + ref_bbox.extent.height // 2
+            l_ref = ref_bbox.start.height + int(ref_bbox.extent.height * anchor_factor)
             standoff = geom(-offset, 0)
-            ele_offset = geom(-elem_size.width, -elem_size.height // 2)
+            ele_offset = geom(-elem_size.width, -int(elem_size.height * anchor_factor))
+
         elif side == 'r' :
             w_ref = ref_bbox.start.width + ref_bbox.extent.width
-            l_ref = ref_bbox.start.height + ref_bbox.extent.height // 2
+            l_ref = ref_bbox.start.height + int(ref_bbox.extent.height * anchor_factor)
             standoff = geom(offset, 0)
-            ele_offset = geom(0, -elem_size.height // 2)
+            ele_offset = geom(0, -int(elem_size.height * anchor_factor))
+
         elif side == 't' :
-            w_ref = ref_bbox.start.width + ref_bbox.extent.width // 2
+            w_ref = ref_bbox.start.width + int(ref_bbox.extent.width * anchor_factor)
             l_ref = ref_bbox.start.height
             standoff = geom(0, -offset)
-            ele_offset = geom(elem_size.width // 2, 0)
+            ele_offset = geom(-int(elem_size.width * anchor_factor), -elem_size.height)
+
         elif side == 'b' :
-            w_ref = ref_bbox.start.width + ref_bbox.extent.width // 2
+            w_ref = ref_bbox.start.width + int(ref_bbox.extent.width * anchor_factor)
             l_ref = ref_bbox.start.height + ref_bbox.extent.height
             standoff = geom(0, offset)
-            ele_offset = geom(-elem_size.width // 2, 0)
+            ele_offset = geom(-int(elem_size.width * anchor_factor), 0)
+            
         else :
             raise ValueError(f"Invalid side: {side}")
 

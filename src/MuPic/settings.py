@@ -113,13 +113,16 @@ class StrokeSettings(Settings) :
     color : str
     width : int
 
+    def __post_init__(self) :
+        self.width = int(self.width)
+
     def exists(self) -> bool :
         return self.width > 0
 
     def merge(self, new_block : Any) :
         new_block = NoneDict(new_block)
         self.override('color', new_block['color'])
-        self.override('width', new_block['width'])
+        self.override('width', int(new_block['width']))
 
     def validate(self) :
         if self.width < 0 :

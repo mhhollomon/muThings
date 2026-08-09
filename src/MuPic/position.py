@@ -101,8 +101,8 @@ POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\d+))? 
 # pixel (width, height, [w anchor], [h anchor])
 PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?)  (?: \s*,\s* (\w+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
 
-# attach (ref, side, offset)
-ATTACH_PATTERN = re.compile(r'attach \s* \( \s* (\w+) \s*,\s* (\w+) \s*,\s* (\d+) \s* \)', re.RegexFlag.X)
+# attach (ref, side, [offset], [anchor])
+ATTACH_PATTERN = re.compile(r'attach \s* \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\d+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
 
 class position :
     def __init__(self, pos_str : str ) -> None :
@@ -126,8 +126,12 @@ class position :
         # side of the reference item - used by attach and border
         self.side = ''
 
-        # what part of the item to use hwen calculating position
+        # what part of the item to use when calculating position
         self.anchor : Tuple[str, str] = ('min', 'min')
+
+        # used by attach. Which part of the ref element side to use
+        # when calculating position. Defaults to mid
+        self.ref_anchor : str = 'mid'
 
         if self.pos_str is None :
             return 
@@ -169,6 +173,7 @@ class position :
         self.side = m.groups()[1]
         self.ptype = 'attach'
         self.offset = int(m.groups()[2] or 0)
+        self.ref_anchor = m.groups()[3] or 'mid'
         self._valid = True
 
     def _parse_function(self) :
@@ -219,7 +224,7 @@ class position :
         if len(m.groups()) == 3 :
             self.anchor = (m.groups()[2], 'mid')
         elif len(m.groups()) == 4 :
-            self.anchor = (m.groups()[2], m.groups()[3])
+            self.anchor = (m.groups()[2] or 'min', m.groups()[3] or 'mid')
 
         self._width = width
         self._height = height
