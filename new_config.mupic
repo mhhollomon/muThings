@@ -1,0 +1,62 @@
+include "path"
+
+default font "name"
+
+default fill "white"
+
+output {
+    path = "path"
+    size = 1980x1080
+    color = "color"
+    background = "path"
+    margin = 10
+    border {
+        color = "color"
+        width = 5
+        sides = lrtb
+    }
+}
+
+cover {
+    path = "path"
+    fit = square
+    align = min
+    crop = mid
+    margin = 10
+    border {
+        color = "color"
+        width = 5
+        sides = lrtb
+    }
+}
+
+image "name" {
+    path = "path"
+    size = 200
+    mask = auto
+    position = "right-bottom"
+}
+
+text "name" {
+    text = "My Text"
+    size = 200
+    position = "pixel(40%, 40%)"
+    rotation = 0
+    fill = "hsv(0,0%,100%)"
+    stroke {
+        color = "green"
+        width = 2
+    }
+    font = "some-font-resource"
+}
+
+# Unnamed text element
+text {
+    text = "Sneaky"
+}
+
+# unnamed image element
+image {
+    path = "path2"
+    size = 400x500
+}

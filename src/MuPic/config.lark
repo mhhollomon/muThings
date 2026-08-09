@@ -1,0 +1,20 @@
+config : include_stmt stmts
+
+
+stmts : statement *
+
+statement : default_stmt
+
+include_stmt : "include" path
+path : ESCAPED_STRING
+
+default_stmt : "default" deflt_prop prop_value
+deflt_prop : "font" | "fill"
+prop_value : ESCAPED_STRING
+
+
+%import common.ESCAPED_STRING
+%import common.SH_COMMENT
+%import common.WS
+%ignore SH_COMMENT
+%ignore WS

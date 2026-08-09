@@ -1,0 +1,6 @@
+include "path"
+
+default font "name"
+
+default fill "white"
+
