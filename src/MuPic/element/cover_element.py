@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from ..music_image import MusicImage
 
 from ..settings import *
-from ..position import rect
+from ..geometry import rect, point
 
 from .element import ImageElement
 from .border_element import BorderElement
@@ -39,28 +39,28 @@ class CoverElement(ImageElement) :
 
         if fit == 'cover' :
             full_cover_size = self.parent.output_size
-            full_cover_offset = geom(0, 0)
+            full_cover_offset = point(0, 0)
         else :
             square_side = min(self.parent.output_size.width, self.parent.output_size.height)
-            full_cover_size = geom(square_side, square_side)
+            full_cover_size = sizet(square_side, square_side)
             if cfg.align == 'min':
-                full_cover_offset = geom(0, 0)
+                full_cover_offset = point(0, 0)
             elif cfg.align == 'mid':
                 if output_size.is_landscape():
-                    full_cover_offset = geom((self.parent.output_size.width - square_side) // 2, 0)
+                    full_cover_offset = point((self.parent.output_size.width - square_side) // 2, 0)
                 else:
-                    full_cover_offset = geom(0, (self.parent.output_size.height - square_side) // 2)
+                    full_cover_offset = point(0, (self.parent.output_size.height - square_side) // 2)
             elif cfg.align == 'max':
                 if output_size.is_landscape():
-                    full_cover_offset = geom(self.parent.output_size.width - square_side, 0)
+                    full_cover_offset = point(self.parent.output_size.width - square_side, 0)
                 else:
-                    full_cover_offset = geom(0, self.parent.output_size.height - square_side)
+                    full_cover_offset = point(0, self.parent.output_size.height - square_side)
             else:
                 raise Exception(f"Invalid cover alignment: {cfg.align}")
 
         
         border_size = full_cover_size - cfg.margin * 2
-        border_offset = full_cover_offset + geom(cfg.margin, cfg.margin)
+        border_offset = full_cover_offset + point(cfg.margin, cfg.margin)
 
         border_ele = BorderElement('border', cfg.border, self.parent)
         border_img = border_ele.generate(rect(border_offset,border_size))
@@ -73,7 +73,7 @@ class CoverElement(ImageElement) :
         logger.debug(f"Calculated cover offsets = {cover_rect.start.to_tuple()}")
 
         cover_img = Image.open(cfg.path)
-        cover_img_size = geom.from_tuple(cover_img.size)
+        cover_img_size = sizet(cover_img.size)
 
         if cover_img_size.is_landscape() :
             if cfg.crop == 'min':

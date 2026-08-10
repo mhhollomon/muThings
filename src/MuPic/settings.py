@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, List
 
-from .position import position, geom
+from .position import position, sizet
 from .none_dict import NoneDict
 
 import logging
@@ -60,7 +60,7 @@ class GlobalSettings(Settings) :
 @dataclass
 class OutputSettings(PathSetting) :
     path : str
-    size : geom
+    size : sizet
     color : str
     background : str
 
@@ -122,7 +122,7 @@ class StrokeSettings(Settings) :
     def merge(self, new_block : Any) :
         new_block = NoneDict(new_block)
         self.override('color', new_block['color'])
-        self.override('width', int(new_block['width']))
+        self.override('width', int(new_block['width'] or 0))
 
     def validate(self) :
         if self.width < 0 :

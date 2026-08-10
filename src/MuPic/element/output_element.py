@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from .element import ImageElement
 
 from ..settings import OutputSettings
-from ..position import geom, rect
+from ..geometry import  rect, point
 
 
 import logging
@@ -35,6 +35,6 @@ class OutputElement(ImageElement) :
             logger.info("Creating color background")
             output_img = Image.new("RGB", output_size.to_tuple(), color=self._settings.color)
 
-        self.bbox = rect(geom(0,0), output_size)
+        self.bbox = rect(point(0,0), output_size)
 
         return output_img

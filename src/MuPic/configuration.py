@@ -24,7 +24,7 @@ def _build_default_config() -> Config :
 
     return Config(
         globals = GlobalSettings(GUTTER_SIZE, ''),
-        output  = OutputSettings("", geom(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
+        output  = OutputSettings("", sizet(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
                                 BorderSettings('#000000', 0), margin=0),
         logo    = GraphicSettings('', LOGO_SIZE, 'black', position('right-bottom')),
@@ -81,7 +81,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
     config.globals.override('font', new_cfg['font'])
 
     config.output.override('path', new_cfg['output.path'])
-    config.output.override('size', geom.from_string(new_cfg['output.size']))
+    config.output.override('size', sizet.from_string(new_cfg['output.size']))
     config.output.override('color', new_cfg['output.color'])
     config.output.override('background', new_cfg['output.background'])
 
@@ -110,7 +110,7 @@ def _add_args(config : Config, args : argparse.Namespace) :
     config.globals.override('font', args.font)
 
     config.output.override('path', args.output_path)
-    config.output.override('size', geom.from_string(args.output_size))
+    config.output.override('size', sizet.from_string(args.output_size))
     config.output.override('color', args.output_color)
     config.output.override('background', args.output_background)
 

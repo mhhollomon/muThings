@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 from PIL import Image
 
-from src.MuPic.position import geom, rect
+from ..geometry import sizet, rect, point
+
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
@@ -35,19 +36,19 @@ class BorderElement(ImageElement):
 
         if side == 'l' :
             start = self.bbox.start
-            extent = geom(self._settings.width, self.bbox.extent.height)
+            extent = sizet(self._settings.width, self.bbox.extent.height)
             
         elif side == 'r' :
-            start = geom(self.bbox.start.width + self.bbox.extent.width - self._settings.width, self.bbox.start.height)
-            extent = geom(self._settings.width, self.bbox.extent.height)
+            start = point(self.bbox.start.x + self.bbox.extent.width - self._settings.width, self.bbox.start.y)
+            extent = sizet(self._settings.width, self.bbox.extent.height)
 
         elif side == 't' :
-            start = geom(self.bbox.start.width, self.bbox.start.height)
-            extent = geom(self.bbox.extent.width, self._settings.width)
+            start = point(self.bbox.start.x, self.bbox.start.y)
+            extent = sizet(self.bbox.extent.width, self._settings.width)
 
         elif side == 'b' :
-            start = geom(self.bbox.start.width, self.bbox.start.height + self.bbox.extent.height - self._settings.width)
-            extent = geom(self.bbox.extent.width, self._settings.width)
+            start = point(self.bbox.start.x, self.bbox.start.y + self.bbox.extent.height - self._settings.width)
+            extent = sizet(self.bbox.extent.width, self._settings.width)
 
         bbox = rect(start, extent)
     
@@ -63,12 +64,12 @@ class BorderElement(ImageElement):
         extent = self.bbox.extent.copy()
         for side in self._settings.sides :
             if side == 'l':
-                start.width += self._settings.width
+                start.x += self._settings.width
                 extent.width -= self._settings.width
             elif side == 'r' :
                 extent.width -= self._settings.width
             elif side == 't' :
-                start.height += self._settings.width
+                start.y += self._settings.width
                 extent.height -= self._settings.width
             elif side == 'b' :
                 extent.height -= self._settings.width

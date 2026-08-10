@@ -2,7 +2,8 @@ from typing import TYPE_CHECKING, Any, Tuple
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
-from ..position import geom, position, rect
+from ..geometry import sizet, rect, point
+from ..position import position
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ImageElement :
     generated = False
-    _bbox = rect(geom(0,0), geom(0,0))
+    _bbox = rect(point(0,0), sizet(0,0))
 
     def __init__(self, name : str, parent : 'MusicImage', add_to_parent : bool = True) :
         self.name = name
@@ -59,7 +60,7 @@ class ImageElement :
         return self.bbox
 
 
-    def _pixel_offsets(self, pos : position, elem_size : geom, gutter : int) -> Tuple[int, int] :
+    def _pixel_offsets(self, pos : position, elem_size : sizet, gutter : int) -> Tuple[int, int] :
 
         output_rect = self.parent.get_elem('output').bbox
 
@@ -113,7 +114,7 @@ class ImageElement :
         logger.debug(f"final offset: {w_offset}, {h_offset}")
         return w_offset, h_offset
 
-    def _attach_offsets(self, pos : position, elem_size : geom) -> Tuple[int, int]:
+    def _attach_offsets(self, pos : position, elem_size : sizet) -> Tuple[int, int]:
         ref_bbox =  self.parent.get_elem(pos.ref).bbox
 
         logger.debug(f"attach : ref_bbox = {ref_bbox}")
@@ -134,43 +135,43 @@ class ImageElement :
             raise ValueError(f"Unknown ref_anchor: {pos.ref_anchor}")
 
         if side == 'l' :
-            w_ref = ref_bbox.start.width
-            l_ref = ref_bbox.start.height + int(ref_bbox.extent.height * anchor_factor)
-            standoff = geom(-offset, 0)
-            ele_offset = geom(-elem_size.width, -int(elem_size.height * anchor_factor))
+            w_ref = ref_bbox.start.x
+            l_ref = ref_bbox.start.y + int(ref_bbox.extent.height * anchor_factor)
+            standoff = sizet(-offset, 0)
+            ele_offset = sizet(-elem_size.width, -int(elem_size.height * anchor_factor))
 
         elif side == 'r' :
-            w_ref = ref_bbox.start.width + ref_bbox.extent.width
-            l_ref = ref_bbox.start.height + int(ref_bbox.extent.height * anchor_factor)
-            standoff = geom(offset, 0)
-            ele_offset = geom(0, -int(elem_size.height * anchor_factor))
+            w_ref = ref_bbox.start.x + ref_bbox.extent.width
+            l_ref = ref_bbox.start.y + int(ref_bbox.extent.height * anchor_factor)
+            standoff = sizet(offset, 0)
+            ele_offset = sizet(0, -int(elem_size.height * anchor_factor))
 
         elif side == 't' :
-            w_ref = ref_bbox.start.width + int(ref_bbox.extent.width * anchor_factor)
-            l_ref = ref_bbox.start.height
-            standoff = geom(0, -offset)
-            ele_offset = geom(-int(elem_size.width * anchor_factor), -elem_size.height)
+            w_ref = ref_bbox.start.x + int(ref_bbox.extent.width * anchor_factor)
+            l_ref = ref_bbox.start.y
+            standoff = sizet(0, -offset)
+            ele_offset = sizet(-int(elem_size.width * anchor_factor), -elem_size.height)
 
         elif side == 'b' :
-            w_ref = ref_bbox.start.width + int(ref_bbox.extent.width * anchor_factor)
-            l_ref = ref_bbox.start.height + ref_bbox.extent.height
-            standoff = geom(0, offset)
-            ele_offset = geom(-int(elem_size.width * anchor_factor), 0)
+            w_ref = ref_bbox.start.x + int(ref_bbox.extent.width * anchor_factor)
+            l_ref = ref_bbox.start.y + ref_bbox.extent.height
+            standoff = sizet(0, offset)
+            ele_offset = sizet(-int(elem_size.width * anchor_factor), 0)
             
         else :
             raise ValueError(f"Invalid side: {side}")
 
-        ref_point = geom(w_ref, l_ref)
+        ref_point = point(w_ref, l_ref)
         logger.debug(f"attach : ref_point = {ref_point.to_tuple()}")
         logger.debug(f"attach : standoff = {standoff.to_tuple()}")
 
-        point = ref_point + standoff + ele_offset
+        final_point = ref_point + standoff + ele_offset
 
-        logger.debug(f"attach : point = {point.to_tuple()}")
+        logger.debug(f"attach : point = {final_point.to_tuple()}")
 
-        return point.to_tuple()
+        return final_point.to_tuple()
     
-    def offsets_for_position(self, pos : position, elem_size : geom, 
+    def offsets_for_position(self, pos : position, elem_size : sizet, 
                              gutter : int) -> Tuple[int, int] :
         if not pos.valid():
             raise ValueError("Position is not valid")
@@ -226,8 +227,8 @@ class ImageElement :
         logger.debug(f"Offsets = ({width_offset}, {height_offset})")
 
         # Match the references position
-        width_offset += ref_rect.start.width
-        height_offset += ref_rect.start.height
+        width_offset += ref_rect.start.x
+        height_offset += ref_rect.start.y
 
         logger.debug(f"Final offsets = ({width_offset}, {height_offset})")
 
