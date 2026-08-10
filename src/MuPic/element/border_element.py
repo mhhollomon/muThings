@@ -64,15 +64,15 @@ class BorderElement(ImageElement):
         extent = self.bbox.extent.copy()
         for side in self._settings.sides :
             if side == 'l':
-                start.x += self._settings.width
-                extent.width -= self._settings.width
+                start += (self._settings.width, 0)
+                extent -= (self._settings.width, 0)
             elif side == 'r' :
-                extent.width -= self._settings.width
+                extent -= (self._settings.width, 0)
             elif side == 't' :
-                start.y += self._settings.width
-                extent.height -= self._settings.width
+                start += (0, self._settings.width)
+                extent -= (0, self._settings.width)
             elif side == 'b' :
-                extent.height -= self._settings.width
+                extent -= (0, self._settings.width)
             else :
                 raise ValueError(f"Invalid side: {side}")
 

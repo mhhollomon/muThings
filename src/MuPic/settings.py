@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, List
 
-from .position import position, sizet
+from .position import position
+from .geometry import sizet
+
 from .none_dict import NoneDict
 
 import logging

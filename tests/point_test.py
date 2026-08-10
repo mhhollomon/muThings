@@ -18,3 +18,11 @@ def test_point() :
         p = point.from_tuple(('a', 'b'))
 
     assert point('1', '3') == point(1, 3)
+
+    with pytest.raises(TypeError) :
+        p = point(1,2)
+        p.x = 2
+
+    s = point(1,2)
+    assert str(s) == 'point<1, 2>'
+    assert repr(s) == 'point<1, 2>'

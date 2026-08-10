@@ -2,17 +2,19 @@ from dataclasses import dataclass
 import re
 
 import logging
-from typing import Tuple
+from typing import Any, Tuple
 logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------
 class point :
     x : int
     y : int
+    _done : bool = False
 
     def __init__(self, x : int | float | str, y : int | float | str) :
         self.x = int(x)
         self.y = int(y)
+        self._done = True
 
     def to_tuple(self) -> tuple :
         return (self.x, self.y)
@@ -60,12 +62,22 @@ class point :
     def __eq__(self, other) :
         return self.x == other.x and self.y == other.y
 
+    def __repr__(self) -> str :
+        return f"point<{self.x}, {self.y}>"
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if not self._done :
+            super().__setattr__(name, value)
+        else :
+            raise TypeError("point is immutable")
+
 #---------------------------------------------------------
 
 GEOMETRY_PATTERN = re.compile(r'(\d+)x(\d+)')
 class sizet :
     width : int
     height : int
+    _done : bool = False
 
     def __init__(self, width : int | float | str | Tuple[int | float, int | float], height : int | float | str | None = None) :
         if height is None :
@@ -91,6 +103,7 @@ class sizet :
         
         self.width = int(width)
         self.height = int(height)
+        self._done = True
 
     def to_tuple(self) -> tuple :
         return (self.width, self.height)
@@ -158,6 +171,12 @@ class sizet :
 
     def __repr__(self) -> str :
         return f"sizet<{self.width}, {self.height}>"
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if not self._done :
+            super().__setattr__(name, value)
+        else :
+            raise TypeError("point is immutable")
 
 #---------------------------------------------------------
 
