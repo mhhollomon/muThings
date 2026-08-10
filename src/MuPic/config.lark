@@ -1,18 +1,56 @@
-config : include_stmt stmts
+config : include_stmt? stmts
 
 
-stmts : statement *
+stmts : statement*
 
-statement : default_stmt
+statement : default_stmt | output_stmt | cover_stmt
+    | image_stmt
 
 include_stmt : "include" path
 path : ESCAPED_STRING
 
-default_stmt : "default" deflt_prop prop_value
-deflt_prop : "font" | "fill"
-prop_value : ESCAPED_STRING
+default_stmt : "default" DEFLT_PROP ESCAPED_STRING
+DEFLT_PROP : "font" | "fill"
 
+output_stmt : "output" "{" output_option* "}"
+output_option : _path_option
+    | _size_option
+    | /color/ "=" ESCAPED_STRING
+    | /background/ "=" ESCAPED_STRING
+    | _margin_option
+    | border_spec
 
+cover_stmt : "cover" "{" cover_option+ "}"
+cover_option : _path_option
+    | /fit/ "=" /square|cover/
+    | /crop/ "=" PLACE
+    | /align/ "=" PLACE
+    | _margin_option
+    | border_spec
+
+image_stmt : "image" ESCAPED_STRING? "{" image_option+ "}"
+image_option : _path_option
+    | _size_option
+    | /mask/ "=" /self|alpha|auto|none|black/i
+    | _position_option
+
+border_spec : "border" "{" border_option+ "}"
+border_option : /color/ "=" ESCAPED_STRING
+    | width_option
+
+width_option : "width" "=" NAT_INT
+    | "width" "{" NAT_INT "}"
+    | "width" "{" one_side+ "}"
+one_side : /[ltrb]/ "=" NAT_INT
+
+_path_option : /path/ "=" ESCAPED_STRING
+_margin_option : /margin/ "=" NAT_INT
+_size_option : /size/ "=" SIZE
+_position_option : /position/ "=" ESCAPED_STRING
+
+SIZE : /(\d+)(x\d+)?/
+NAT_INT : /\d+/
+PLACE : /min|mid|max/
 %import common.ESCAPED_STRING
 %import common.SH_COMMENT
 %import common.WS

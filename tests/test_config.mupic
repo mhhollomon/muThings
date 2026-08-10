@@ -4,3 +4,41 @@ default font "name"
 
 default fill "white"
 
+output {
+    path = "path"
+    size = 1980x1080
+    color = "color"
+    background = "path"
+    margin = 10
+    border {
+        color = "color"
+        width { l=5 r=6 }
+    }
+}
+
+cover {
+    path = "path"
+    fit = square
+    align = min
+    crop = mid
+    margin = 10
+    border {
+        color = "color"
+        width {t=10}
+    }
+}
+
+image "name" {
+    path = "path"
+    size = 200
+    mask = auto
+    position = "right-bottom"
+}
+
+# unnamed image element
+image {
+    path = "path2"
+    size = 400x500
+}
+
+

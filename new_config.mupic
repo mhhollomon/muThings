@@ -12,8 +12,7 @@ output {
     margin = 10
     border {
         color = "color"
-        width = 5
-        sides = lrtb
+        width { 5 }
     }
 }
 
@@ -25,8 +24,7 @@ cover {
     margin = 10
     border {
         color = "color"
-        width = 5
-        sides = lrtb
+        width {t=10}
     }
 }
 
