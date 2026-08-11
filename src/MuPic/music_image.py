@@ -24,9 +24,12 @@ class MusicImage :
         ele = GraphicElement('logo', self.config.logo, self)
         ele.generate()
 
-        for i, block in enumerate(self.config.text_blocks):
+        for i, block in enumerate(self.config.elements):
             name = block.name or f'block_{i}'
-            ele = TextElement(name, block, self)
+            if isinstance(block, GraphicSettings) :
+                ele = GraphicElement(name, block, self)
+            else :
+                ele = TextElement(name, block, self)
             ele.generate()
 
         return output_img

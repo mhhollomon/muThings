@@ -26,14 +26,14 @@ def _build_default_config() -> Config :
         globals = GlobalSettings(GUTTER_SIZE, ''),
         output  = OutputSettings("", sizet(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
-                                BorderSettings('#000000', 0), margin=0),
-        logo    = GraphicSettings('', LOGO_SIZE, 'black', position('right-bottom')),
-        text_blocks  = []
+                                BorderSettings('#000000', None), margin=0),
+        logo    = GraphicSettings('', '', LOGO_SIZE, 'black', position('right-bottom')),
+        elements  = []
     )
 
-def _merge_blocks(old : List[TextSettings], new : List[dict]) -> List[TextSettings] :
+def _merge_blocks(old : List[TextSettings | GraphicSettings], new : List[dict]) -> List[TextSettings | GraphicSettings] :
 
-    retlist : List[TextSettings] = []
+    retlist : List[TextSettings | GraphicSettings] = []
     seen_names : Set[str] = set()
     for block in old :
         if  block.named() :
@@ -101,7 +101,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
 
     if new_cfg['text_blocks'] is not None :
         blocks = new_cfg['text_blocks']
-        config.text_blocks = _merge_blocks(config.text_blocks, blocks)
+        config.elements = _merge_blocks(config.elements, blocks)
 
     return config
 
@@ -171,7 +171,7 @@ def build_config(args : argparse.Namespace, config_path : str, print_config : bo
     retval.globals.default('font', _get_default_font())
 
     # update the other fonts to use this if needed.
-    for block in retval.text_blocks :
+    for block in retval.elements :
         block.default('font', retval.globals.font)
 
     if print_config :
@@ -238,19 +238,9 @@ def validate_config(config : Config) -> bool :
         logger.error("Gutter must be >= 0")
         return False
     
-    if config.cover.border.width < 0:
-        logger.error("Cover border width must be >= 0")
-        return False
+    config.cover.border.validate()
 
-    if config.cover.crop not in ('min', 'mid', 'max'):
-        logger.error(f"Invalid cover crop value {config.cover.crop}")
-        return False
-
-    if config.cover.align not in ('min', 'mid', 'max'):
-        logger.error(f"Invalid cover align value {config.cover.align}")
-        return False
-
-    for block in config.text_blocks:
+    for block in config.elements:
         block.validate()
 
     return True
