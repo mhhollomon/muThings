@@ -1,10 +1,10 @@
 config : include_stmt? stmts
 
-
 stmts : statement*
 
-statement : default_stmt | output_stmt | cover_stmt
-    | image_stmt | text_stmt
+statement : default_stmt 
+    | output_stmt | cover_stmt
+    | image_stmt  | text_stmt
 
 include_stmt : "include" path
 path : ESCAPED_STRING
@@ -22,16 +22,16 @@ output_option : _path_option
 
 cover_stmt : "cover" "{" cover_option+ "}"
 cover_option : _path_option
-    | /fit/ "=" /square|cover/
-    | /crop/ "=" PLACE
-    | /align/ "=" PLACE
+    | /fit/ "=" WORD # check the actual string in the Transformer
+    | /crop/ "=" WORD
+    | /align/ "=" WORD
     | _margin_option
     | border_spec
 
 image_stmt : "image" ESCAPED_STRING? "{" image_option+ "}"
 image_option : _path_option
     | _size_option
-    | /mask/ "=" /self|alpha|auto|none|black/i
+    | /mask/ "=" WORD
     | _position_option
 
 text_stmt : "text" ESCAPED_STRING? "{" text_option+ "}"
@@ -62,11 +62,11 @@ _size_option : /size/ "=" (SIZE|INTEGER)
 _position_option : /position/ "=" ESCAPED_STRING
 _color_option : /color/ "=" ESCAPED_STRING
 
-SIZE : /(\d+)x\d+/
+SIZE : /\d+x\d+/
 INTEGER : /[-+]?\d+/
-PLACE : /min|mid|max/
 %import common.ESCAPED_STRING
 %import common.SH_COMMENT
 %import common.WS
+%import common.WORD
 %ignore SH_COMMENT
 %ignore WS
