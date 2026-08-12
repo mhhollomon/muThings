@@ -4,6 +4,8 @@ from lark import Transformer, v_args, Token
 
 from .settings import *
 
+from pathlib import Path
+
 class OptionTuple(NamedTuple) :
     name : str
     value : Any
@@ -12,10 +14,12 @@ class DefaultOption(NamedTuple) :
     name : str
     value : Any
 
-class ConfigTransformer(Transformer) :
-    def __init__(self) :
+class Configuration(Transformer) :
+    def __init__(self, config_file : str) :
         super().__init__()
         self.config = ConfigOld()
+        self.config_file = Path(config_file)
+        self.context = self.config_file.parent
 
     def __default__(self, data, children, meta) :
         if data.endswith('_option') :

@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import sys
 
-from MuPic.config_transformer import ConfigTransformer
+from MuPic.configuration import Configuration
 
 logger.setLevel(logging.DEBUG)
 
@@ -18,7 +18,7 @@ print(tree.pretty())
 
 print("=====")
 
-xform = ConfigTransformer()
+xform = Configuration(sys.argv[1])
 new_tree = xform.transform(tree)
 print(new_tree.pretty())
 
