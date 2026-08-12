@@ -66,6 +66,9 @@ class position :
         else :
             raise ValueError(f"Invalid position string: {pos_str}")
 
+    def __str__(self) -> str :
+        return f"'{self.pos_str}'"
+
     def _parse_simple(self) :
             w, h = self.pos_str.split('-')
             w = w.strip()

@@ -27,13 +27,13 @@ def _build_default_config() -> ConfigOld :
         output  = OutputSettings("", sizet(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
                                 BorderSettings('#000000', None), margin=0),
-        logo    = GraphicSettings('', '', LOGO_SIZE, 'black', position('right-bottom')),
+        logo    = ImageSettings('', '', LOGO_SIZE, 'black', position('right-bottom')),
         elements  = []
     )
 
-def _merge_blocks(old : List[TextSettings | GraphicSettings], new : List[dict]) -> List[TextSettings | GraphicSettings] :
+def _merge_blocks(old : List[TextSettings | ImageSettings], new : List[dict]) -> List[TextSettings | ImageSettings] :
 
-    retlist : List[TextSettings | GraphicSettings] = []
+    retlist : List[TextSettings | ImageSettings] = []
     seen_names : Set[str] = set()
     for block in old :
         if  block.named() :

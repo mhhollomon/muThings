@@ -230,24 +230,43 @@ class CoverSettings(PathSetting) :
         print(f"{new_prefix}fit = {self.fit}")
         if self.border is not None :
             self.border.print(new_prefix)
-        print(f"{new_prefix}margin = {self.margin}")
+        if self.margin > 0 :
+            print(f"{new_prefix}margin = {self.margin}")
         print(f"{prefix}}}")
 
 # -------------------------------------------------------------------------
 
 @dataclass
-class GraphicSettings(PathSetting) :
+class ImageSettings(PathSetting) :
     name : str | None
-    path : str
     size : int
-    mask : str
     position : position
+    mask : str = 'auto'
+    # legal to have no path - just a background color.
+    path : str | None = None
+    color : str | None = None
+    border : BorderSettings | None = None
+    margin : int = 0
+
+    def print(self, prefix : str = '') :
+        print(f"{prefix}image {{")
+        new_prefix = prefix + '  '
+        print(f"{new_prefix}name = {self.name}")
+        print(f"{new_prefix}path = {self.path}")
+        print(f"{new_prefix}size = {self.size}")
+        print(f"{new_prefix}mask = {self.mask}")
+        print(f"{new_prefix}position = {self.position}")
+        if self.border is not None :
+            self.border.print(new_prefix)
+        if self.margin > 0 :
+            print(f"{new_prefix}margin = {self.margin}")
+        print(f"{prefix}}}")
 
     def named(self) -> bool :
         return self.name is not None and self.name != ''
 
     def merge(self, other : Any) :
-        if isinstance(other, GraphicSettings) :
+        if isinstance(other, ImageSettings) :
             raise ValueError("Cannot merge GraphicSettings with GraphicSettings (yet)")
         
         logger.debug(f"GraphicSettings.merge: {self.name} input = {other}")
@@ -350,8 +369,7 @@ class ConfigOld(Settings) :
     globals : GlobalSettings = field(default_factory=GlobalSettings)
     output  : OutputSettings = field(default_factory=OutputSettings)
     cover   : CoverSettings = field(default_factory=lambda :CoverSettings('', 'min', 'min', 'square', BorderSettings('#000000', None), margin=0))
-    logo    : GraphicSettings = field(default_factory=lambda :GraphicSettings('', '', 10, 'black', position('right-bottom')))
-    elements  : List[TextSettings | GraphicSettings] = field(default_factory=list)
+    elements  : List[TextSettings | ImageSettings] = field(default_factory=list)
 
     def print(self, prefix : str = '') :
         print(f"{prefix}Config:")
@@ -359,6 +377,5 @@ class ConfigOld(Settings) :
         self.globals.print(prefix)
         self.output.print(prefix)
         self.cover.print(prefix)
-        self.logo.print(prefix)
         for e in self.elements :
             e.print(prefix)

@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from ..music_image import MusicImage
 
 from .element import ImageElement
-from ..settings import GraphicSettings
+from ..settings import ImageSettings
 from ..geometry import sizet, rect, point
 
 from PIL import Image
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class GraphicElement(ImageElement):
-    def __init__(self, name : str, graphic_settings : GraphicSettings, parent : 'MusicImage') :
+    def __init__(self, name : str, graphic_settings : ImageSettings, parent : 'MusicImage') :
         super().__init__(name, parent)
 
         self._settings = deepcopy(graphic_settings)

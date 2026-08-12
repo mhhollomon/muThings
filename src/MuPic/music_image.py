@@ -26,7 +26,7 @@ class MusicImage :
 
         for i, block in enumerate(self.config.elements):
             name = block.name or f'block_{i}'
-            if isinstance(block, GraphicSettings) :
+            if isinstance(block, ImageSettings) :
                 ele = GraphicElement(name, block, self)
             else :
                 ele = TextElement(name, block, self)

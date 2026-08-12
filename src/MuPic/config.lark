@@ -32,6 +32,10 @@ image_stmt : "image" ESCAPED_STRING? "{" image_setting+ "}"
     | size_2d_option
     | "mask" "=" WORD -> mask_option
     | position_option
+    | border_spec
+    | margin_int_option
+    | color_option
+    | path_option
 
 text_stmt : "text" ESCAPED_STRING? "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option

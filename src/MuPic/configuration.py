@@ -36,7 +36,7 @@ class Configuration(Transformer) :
     defaults : DefaultSettings
     output  : OutputSettings
     cover   : CoverSettings | None
-    elements  : List[TextSettings | GraphicSettings]
+    elements  : List[TextSettings | ImageSettings]
 
     def __init__(self, config_file : str, toplevel : bool = True) :
         super().__init__()
@@ -189,4 +189,20 @@ class Configuration(Transformer) :
                 self.cover.border = child
             else :
                 raise ValueError(f"Invalid cover statement: {child}")
+
+    def image_stmt(self, children) :
+        name = children[0].value
+        new_image = ImageSettings(name=name, path = '',size=0, mask='auto',position=position(''))
+        self.elements.append(new_image)
+
+        for child in children[1:] :
+            if isinstance(child, OptionTuple) :
+                if child.name in ('path', 'size', 'mask', 'position', 'margin', 'color') :
+                    setattr(new_image, child.name, child.value)
+                else :
+                    raise ValueError(f"Invalid image statement: {child}")
+            elif isinstance(child, BorderSettings) :
+                new_image.border = child
+            else :
+                raise ValueError(f"Invalid image statement: {child}")
 
