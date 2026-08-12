@@ -306,7 +306,7 @@ class TextSettings(Settings) :
 # -------------------------------------------------------------------------
 
 @dataclass
-class Config(Settings) :
+class ConfigOld(Settings) :
     globals : GlobalSettings = field(default_factory=GlobalSettings)
     output  : OutputSettings = field(default_factory=OutputSettings)
     cover   : CoverSettings = field(default_factory=lambda :CoverSettings('', 'min', 'min', 'square', None, BorderSettings('#000000', None), margin=0))

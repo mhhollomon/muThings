@@ -15,7 +15,7 @@ class DefaultOption(NamedTuple) :
 class ConfigTransformer(Transformer) :
     def __init__(self) :
         super().__init__()
-        self.config = Config()
+        self.config = ConfigOld()
 
     def __default__(self, data, children, meta) :
         if data.endswith('_option') :

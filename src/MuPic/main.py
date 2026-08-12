@@ -12,7 +12,7 @@ logger = logging.getLogger('app')
 
 import argparse
 
-from .configuration import Config, build_config, validate_config
+from .config_old import ConfigOld, build_config, validate_config
 from .paths import set_resolve_path
 
 
@@ -20,7 +20,7 @@ from .paths import set_resolve_path
 # TOP LEVEL FUNCTION
 #--------------------------------------------------------------------------------
 
-def build_image(config : Config) :
+def build_image(config : ConfigOld) :
 
     final = MusicImage(config)
 

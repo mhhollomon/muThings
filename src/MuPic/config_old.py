@@ -20,9 +20,9 @@ GUTTER_SIZE = 10
 
 CONFIG_FILE_LIST : Set[str] = set()
 
-def _build_default_config() -> Config :
+def _build_default_config() -> ConfigOld :
 
-    return Config(
+    return ConfigOld(
         globals = GlobalSettings(GUTTER_SIZE, ''),
         output  = OutputSettings("", sizet(IMAGE_WIDTH, IMAGE_HEIGHT), '#000000', background = ''),
         cover   = CoverSettings('', 'min', 'min', 'square', None, 
@@ -66,7 +66,7 @@ def _merge_blocks(old : List[TextSettings | GraphicSettings], new : List[dict]) 
 
 
 
-def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) -> Config :
+def _add_supplied_config(config : ConfigOld, new_cfg : NoneDict, parent_dir : str) -> ConfigOld :
 
     if new_cfg['include'] is not None :
         file = new_cfg['include']
@@ -105,7 +105,7 @@ def _add_supplied_config(config : Config, new_cfg : NoneDict, parent_dir : str) 
 
     return config
 
-def _add_args(config : Config, args : argparse.Namespace) :
+def _add_args(config : ConfigOld, args : argparse.Namespace) :
     config.globals.override('gutter', args.gutter)
     config.globals.override('font', args.font)
 
@@ -139,7 +139,7 @@ def _get_default_font() :
     else:
         return 'Arial'
 
-def build_config(args : argparse.Namespace, config_path : str, print_config : bool) -> Config:
+def build_config(args : argparse.Namespace, config_path : str, print_config : bool) -> ConfigOld:
 
     retval = _build_default_config()
 
@@ -184,7 +184,7 @@ def build_config(args : argparse.Namespace, config_path : str, print_config : bo
 
     return retval
 
-def validate_config(config : Config) -> bool :
+def validate_config(config : ConfigOld) -> bool :
     if not config.output.path_valid():
         logger.error("No output path specified")
         return False

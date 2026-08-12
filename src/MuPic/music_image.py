@@ -6,7 +6,7 @@ from .element import *
 from .settings import *
 
 class MusicImage :
-    def __init__(self, config : Config) -> None:
+    def __init__(self, config : ConfigOld) -> None:
         self.config = config
         self.elements : Dict[str, ImageElement] = {}
         
