@@ -1,4 +1,4 @@
-config_file : include_stmt? stmts
+mupic_config_file : include_stmt? stmts
 
 stmts : statement*
 
@@ -13,10 +13,10 @@ DEFLT_PROP : "font" | "fill"
 
 output_stmt : "output" "{" output_setting+ "}"
 ?output_setting : path_option
-    | size_option
+    | size_2d_option
     | color_option
     | "background" "=" ESCAPED_STRING -> background_option
-    | margin_option
+    | margin_int_option
     | border_spec
 
 cover_stmt : "cover" "{" cover_setting+ "}"
@@ -24,18 +24,18 @@ cover_stmt : "cover" "{" cover_setting+ "}"
     | "fit" "=" WORD -> fit_option // check the actual string in the Transformer
     | "crop" "=" WORD -> crop_option
     | "align" "=" WORD -> align_option
-    | margin_option
+    | margin_int_option
     | border_spec
 
 image_stmt : "image" ESCAPED_STRING? "{" image_setting+ "}"
 ?image_setting : path_option
-    | size_option
+    | size_2d_option
     | "mask" "=" WORD -> mask_option
     | position_option
 
 text_stmt : "text" ESCAPED_STRING? "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option
-    | size_option
+    | "size" "=" INTEGER -> size_int_option
     | position_option
     | "rotation" "=" INTEGER -> rotation_option
     | "fill" "=" ESCAPED_STRING -> fill_option // This is a color
@@ -58,8 +58,8 @@ width_spec : "width" "=" INTEGER
 one_side : /[ltrb]/ "=" INTEGER
 
 path_option : "path" "=" ESCAPED_STRING
-margin_option : "margin" "=" INTEGER
-size_option : "size" "=" SIZE
+margin_int_option : "margin" "=" INTEGER
+size_2d_option : "size" "=" SIZE
 position_option : "position" "=" ESCAPED_STRING
 color_option : "color" "=" ESCAPED_STRING
 

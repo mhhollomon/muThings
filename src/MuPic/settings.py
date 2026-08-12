@@ -54,7 +54,7 @@ class PathSetting(Settings) :
         path = getattr(self, 'path')
         return path is not None and path != ''
 
-# -------------------------------------------------------------------------
+# -------OLD---------------------------------------------------------------
 
 @dataclass
 class GlobalSettings(Settings) :
@@ -70,26 +70,53 @@ class GlobalSettings(Settings) :
         print(f"{new_prefix}fill={self.fill}")
         print(f"{prefix}}}")
 
+# ------NEW----------------------------------------------------------------
+
+@dataclass
+class DefaultSettings(Settings) :
+    font : str | None = None
+    fill : str | None = None
+
+    def print(self, prefix : str = '') :
+        print(f"{prefix}DefaultSettings {{")
+        new_prefix = prefix + '  '
+        print(f"{new_prefix}font = {self.font}")
+        print(f"{new_prefix}fill = {self.fill}")
+        print(f"{prefix}}}")
+
+
 # -------------------------------------------------------------------------
 
 @dataclass
 class OutputSettings(PathSetting) :
-    path : str = ''
+    path : str | None = None
     size : sizet = field(default_factory=lambda :sizet(1920, 1080))
     color : str = '"black"'
-    background : str = ''
+    background : str | None = None
     margin : int = 0
-    border : 'BorderSettings' = field(default_factory=lambda :BorderSettings())
+    border : 'BorderSettings | None' = None
+
+    def validate(self) -> None :
+        if self.border is not None :
+            self.border.validate()
+
+        if self.margin < 0 :
+            raise ValueError(f"Margin cannot be negative: {self.margin}")
+
+        if self.size.width <= 0 or self.size.height <= 0 :
+            raise ValueError(f"Dimensions cannot be negative or zero for output: {self.size}")
 
     def print(self, prefix: str = ''):
         print(f"{prefix}OutputSettings {{")
         new_prefix = prefix + '  '
-        print(f"{new_prefix}path={self.path}")
-        print(f"{new_prefix}size={self.size}")
-        print(f"{new_prefix}color={self.color}")
-        print(f"{new_prefix}background={self.background}")
-        print(f"{new_prefix}margin={self.margin}")
-        self.border.print(new_prefix)
+        print(f"{new_prefix}path = {self.path}")
+        print(f"{new_prefix}size = {self.size}")
+        print(f"{new_prefix}color = {self.color}")
+        if self.background is not None :
+            print(f"{new_prefix}background = {self.background}")
+        print(f"{new_prefix}margin = {self.margin}")
+        if self.border is not None :
+            self.border.print(new_prefix)
         print(f"{prefix}}}")
 
 # -------------------------------------------------------------------------
@@ -166,7 +193,7 @@ class BorderSettings(Settings) :
         print(f"{prefix}border {{")
         new_prefix = prefix + '  '
         if self.color is not None :
-            print(f"{new_prefix}color={self.color}")
+            print(f"{new_prefix}color = {self.color}")
         if self.width is not None :
             self.width.print(new_prefix)
         print(f"{prefix}}}")
@@ -185,13 +212,26 @@ class BorderSettings(Settings) :
 
 @dataclass
 class CoverSettings(PathSetting) :
-    path : str
     align : str
     crop : str
-    fit : str
-    color : str | None # This is a convenience attribute
-    border : BorderSettings
-    margin : int
+    fit : str 
+    # This is a convienence field for the code. The user cannot set it.
+    color : str | None = field(default=None, repr=False, init=False)
+    path : str | None = None
+    border : BorderSettings | None = None
+    margin : int = 0
+
+    def print(self, prefix : str = '') :
+        print(f"{prefix}cover {{")
+        new_prefix = prefix + '  '
+        print(f"{new_prefix}path = {self.path}")
+        print(f"{new_prefix}align = {self.align}")
+        print(f"{new_prefix}crop = {self.crop}")
+        print(f"{new_prefix}fit = {self.fit}")
+        if self.border is not None :
+            self.border.print(new_prefix)
+        print(f"{new_prefix}margin = {self.margin}")
+        print(f"{prefix}}}")
 
 # -------------------------------------------------------------------------
 
@@ -309,7 +349,7 @@ class TextSettings(Settings) :
 class ConfigOld(Settings) :
     globals : GlobalSettings = field(default_factory=GlobalSettings)
     output  : OutputSettings = field(default_factory=OutputSettings)
-    cover   : CoverSettings = field(default_factory=lambda :CoverSettings('', 'min', 'min', 'square', None, BorderSettings('#000000', None), margin=0))
+    cover   : CoverSettings = field(default_factory=lambda :CoverSettings('', 'min', 'min', 'square', BorderSettings('#000000', None), margin=0))
     logo    : GraphicSettings = field(default_factory=lambda :GraphicSettings('', '', 10, 'black', position('right-bottom')))
     elements  : List[TextSettings | GraphicSettings] = field(default_factory=list)
 

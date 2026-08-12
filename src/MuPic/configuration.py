@@ -1,10 +1,25 @@
 from typing import Any, NamedTuple
 
-from lark import Transformer, v_args, Token
+from lark import Lark, Transformer, v_args, Token, logger as lark_logger
+import logging
+
+lark_logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 from .settings import *
 
 from pathlib import Path
+
+def _get_default_font() :
+    #import sys
+    import platform
+    #print(f"==== sys.platform: {sys.platform}")
+    #print(f"==== platform: {platform.platform()}")
+    if 'WSL2' in platform.platform():
+        return '/mnt/c/Windows/Fonts/arial.ttf'
+    else:
+        return 'Arial'
+
 
 class OptionTuple(NamedTuple) :
     name : str
@@ -14,30 +29,87 @@ class DefaultOption(NamedTuple) :
     name : str
     value : Any
 
+#--------------------------------------------------------------------------
+
 class Configuration(Transformer) :
-    def __init__(self, config_file : str) :
+    context : Path
+    defaults : DefaultSettings
+    output  : OutputSettings
+    cover   : CoverSettings | None
+    elements  : List[TextSettings | GraphicSettings]
+
+    def __init__(self, config_file : str, toplevel : bool = True) :
         super().__init__()
-        self.config = ConfigOld()
-        self.config_file = Path(config_file)
-        self.context = self.config_file.parent
+        self.toplevel = toplevel
+        self._config_file = Path(config_file)
+
+        self.context = self._config_file.parent
+        self.defaults = DefaultSettings(_get_default_font(), '"white"')
+        # output can't (ultimately) be None. So I don't want to pollute the type system.
+        self.output   = None # type: ignore
+        self.cover    = None
+        self.elements = []
+
+    def read_config(self) -> None :
+        grammar = Path(__file__).parent / 'config.lark'
+
+        with open(self._config_file, 'r') as f :
+            text = f.read()
+        parser = Lark(grammar.read_text(), parser='lalr', debug=True, start='mupic_config_file', maybe_placeholders=True, strict=True)
+
+        tree = parser.parse(text)
+        _ = self.transform(tree)
+
+        if self.toplevel :
+            self.validate()
+
+    def print(self, prefix : str = '') :
+        print(f"{prefix}Config:")
+        prefix += '  '
+        self.defaults.print(prefix)
+        if self.output is not None :
+            self.output.print(prefix)
+        if self.cover is not None :
+            self.cover.print(prefix)
+        for e in self.elements :
+            e.print(prefix)
+
+    def validate(self) -> None :
+        if self.output is None :
+            raise ValueError("No output specified")
+        else :
+            self.output.validate()
+
+    #--------------------------------------------
+    # Lark Transform routines
+    #--------------------------------------------
 
     def __default__(self, data, children, meta) :
         if data.endswith('_option') :
-            data = data[:-7]
-            print(f"==== {data} = {children[0]}")
-            return OptionTuple(data, 
-                children[0].value if isinstance(children[0], Token) else children[0])
+            if data.endswith('_int_option') :
+                data = data[:-11]
+                logger.debug(f"==== int option default handling: {data} = {children[0]}")
+                return OptionTuple(data, int(children[0].value))
+            else :
+                data = data[:-7]
+                logger.debug(f"==== option default handling: {data} = {children[0]}")
+                return OptionTuple(data, 
+                    children[0].value if isinstance(children[0], Token) else children[0])
         return super().__default__(data, children, meta)
 
     @v_args(inline=True)
     def default_stmt(self, name : Token, value : Token) :
         name = name.value
-        if hasattr(self.config.globals, name) :
-            setattr(self.config.globals, name, value.value)
+        if hasattr(self.defaults, name) :
+            setattr(self.defaults, name, value.value)
             return DefaultOption(name, value.value)
         else :
             raise ValueError(f"Invalid default statement: {name}")
 
+    @v_args(inline=True)
+    def size_2d_option(self, value : Token) :
+        return OptionTuple('size', sizet(value.value))
+    
     @v_args(inline=True)
     def one_side(self, side : Token, value : Token) :
         return OptionTuple(side.value, value.value)
@@ -91,22 +163,30 @@ class Configuration(Transformer) :
         return settings
 
     def output_stmt(self, children) :
+        if self.output is None :
+            self.output = OutputSettings()
         for child in children :
             if isinstance(child, OptionTuple) :
-                if child.name == 'path' :
-                    self.config.output.path = child.value
-                elif child.name == 'size' :
-                    self.config.output.size = child.value
-                elif child.name == 'color' :
-                    self.config.output.color = child.value
-                elif child.name == 'background' :
-                    self.config.output.background = child.value
-                elif child.name == 'margin' :
-                    self.config.output.margin = child.value
+                if child.name in ('name', 'path', 'size', 'color', 'background', 'margin') :
+                    setattr(self.output, child.name, child.value)
                 else :
                     raise ValueError(f"Invalid output statement: {child}")
             elif isinstance(child, BorderSettings) :
-                self.config.output.border = child
+                self.output.border = child
             else :
                 raise ValueError(f"Invalid output statement: {child}")
+
+    def cover_stmt(self, children) :
+        if self.cover is None :
+            self.cover = CoverSettings(align='min', fit='square', crop='mid')
+        for child in children :
+            if isinstance(child, OptionTuple) :
+                if child.name in ('path', 'align', 'fit', 'crop', 'margin') :
+                    setattr(self.cover, child.name, child.value)
+                else :
+                    raise ValueError(f"Invalid cover statement: {child}")
+            elif isinstance(child, BorderSettings) :
+                self.cover.border = child
+            else :
+                raise ValueError(f"Invalid cover statement: {child}")
 

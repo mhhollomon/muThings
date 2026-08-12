@@ -1,6 +1,6 @@
 include "path"
 
-default font "name"
+default font "some-font-name"
 
 default fill "white"
 

@@ -22,11 +22,15 @@ from .paths import set_resolve_path
 
 def build_image(config : ConfigOld) :
 
+    output_path = config.output.path
+    if output_path is None :
+        logger.error("No output path specified")
+        sys.exit(1)
+
     final = MusicImage(config)
 
     output_img = final.generate()
 
-    output_path = config.output.path
 
     # Save the image
     output_img.save(output_path)

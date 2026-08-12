@@ -189,7 +189,9 @@ def validate_config(config : ConfigOld) -> bool :
         logger.error("No output path specified")
         return False
     else :
-        output_path = resolve_path(config.output.path)
+        # The if leg will make sure this isn't None. 
+        # But the checker can't tell that.
+        output_path = resolve_path(config.output.path or '')
         dirname = os.path.dirname(output_path)
         if dirname != "" and not os.path.exists(dirname) :
             logger.error(f"The directory {dirname} does not exist.")
@@ -206,14 +208,15 @@ def validate_config(config : ConfigOld) -> bool :
         return False
     
     if config.output.valid_attr('background'):
-        path = resolve_path(config.output.background)
+        # The check will make sure this isn't None
+        path = resolve_path(config.output.background or '')
         if not os.path.isfile(path):
             logger.error(f"The background image file {path} does not exist.")
             return False
         config.output.background = path
 
     if config.cover.path_valid():
-        cover_path = resolve_path(config.cover.path)
+        cover_path = resolve_path(config.cover.path or '')
         if not os.path.isfile(cover_path):
             logger.error(f"The cover image file {cover_path} does not exist.")
             return False
@@ -222,7 +225,7 @@ def validate_config(config : ConfigOld) -> bool :
     
 
     if config.logo.path_valid():
-        logo_path = resolve_path(config.logo.path)
+        logo_path = resolve_path(config.logo.path or '')
         if not os.path.isfile(logo_path):
             logger.error(f"The logo image file {logo_path} does not exist.")
             return False
