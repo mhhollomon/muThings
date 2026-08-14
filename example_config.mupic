@@ -69,156 +69,347 @@
 #     ref is the element that is used as a reference.
 #     side is one of 'left', 'right', 'top', 'bottom'
 #     offset is the standoff from the reference element.
-
+#
+# ---------------------------------
+# Paths
+# ---------------------------------
+# Any path (e.g. for include or images) is resolved as follows :
+# - If the path is absolute, it is used as is.
+# - If it starts with './' then it is resolved relative to the current directory.
+# - Otherwise, it is resolved realtive to the directory containing the
+#      the configuration file currently being read.
+# Examples :
+#    assume that '/a/b/file.mupic' is the current file
+#    assume that '/c/d' is the current working directory
+#  '/e/f/moo.pg'   ==> (rule 1) /e/f/moo.png
+#  './e/f/moo.png' ==> (rule 2) /c/d/e/f/moo.png
+#   'e/f/moo.pnh   => (rule 3) /a/b/e/f/moo.png
+#  '../e/f/moo.png' ==> (rule 3) /a/e/f/moo.png
+#
+# ---------------------------------
+# Layouts
+# ---------------------------------
+# Most items may have up to 3 areas that are a part
+# of their bounding box - margin, border, and content.
+# Unless otherwise noted, when a size is given to an element,
+# this size will include all three areas. In particular,
+# this means that the content will be placed into a smaller
+# area than the given size if either a margin or a border
+# is specified.
+#
+# Areas from outside in :
+# 1. Margin - Defined by a width that is used for all 4 sides.
+#   The margin is transparent. Whatever is beneath will show through.
+# 2. Border - Each side of the border can be a different size.
+#   The border will be painted the specified color.
+# 3. Content - The image or text.
+#
+# There are slightly different rules for different element types.
+# See below.
 
 #---------------------------------
-# Global Configuration
+# Include file
 #---------------------------------
 
 # Include another file in this one. The values from the included
 # file will be added to the current configuration FIRST, so that
 # they can be overridden by the values in this file.
+# Only one file may be included. However, nesting can go to 20 levels.
+# The file path must be double-quoted.
+# The path will be resolved as in the `Paths` section above.
+
 include "/path/to/file.mupic"
 
-# Gap between the title or logo and the edge of the output image
-gutter : 10 # --gutter
+#---------------------------------
+# Defaults
+#---------------------------------
 
 # Font - This is the font that will be used for all text items
 # unless it is overridden in the configuration for that item.
 # The default value will vary according to the platform.
-font : 'My Cool Font' # --font
+# Quotes are needed for the value if there are spaces, tabs, commas or
+# quotes in the value.
+
+default font  "My Cool Font"
+
+# Fill - The defualt color if the text item unless it is
+# overridden in the configuration for that item.
+# The default is white.
+# Any color firmat from above may be used.
+# Quotes are needed for the value if there are spaces, tabs, commas or
+# quotes in the value.
+
+
+default fill white
 
 #---------------------------------
 # Output Configuration
 #---------------------------------
-output :
-  # Only PNG, JPG (or JPEG), and WEBP outputs are currently supported.
-  # The extension on the filename will be used to determine the format.
-  path : "/path/to/output/file.png" # -o or --output_path
+# This is the "main" section of the output and is the only
+# section of the configuration that is required.
+# This sets the size and format of the final image as well
+# as the file to write to.
+# Everything else is written on top of this layer.
 
-  # This is the size of the output image in WIDTHxHEIGHT format.
-  size : 1980x1080
+output {
+    # Only PNG, JPG (or JPEG), and WEBP outputs are currently supported.
+    # The extension on the filename will be used to determine the format.
+    # This can be overriden on the command line with the `-o` or `--output_path`
+    # parameter.
+    # This path is resolved using the rules in the `Paths` section above.
 
-  # This is the base color of the output image. It will be the
-  # color of any area that isn't otherwise covered by the various elements.
-  # 'black' is the default.
-  color : "rgb(0,0,0)"
+    path = "/path/to/output/file.png"
 
+    # This is the size of the output image in WIDTHxHEIGHT format.
+    # Required.
+    size = 1980x1080
+
+    # This is the base color of the output image. It will be the
+    # color of any area that isn't otherwise covered by the various elements.
+    # 'black' is the default.
+    # optional
+    color = "rgb(0,0,0)"
+
+    # Size of the margin. Default is 0.
+    # optional.
+    margin = 10
+
+    # An image to use as a part of the background. See fit.
+    # optional
+
+    background = "/some/file.png"
+
+    # How to place the background image on the output.
+    # For `cover`, the image is resized to completely cover the 
+    # output. The `color` parameter is not used. In this case,
+    # the image is what will be seen in the transparent margin as
+    # well as in the content area of the output.
+    # If fit is `contain`, the image is resized to content area
+    # of the output.
+    # Note that in both cases, the image is stretched as needed. aspect
+    # ratio is not preserved.
+    # optional. default = contain
+
+    fit = cover # or contain
+
+    # Define a border.
+    # This will be between the marign and content areas.
+    # optional. Default = no border.
+    border {
+        # Define the width of each side of the border.
+        # If you wnat them to be the same you can just give that
+        # number :
+        #   width = 5
+        # is the same as :
+        #   width { l=5 r=5 t=5 b=5 }
+        # If sides are left out of the spec (or set to zero),
+        # no border will be drawn on that side.
+        # required.
+
+        width { l=10 r=5 t=10 b=4 }
+
+        # Color to paint the border. Any of the above color formats may be used.
+        # required.
+
+        color = "hsv(20, 50%, 90%)"
+    }
+}
 #---------------------------------
 # Cover Image Configuration
 #---------------------------------
-cover :
-  # The path to the image.
-  # The image can be any type supported by the `pillow` module.
-  path : "/path/to/cover/file.png"
+# A "cover" image that is prominent on the output.
+# This is different from an image element (see below) by
+# always being placed relative to the output content area and
+# the cropping controls.
+# This is draw after the output layer but before any image or text elements
+# regardless of the order in the file.
+# optional.
 
-  # How the cover is resized to fit on the background.
-  # 'square' will resize the cover, then crop to a square.
-  # 'cover' will resize the cover, then crop to fit the output image.
-  fit : square
+cover {
+    # The path to the image.
+    # The image can be any type supported by the `pillow` module.
+    # This path is resolved using the rules in the `Paths` section above.
+    # optional
+    path = /path/to/cover/file.png
 
-  # One of 'min, 'mid', or 'max'
-  # Aligning depends on the orientation of the output - landscape or portrait.
-  # If landscape then it is relative to the width of the output image.
-  #   (min = left, mid = center, max = right)
-  # If portrait then it is relative to the height of the output image.
-  #   (min = top, mid = center, max = bottom)
-  # This is not used if the fit is `cover`.
-  align : min
+    # How the cover is resized to fit on the background.
+    # 'square' will resize the cover, then crop to a square.
+    # 'cover' will resize the cover, then crop to fit the output image.
+    # optional. Defaults to `square`.
+    fit = square
 
-  # One of 'min, 'mid', or 'max'
-  # If the resized image needs to be cropped, this sets what area will be retained.
-  # Similar to 'align', the exact effect depends on the orientation
-  # of the output image.
-  # 'mid' is the default
-  # If the resized image is small, then this controls where in the 
-  # square the image will be placed.
-  # This will happen, for instance, if a portrait image is used
-  # as a cover in a landscape formatted output.
-  crop : mid
+    # One of 'min, 'mid', or 'max'
+    # Aligning depends on the orientation of the output - landscape or portrait.
+    # If landscape then it is relative to the width of the output image.
+    #   (min = left, mid = center, max = right)
+    # If portrait then it is relative to the height of the output image.
+    #   (min = top, mid = center, max = bottom)
+    # This is not used if the fit is `cover`.
+    # optional. Defaults to `min`.
+    align = min
 
-  # border for the cover image
-  # If the width is zero, then no border will be drawn. This is the default.
-  border :
-    color : "rgb(0,0,0)"
-    width : 0
-    sides : "lrtb"
+    # One of 'min, 'mid', or 'max'
+    # If the resized image needs to be cropped, this sets what area will be retained.
+    # Similar to 'align', the exact effect depends on the orientation
+    # of the output image.
+    # 'mid' is the default
+    # If the resized image is small, then this controls where in the 
+    # square the image will be placed.
+    # This will happen, for instance, if a portrait image is used
+    # as a cover in a landscape formatted output.
+    # optional. Defaults to `mid`.
+    crop = mid
 
-#---------------------------------
-# Logo Image Configuration
-#---------------------------------
-logo :
-  # The path to the logo image
-  # The image can be any type supported by the `pillow` module.
-  path : "/path/to/image/file.jpg"
+    # Size of the margin. Default is 0.
+    # optional.
+    margin = 5
 
-  # size in pixels for the logo. aspect ratio will be preserved.
-  # The largest dimension of the logo will be scaled to this size.
-  size : 200 # size in pixels --logo_size
-
-  # Algorithm to compute a mask for the logo image.
-  # "self" - uses the luminance channel of the image as-is. This means that
-  #     the background will show through at least a little on any part of
-  #     the logo image that is not fully white.
-  # "black" - clamps the luminance channel, so that only black pixels in the logo 
-  #     are transparent.
-  # "alpha" - uses the alpha channel of the image as a mask.
-  # "auto" - automatically chooses between "alpha" and "black". This is the default.
-  # "none" : No masking is done.
-  mask : auto
-
-  # Position for the logo on the output.
-  # See above for details
-  # right-bottom is the default
-  position : right-bottom
+    # border for the cover image.
+    # See the `output` border section for details.
+    # optional. Defaults to no border.
+    border {
+        color = "rgb(0,0,0)"
+        width = 0
+    }
+}
 
 #---------------------------------
-# Text Block Configuration
+# Text Configuration
 #---------------------------------
-# arbitrary text blocks can be added.
-text_blocks :
-    # The reference name for the text block for use when positioning.
-    # It must be unique. dashes and spaces cannot be used.
-    # If not given, a unique name will be assigned.
-  - name : "title"
 
+# Arbitrary text blocks can be added.
+# While a name is not required, a name is needed if this element is
+# to be used as target of an attach or if you need to override settings
+# given in an included file.
+# Names must be unique across all elements. also the names `cover`, `border`, 
+# and `output` may not be used.
+# Dashes and spaces my not be used in names.
+# Names must be quoted.
+
+# Text and Image files are rendered in the order they appear in the file 
+# (but after the output and cover sections, regardless of order).
+# Elements in an included file will be rendered before any elements in the
+# including file. Elements with the same name will be merged into a single
+# configuration with the including file's settings taking precedence. However,
+# the element will be rendered in the order set by the included file.
+#
+
+text "name" {
     # The actual text. Multiple lines can be given using "\n" to denote the end of the line.
-    text : "This is the title"
+    # required.
+    text = "This is the title"
 
     # Size of the text in pixels (not points)
     # This size is a maximum. If the text does not fit, it will be scaled down.
-    size : 200
+    # required.
+    size = 200
 
     # Position for the text on the output.
     # See above for details
-    position : "pixel(40%, 40%)"
+    # required.
+    position = "pixel(40%, 40%)"
 
     # Font to use for the text.
-    # defaults to the global font setting if not given (see above).
-    font : 'DejaVuSans.ttf'
+    # defaults to the `default` font setting if not given (see above).
+    # optional.
+    font = 'DejaVuSans.ttf'
 
     # Fill color for the text
     # see above for color formats.
-    # White is the default
-    fill : "hsv(0,0%,100%)"
-  
+    # Uses the `default` fill if that has been given, otherwise white.
+    # optional. 
+    fill = "hsv(0,0%,100%)"
+
     # Control the stroke.
     # See above for color formats.
-    # If width is 0, no stroke is drawn (the default).
-    # Default stroke color is white.
-    stroke :
-      color : "hsv(0,0%,100%)"
-      width : 2
-  
+    # Width is a single integer.
+    # optional.
+    stroke {
+        # Color of the ink for the stroke.
+        # required.
+        color = "hsv(0,0%,100%)"
+
+        # Width of the stroke in pixels.
+        # required.
+        width = 2
+    }
+
     # Control Rotation
-    # The default is 0 (no rotation)
     # For text, only values allowed are :
     # -90 - text reads bottom to top
     #   0 - text reads left to right
     #  90 - text reads top to bottom
     # 180 - text reads right to left (and upside down)
+    # Optional. Defaults to 0
     rotation : 0
 
-  - text : "This is another text block\nWith multiple lines."
-    size : 200
-    position : "pixel(60%, 60%)"
+}
+
+#---------------------------------
+# Image Configuration
+#---------------------------------
+
+# Arbitrary image elements can be added.
+# While a name is not required, a name is needed if this element is
+# to be used as target of an attach or if you need to override settings
+# given in an included file.
+# Names must be unique across all elements. also the names `cover`, `border`, 
+# and `output` may not be used.
+# Dashes and spaces my not be used in names.
+# Names must be quoted.
+
+# See the `text` element section for discussion of rendering order.
+
+# Since the actual image is optional, the image element can also be used
+# to draw colored rectangles on the output.
+
+image "logo" {
+    # The path to the image.
+    # The image can be any type supported by the `pillow` module.
+    # This path is resolved using the rules in the `Paths` section above.
+    # optional.
+    path = /path/to/cover/file.png
+
+    # background color.
+    # optional. Default is `black`
+    color = green
+
+    # Size for the image.
+    # If only a single number is given, it is used for both dimensions
+    #   size = 300
+    # is the same as :
+    #   size = 300x300
+    # required.
+    size = 200x200
+
+    # margin
+    # optional. defaults to 0
+    margin = 5
+
+    # position
+    # See intro for details.
+    # required.
+    position = attach(some_ele, mid, mid)
+
+    # Algorithm to compute a mask for the logo image.
+    # "self" - uses the luminance channel of the image as-is. This means that
+    #     the background will show through at least a little on any part of
+    #     the logo image that is not fully white.
+    # "black" - clamps the luminance channel, so that only black pixels in the logo 
+    #     are transparent.
+    # "alpha" - uses the alpha channel of the image as a mask.
+    # "auto" - automatically chooses between "alpha" and "black". This is the default.
+    # "none" : No masking is done.
+    # optional
+    mask = auto
+
+    # border for the cover image.
+    # See the `output` border section for details.
+    # optional. Defaults to no border.
+    border {
+        color = "rgb(0,0,0)"
+        width = 20
+    }
+
+}
+
