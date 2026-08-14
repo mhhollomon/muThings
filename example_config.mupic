@@ -6,8 +6,7 @@
 # The image is built in the following order
 # 1. The background
 # 2. The cover image
-# 3. The logo
-# 4. text_blocks
+# 3. image/text elements in the order they appear in the file
 
 # ---------------------------------
 # COLORS
@@ -23,11 +22,13 @@
 # POSITIONS
 # ---------------------------------
 # You can use the following formats for positions:
-# Simple : Width-Height
+#
+# Simple : Width-Height[-offset]
 #    Width is one of 'left', 'center', 'right'
 #    Height is one of 'top', 'center', 'bottom'
-#    The title will be placed using the `gutter` parameter as a standoff
-#    from the edge of the output image.
+#    Offset is the standoff from the edge of the output image.
+#    The default offset is 10.
+#
 # Function :
 #   The name of the function is the element that is used as a reference.
 #   The following functions are available:
@@ -36,8 +37,6 @@
 #     border(w, h, side)
 #   both 'w' and 'h' are one of 'min', 'mid', or 'max'
 #   'side' is one of 'left', 'right', 'top', 'bottom'
-#   The element will be placed using the `gutter` parameter as a standoff
-#   from the edge of the reference.
 #
 #   'output(max, max)' is the equivalent of `right-bottom`
 #
@@ -79,7 +78,7 @@
 # Include another file in this one. The values from the included
 # file will be added to the current configuration FIRST, so that
 # they can be overridden by the values in this file.
-include : "/path/to/file.yml"
+include "/path/to/file.mupic"
 
 # Gap between the title or logo and the edge of the output image
 gutter : 10 # --gutter
