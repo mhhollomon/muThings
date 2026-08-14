@@ -30,6 +30,9 @@ Lets call the ele.sub.piece the _target triple_
 
 ### Attach
 `attach(triple, side, pos_x, pos_y [, anch_x, anch_y] [, offset])`
+
+`side` is one of `left`, `right`, `top`, `bottom`
+
 #### shortcuts
 border.`piece` means cover.border.`piece`
 ele.`piece`    means ele.border.`piece`
@@ -43,8 +46,8 @@ ele.`piece`    means ele.border.`piece`
 ele            means ele.content
 
 ### grammar
-SUB_ELEMENT : /full|margin|border|content/i
-PIECE : /left|right|top|bottom/i
+SUB_ELEMENT.10 : /full|margin|border|content/i
+PIECE.10 : /left|right|top|bottom/i
 BARE_STRING : /[^\s\t\n"')(\.]+/
 ELEMENT_NAME : ESCAPED_STRING | BARE_STRING
 
