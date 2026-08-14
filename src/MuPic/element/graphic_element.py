@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 if TYPE_CHECKING:
     from ..music_image import MusicImage

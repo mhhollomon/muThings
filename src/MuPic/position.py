@@ -117,7 +117,7 @@ class position :
 
         ref, width, height, offset, side = m.groups()
 
-        if ref not in ('output', 'cover', 'border') :
+        if ref not in ('output', 'cover', 'border', 'full_output') :
             raise ValueError(f"Invalid reference in position string: {self.pos_str}")
 
         if width not in ('min', 'mid', 'max') :

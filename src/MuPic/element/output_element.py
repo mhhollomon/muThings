@@ -3,9 +3,12 @@ from copy import deepcopy
 from PIL import Image
 
 from typing import TYPE_CHECKING
+
+
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
+from .bbox_element import BBoxElement
 from .element import ImageElement
 
 from ..settings import OutputSettings
@@ -69,5 +72,8 @@ class OutputElement(ImageElement) :
             output_img.paste(bg_img, output_offset.to_tuple())
 
         self.bbox = rect(output_offset, output_size)
+
+        dummy = BBoxElement('full_output', self.parent)
+        dummy.bbox = rect(point(0,0), full_output_size)
 
         return output_img

@@ -34,6 +34,13 @@ text "artist" {
     position = center-bottom
 }
 
+text "year" {
+    text = "1854"
+    font = "/mnt/c/Windows/Fonts/arialbi.ttf"
+    size = 30
+    position = "full_output(mid,max, 10)"
+}
+
 image "logo" {
     path = "/mnt/c/Users/mhhol/Desktop/More Stuff/viking-treble-clef-no-fill.png"
     size = 100

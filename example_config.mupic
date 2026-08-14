@@ -32,10 +32,13 @@
 # Function :
 #   The name of the function is the element that is used as a reference.
 #   The following functions are available:
-#     output(w, h)
-#     cover(w, h)
-#     border(w, h, side)
+#     output(w, h, [offset])
+#     full_output(w, h, [offset])
+#     cover(w, h, [offset])
+#     border(w, h, [offset], side)
 #   both 'w' and 'h' are one of 'min', 'mid', or 'max'
+#   `offset` is an integer - the number of pixels to leave between
+#       the container and element.
 #   'side' is one of 'left', 'right', 'top', 'bottom'
 #
 #   'output(max, max)' is the equivalent of `right-bottom`
@@ -44,7 +47,7 @@
 #   The pixel() function is used to place an element at a specified location
 #   relative to the output in either exact pixels, or a percentage of the
 #   output size.
-#   The top left corner of the element is the anchor position that ill be placed
+#   The top left corner of the element is the anchor position that will be placed
 #   at the specified location.
 #   The functions will do its best to make sure the whole element is visible on the output.
 #   Also, the gutter will honored.
