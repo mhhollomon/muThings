@@ -45,7 +45,7 @@ class TextElement(ImageElement) :
         title_font = ImageFont.truetype(self._settings.font, self._settings.size)
         text_size = _get_text_size(self._settings.text, title_font)
 
-        gutter = self.parent.config.globals.gutter
+        gutter = 10
 
         if output_size.is_landscape() and not output_size.is_square():
             max_text_width = output_size.width - output_size.height - (gutter * 2)
@@ -69,11 +69,11 @@ class TextElement(ImageElement) :
         offsets =  self.offsets_for_position(
             pos=position,
             elem_size=final_text_size,
-            gutter=self.parent.config.globals.gutter
+            gutter=10
             )
 
 
-        if self._settings.stroke.exists():
+        if self._settings.stroke is not None :
             stroke_params = { 'stroke_fill' : self._settings.stroke.color,
                             'stroke_width' : self._settings.stroke.width }
         else :

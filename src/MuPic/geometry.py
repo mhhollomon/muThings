@@ -182,12 +182,12 @@ class sizet :
 
 @ dataclass
 class rect :
-    start : point
+    origin : point
     extent: sizet
 
     def to_tuple(self) -> tuple :
-        return (self.start.to_tuple(), self.extent.to_tuple())
+        return (self.origin.to_tuple(), self.extent.to_tuple())
     
     def copy(self) -> 'rect' :
-        return rect(point(self.start.x, self.start.y), 
+        return rect(point(self.origin.x, self.origin.y), 
                     sizet(self.extent.width, self.extent.height)) 

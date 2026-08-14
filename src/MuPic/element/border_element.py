@@ -20,8 +20,7 @@ logger = logging.getLogger(__name__)
 class BorderElement(ImageElement):
     def __init__(self, name : str, settings : BorderSettings, parent : 'MusicImage') :
         super().__init__(name, parent)
-        self._settings = deepcopy(settings)
-        self._settings.sides = ''.join(set(self._settings.sides.lower()))
+        self.settings = deepcopy(settings)
 
     def get_bbox(self, **kwargs) :
         """
@@ -31,24 +30,24 @@ class BorderElement(ImageElement):
             raise ValueError("Must specify a side for border bbox")
 
         side = kwargs['side']
-        if side not in self._settings.sides :
+        if side not in 'lrtb' :
             raise ValueError(f"Invalid side for border bbox: {side}")
 
         if side == 'l' :
-            start = self.bbox.start
-            extent = sizet(self._settings.width, self.bbox.extent.height)
+            start = self.bbox.origin
+            extent = sizet(self.settings.width.l, self.bbox.extent.height)
             
         elif side == 'r' :
-            start = point(self.bbox.start.x + self.bbox.extent.width - self._settings.width, self.bbox.start.y)
-            extent = sizet(self._settings.width, self.bbox.extent.height)
+            start = point(self.bbox.origin.x + self.bbox.extent.width - self.settings.width.r, self.bbox.origin.y)
+            extent = sizet(self.settings.width.r, self.bbox.extent.height)
 
         elif side == 't' :
-            start = point(self.bbox.start.x, self.bbox.start.y)
-            extent = sizet(self.bbox.extent.width, self._settings.width)
+            start = point(self.bbox.origin.x, self.bbox.origin.y)
+            extent = sizet(self.bbox.extent.width, self.settings.width.t)
 
         elif side == 'b' :
-            start = point(self.bbox.start.x, self.bbox.start.y + self.bbox.extent.height - self._settings.width)
-            extent = sizet(self.bbox.extent.width, self._settings.width)
+            start = point(self.bbox.origin.x, self.bbox.origin.y + self.bbox.extent.height - self.settings.width.b)
+            extent = sizet(self.bbox.extent.width, self.settings.width.b)
 
         bbox = rect(start, extent)
     
@@ -57,23 +56,11 @@ class BorderElement(ImageElement):
     def generate(self, size_rect : rect) -> Image.Image :
         logger.debug(f"--- Generating border rect = {size_rect.to_tuple()}")
         self.bbox = size_rect.copy()
-        return Image.new("RGB", size_rect.extent.to_tuple(), color=self._settings.color)
+        return Image.new("RGB", size_rect.extent.to_tuple(), color=self.settings.color)
 
     def get_cover_rect(self) -> rect :
-        start = self.bbox.start.copy()
-        extent = self.bbox.extent.copy()
-        for side in self._settings.sides :
-            if side == 'l':
-                start += (self._settings.width, 0)
-                extent -= (self._settings.width, 0)
-            elif side == 'r' :
-                extent -= (self._settings.width, 0)
-            elif side == 't' :
-                start += (0, self._settings.width)
-                extent -= (0, self._settings.width)
-            elif side == 'b' :
-                extent -= (0, self._settings.width)
-            else :
-                raise ValueError(f"Invalid side: {side}")
+        ws = self.settings.width
+        start = self.bbox.origin.copy() + (ws.l, ws.t)
+        extent = self.bbox.extent.copy() - (ws.l + ws.r, ws.t + ws.b)
 
         return rect(start, extent)       

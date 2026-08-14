@@ -1,0 +1,42 @@
+# ./mupic -c dieng-plateau.mupic
+
+output {
+    path = test-out/dieng-plateau.png
+    size = 1920x1080
+    margin = 50
+    border {
+        width = 20
+        color = red
+    }
+    background = outdoors.jpg
+    color = darkblue
+    fit = cover
+}
+
+text "title" {
+    text = "View of a Landscape on the Dieng Plateau"
+    size = 50
+    position = center-top
+    fill = black
+}
+
+text "archive" {
+    text = "via The Public Domain Image Archive"
+    position = left-bottom
+    rotation = -90
+    size = 20
+}
+
+text "artist" {
+    text = "Franz Wilhelm Junghuhn"
+    font = "/mnt/c/Windows/Fonts/arialbi.ttf"
+    size = 40
+    position = center-bottom
+}
+
+image "logo" {
+    path = "/mnt/c/Users/mhhol/Desktop/More Stuff/viking-treble-clef-no-fill.png"
+    size = 100
+    position = right-bottom
+    mask = auto
+}

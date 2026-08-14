@@ -58,7 +58,7 @@ class GraphicElement(ImageElement):
         with Image.open(logo_path) as logo_img:
 
             logo_width, logo_height = logo_img.size
-            needed_size : int = self._settings.size
+            needed_size : int = self._settings.size.width
 
             if logo_width > logo_height:
                 # Landscape
@@ -91,7 +91,7 @@ class GraphicElement(ImageElement):
         offsets =  self.offsets_for_position(
             pos=position,
             elem_size=sizet(logo_width, logo_height),
-            gutter=self.parent.config.globals.gutter
+            gutter=10
             )
 
         # Paste the logo

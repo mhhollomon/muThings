@@ -1,0 +1,28 @@
+# An example include file
+
+default font "include-font"
+default fill "include-fill"
+
+output {
+    size = 600x600
+    fit = cover
+}
+
+
+cover {
+    path = my/path
+    fit = square
+    align = min
+    crop = mid
+    margin = 10
+    border {
+        color = "color"
+        width {t=10}
+    }
+}
+
+text "title" {
+    fill = "white"
+    size = 200
+    position = "right-bottom"
+}

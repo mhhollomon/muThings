@@ -1,0 +1,25 @@
+output {
+    path = test-out/double-border.png
+    size = 1920x1080
+    margin = 50
+    border {
+        width = 20
+        color = red
+    }
+    color = darkblue
+    fit = contain
+    #background = guitar.jpg
+}
+
+cover {
+    path = tests/resources/landscape-mode.png
+    align = mid
+    crop = mid
+    fit = square
+    margin = 10
+    border {
+        width = 20
+        color = white
+    }
+
+}

@@ -1,10 +1,12 @@
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, List
 
 from .position import position
 from .geometry import sizet
 
-from .none_dict import NoneDict
+from .utils import dictmerge
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,7 +14,20 @@ logger = logging.getLogger(__name__)
 # -------------------------------------------------------------------------
 # BASE CLASS Settings
 # -------------------------------------------------------------------------
-class Settings :
+class SettingsBase :
+    __REQ_ARGS__ = ()
+
+    @classmethod
+    def check_args(cls, input : dict) :
+        failed : set[str] = set()
+        for k in cls.__REQ_ARGS__ :
+            if k not in input :
+                failed.add(k)
+        if failed :
+            name = input.get('name', 'unknown')
+            raise ValueError(f"Setting for '{name}' is missing required arguments: {failed} :\n{input}")
+
+
 
     def valid_value(self, value : Any) -> bool :
 
@@ -49,33 +64,18 @@ class Settings :
 
 # -------------------------------------------------------------------------
 
-class PathSetting(Settings) :
+class PathSetting(SettingsBase) :
     def path_valid(self) -> bool :
         path = getattr(self, 'path')
         return path is not None and path != ''
 
-# -------OLD---------------------------------------------------------------
+
+# -------------------------------------------------------------------------
 
 @dataclass
-class GlobalSettings(Settings) :
-    gutter : int = 10
-    font : str = ''
-    fill : str = '"white"'
-
-    def print(self, prefix : str = '') :
-        print(f"{prefix}GlobalSettings {{")
-        new_prefix = prefix + '  '
-        print(f"{new_prefix}gutter={self.gutter}")
-        print(f"{new_prefix}font={self.font}")
-        print(f"{new_prefix}fill={self.fill}")
-        print(f"{prefix}}}")
-
-# ------NEW----------------------------------------------------------------
-
-@dataclass
-class DefaultSettings(Settings) :
-    font : str | None = None
-    fill : str | None = None
+class DefaultSettings(SettingsBase) :
+    font : str
+    fill : str
 
     def print(self, prefix : str = '') :
         print(f"{prefix}DefaultSettings {{")
@@ -84,50 +84,18 @@ class DefaultSettings(Settings) :
         print(f"{new_prefix}fill = {self.fill}")
         print(f"{prefix}}}")
 
+    def to_dict(self) :
+        return { 'font' : self.font, 'fill' : self.fill }
 
 # -------------------------------------------------------------------------
 
-@dataclass
-class OutputSettings(PathSetting) :
-    path : str | None = None
-    size : sizet = field(default_factory=lambda :sizet(1920, 1080))
-    color : str = '"black"'
-    background : str | None = None
-    margin : int = 0
-    border : 'BorderSettings | None' = None
+class WidthSettings(SettingsBase) :
+    l : int = 0
+    r : int = 0
+    t : int = 0
+    b : int = 0
 
-    def validate(self) -> None :
-        if self.border is not None :
-            self.border.validate()
-
-        if self.margin < 0 :
-            raise ValueError(f"Margin cannot be negative: {self.margin}")
-
-        if self.size.width <= 0 or self.size.height <= 0 :
-            raise ValueError(f"Dimensions cannot be negative or zero for output: {self.size}")
-
-    def print(self, prefix: str = ''):
-        print(f"{prefix}OutputSettings {{")
-        new_prefix = prefix + '  '
-        print(f"{new_prefix}path = {self.path}")
-        print(f"{new_prefix}size = {self.size}")
-        print(f"{new_prefix}color = {self.color}")
-        if self.background is not None :
-            print(f"{new_prefix}background = {self.background}")
-        print(f"{new_prefix}margin = {self.margin}")
-        if self.border is not None :
-            self.border.print(new_prefix)
-        print(f"{prefix}}}")
-
-# -------------------------------------------------------------------------
-
-class WidthSettings(Settings) :
-    l : int = -1
-    r : int = -1
-    t : int = -1
-    b : int = -1
-
-    def __init__(self, l : int = -1, r : int = -1, t : int = -1, b : int = -1) :
+    def __init__(self, l : int = 0, r : int = 0, t : int = 0, b : int = 0) :
         self.l = l
         self.r = r
         self.t = t
@@ -135,16 +103,6 @@ class WidthSettings(Settings) :
 
     def is_zero(self) :
         return self.l < 1 and self.r < 1 and self.t < 1 and self.b < 1
-
-    def merge(self, other : 'WidthSettings') -> 'WidthSettings' :
-        for attr in ('l', 'r', 't', 'b') :
-            value = getattr(other, attr)
-            if value > 0 :
-                setattr(self, attr, value)
-            elif value == 0 :
-                setattr(self, attr, -1)
-
-        return self
 
     def validate(self) -> bool :
         for attr in ('l', 'r', 't', 'b') :
@@ -164,9 +122,17 @@ class WidthSettings(Settings) :
 # -------------------------------------------------------------------------
 
 @dataclass
-class BorderSettings(Settings) :
-    color : str | None = None
-    width : WidthSettings | None = None
+class BorderSettings(SettingsBase) :
+    __REQ_ARGS__ = ('color', 'width')
+    color : str
+    width : WidthSettings
+
+    @classmethod
+    def from_dict(cls, d : dict) :
+        cls.check_args(d)
+        if 'width' in d :
+            d['width'] = WidthSettings(**d['width'])
+        return cls(**d)
 
     def exists(self) -> bool :
         return self.width is not None and not self.width.is_zero()
@@ -180,15 +146,6 @@ class BorderSettings(Settings) :
 
         return True
         
-    def merge(self, other) :
-        if other.color is not None :
-            self.color = other.color
-        if other.width is not None :
-            if self.width is None :
-                self.width = other.width
-            else :
-                self.width.merge(other.width)
-
     def print(self, prefix : str = '') :
         print(f"{prefix}border {{")
         new_prefix = prefix + '  '
@@ -207,19 +164,78 @@ class BorderSettings(Settings) :
         string += '}'
         return string
 
+# -------------------------------------------------------------------------
+
+@dataclass
+class OutputSettings(PathSetting) :
+    __REQ_ARGS__ = ('size',)
+    size : sizet
+    path : str | None = None
+    color : str = '"black"'
+    background : str | None = None
+    margin : int = 0
+    fit : str = 'contain'
+    border : BorderSettings | None = None
+
+    @classmethod
+    def from_dict(cls, d : dict) :
+        cls.check_args(d)
+        if 'border' in d :
+            d['border'] = BorderSettings.from_dict(d['border'])
+
+        return cls(**d)
+
+    def validate(self) -> None :
+        if self.border is not None :
+            self.border.validate()
+
+        if self.margin < 0 :
+            raise ValueError(f"Margin cannot be negative: {self.margin}")
+
+        if self.size.width <= 0 or self.size.height <= 0 :
+            raise ValueError(f"Dimensions cannot be negative or zero for output: {self.size}")
+        
+
+    def print(self, prefix: str = ''):
+        print(f"{prefix}OutputSettings {{")
+        new_prefix = prefix + '  '
+        print(f"{new_prefix}path = {self.path}")
+        print(f"{new_prefix}size = {self.size}")
+        print(f"{new_prefix}fit = {self.fit}")
+        print(f"{new_prefix}color = {self.color}")
+        if self.background is not None :
+            print(f"{new_prefix}background = {self.background}")
+        print(f"{new_prefix}margin = {self.margin}")
+        if self.border is not None :
+            self.border.print(new_prefix)
+        print(f"{prefix}}}")
+
 
 # -------------------------------------------------------------------------
 
 @dataclass
 class CoverSettings(PathSetting) :
+    __REQ_ARGS__ = ('align', 'crop', 'fit')
     align : str
     crop : str
     fit : str 
+    name : str = 'cover'
     # This is a convienence field for the code. The user cannot set it.
     color : str | None = field(default=None, repr=False, init=False)
     path : str | None = None
     border : BorderSettings | None = None
     margin : int = 0
+
+    @classmethod
+    def from_dict(cls, d : dict) :
+        d['name'] = 'cover'
+        if 'path' in d :
+            cls.check_args(d)
+        else :
+            d = dictmerge(deepcopy(d), { x : None for x in cls.__REQ_ARGS__ } )
+        if 'border' in d :
+            d['border'] = BorderSettings.from_dict(d['border'])
+        return cls(**d)
 
     def print(self, prefix : str = '') :
         print(f"{prefix}cover {{")
@@ -238,7 +254,8 @@ class CoverSettings(PathSetting) :
 
 @dataclass
 class ImageSettings(PathSetting) :
-    name : str | None
+    __REQ_ARGS__ = ('name', 'size', 'position')
+    name : str
     size : int
     position : position
     mask : str = 'auto'
@@ -248,10 +265,21 @@ class ImageSettings(PathSetting) :
     border : BorderSettings | None = None
     margin : int = 0
 
+    @classmethod
+    def from_dict(cls, d : dict) -> 'ImageSettings' :
+        cls.check_args(d)
+        d['position'] = position(d['position'])
+        if 'border' in d :
+            d['border'] = BorderSettings.from_dict(d['border'])
+        try :
+            t = ImageSettings(**d)
+        except Exception as e :
+            raise ValueError(f"Invalid image settings: {d} : {e}") from None
+        return t
+
     def print(self, prefix : str = '') :
-        print(f"{prefix}image {{")
+        print(f"{prefix}image \"{self.name}\" {{")
         new_prefix = prefix + '  '
-        print(f"{new_prefix}name = {self.name}")
         print(f"{new_prefix}path = {self.path}")
         print(f"{new_prefix}size = {self.size}")
         print(f"{new_prefix}mask = {self.mask}")
@@ -262,21 +290,6 @@ class ImageSettings(PathSetting) :
             print(f"{new_prefix}margin = {self.margin}")
         print(f"{prefix}}}")
 
-    def named(self) -> bool :
-        return self.name is not None and self.name != ''
-
-    def merge(self, other : Any) :
-        if isinstance(other, ImageSettings) :
-            raise ValueError("Cannot merge GraphicSettings with GraphicSettings (yet)")
-        
-        logger.debug(f"GraphicSettings.merge: {self.name} input = {other}")
-        other = NoneDict(other)
-        self.override('name', other['name'])
-        self.override('path', other['path'])
-        self.override('size', other['size'])
-        self.override('mask', other['mask'])
-        self.override('position', other['position'])
-        logger.debug(f"GraphicSettings.merge: {self.name} final = {self}")
 
     def validate(self) -> bool :
         return self.size > 0
@@ -284,24 +297,13 @@ class ImageSettings(PathSetting) :
 # -------------------------------------------------------------------------
 
 @ dataclass
-class StrokeSettings(Settings) :
+class StrokeSettings(SettingsBase) :
     color : str | None = None
     width : int | None = None
 
 
     def exists(self) -> bool :
         return self.width is not None
-
-    def merge(self, other) :
-        if other.color is not None :
-            self.color = other.color
-        if other.width is not None :
-            self.width = other.width
-
-    def validate(self) -> bool :
-        if self.width is not None and self.width < 0 :
-            raise ValueError("Stroke width cannot be negative")
-        return True
 
     def __str__(self) :
         string = "stroke {"
@@ -315,67 +317,80 @@ class StrokeSettings(Settings) :
 
 # -------------------------------------------------------------------------
 @dataclass 
-class TextSettings(Settings) :
+class TextSettings(SettingsBase) :
+    __REQ_ARGS__ = ['name', 'text', 'size', 'font', 'position', 'fill']
     name : str
     text : str
     size : int
     font : str
     position : position
     fill : str
-    stroke : StrokeSettings
-    rotation : int
+    stroke : StrokeSettings | None = None
+    rotation : int = 0
 
     @classmethod
-    def from_dict(cls, d : dict) :
-        return TextSettings(**d)
+    def from_dict(cls, d : dict) -> 'TextSettings' :
+        cls.check_args(d)
+        d['position'] = position(d['position'])
+        if 'stroke' in d :
+            d['stroke'] = StrokeSettings(**d['stroke'])
+        try :
+            t = TextSettings(**d)
+        except Exception as e :
+            raise ValueError(f"Invalid text settings: {d} : {e}") from e
+        return t
+
+    def print(self, prefix : str = '') :
+        print(f"{prefix}text \"{self.name}\" {{")
+        new_prefix = prefix + '  '
+        print(f"{new_prefix}text = {self.text}")
+        print(f"{new_prefix}size = {self.size}")
+        print(f"{new_prefix}font = {self.font}")
+        print(f"{new_prefix}position = {self.position}")
+        print(f"{new_prefix}fill = {self.fill}")
+        if self.stroke is not None :
+            self.stroke.print(new_prefix)
+        print(f"{new_prefix}rotation = {self.rotation}")
+        print(f"{prefix}}}")
 
     def has_text(self) -> bool :
         return self.text is not None and self.text != ''
 
-    def named(self) -> bool :
-        return self.name is not None and self.name != ''
-
-    def merge(self, new_block : Any) :
-        if isinstance(new_block, TextSettings) :
-            raise ValueError("Cannot merge TextSettings with TextSettings (yet)")
-        logger.debug(f"TextSettings.merge: {self.name} input = {new_block}")
-        new_block = NoneDict(new_block)
-        self.override('text', new_block['text'])
-        self.override('size', new_block['size'])
-        self.override('font', new_block['font'])
-        self.override('position', new_block['position'])
-        self.override('fill', new_block['fill'])
-        self.override('rotation', new_block['rotation'])
-
-        self.stroke.merge(new_block['stroke'])
-        logger.debug(f"TextSettings.merge: {self.name} final = {self}")
-
-    def validate(self) -> bool:
-        if self.rotation not in (-90, 0, 90, 180) :
-            raise ValueError(f"Invalid rotation '{self.rotation}' for text ")
-        if self.size is None or self.size < 1 :
-            raise ValueError(f"Invalid size '{self.size}' for text")
-
-        self.stroke.validate()
-
-        return True
 
 # -------------------------------------------------------------------------
-# CONFIG CLASS
+# Settings CLASS
 # -------------------------------------------------------------------------
 
-@dataclass
-class ConfigOld(Settings) :
-    globals : GlobalSettings = field(default_factory=GlobalSettings)
-    output  : OutputSettings = field(default_factory=OutputSettings)
-    cover   : CoverSettings = field(default_factory=lambda :CoverSettings('', 'min', 'min', 'square', BorderSettings('#000000', None), margin=0))
-    elements  : List[TextSettings | ImageSettings] = field(default_factory=list)
+class Settings(SettingsBase) :
+    defaults : DefaultSettings
+    output  : OutputSettings
+    cover   : CoverSettings | None = None
+    elements  : List[TextSettings | ImageSettings]
+
+    def __init__(self, setting : dict[str, Any]) :
+        super().__init__()
+        self.defaults = DefaultSettings(**setting['defaults'])
+        self.output = OutputSettings.from_dict(setting['output'])
+        if 'cover' in setting :
+            self.cover = CoverSettings.from_dict(setting['cover'])
+        self.elements = []
+        for e in setting['elements'] :
+            etype = e['type']
+            del e['type']
+            if etype == 'text' :
+                self.elements.append(TextSettings.from_dict(e))
+            elif etype == 'image' :
+                self.elements.append(ImageSettings.from_dict(e))
+            else :
+                raise ValueError(f"Unknown element type: {etype}")
 
     def print(self, prefix : str = '') :
         print(f"{prefix}Config:")
         prefix += '  '
-        self.globals.print(prefix)
+        self.defaults.print(prefix)
         self.output.print(prefix)
-        self.cover.print(prefix)
+        if self.cover is not None :
+            self.cover.print(prefix)
         for e in self.elements :
             e.print(prefix)
+

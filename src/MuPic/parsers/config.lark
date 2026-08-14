@@ -1,33 +1,34 @@
-mupic_config_file : include_stmt? stmts
+mupic_config_file : include_stmt? default_stmt* _stmts
 
-stmts : statement*
+_stmts : statement*
 
-?statement : default_stmt 
-    | output_stmt | cover_stmt
+?statement : output_stmt | cover_stmt
     | image_stmt  | text_stmt
 
 include_stmt : "include" ESCAPED_STRING
 
-default_stmt : "default" DEFLT_PROP ESCAPED_STRING
+default_stmt : "default" DEFLT_PROP STRING_VALUE
 DEFLT_PROP : "font" | "fill"
 
 output_stmt : "output" "{" output_setting+ "}"
+OUTPUT_FIT : "cover" | "contain"
 ?output_setting : path_option
     | size_2d_option
     | color_option
-    | "background" "=" ESCAPED_STRING -> background_option
+    | "background" "=" STRING_VALUE -> background_option
+    | "fit" "=" OUTPUT_FIT -> fit_option
     | margin_int_option
     | border_spec
 
 cover_stmt : "cover" "{" cover_setting+ "}"
 ?cover_setting : path_option
-    | "fit" "=" WORD -> fit_option // check the actual string in the Transformer
+    | "fit" "=" WORD -> fit_option
     | "crop" "=" WORD -> crop_option
     | "align" "=" WORD -> align_option
     | margin_int_option
     | border_spec
 
-image_stmt : "image" ESCAPED_STRING? "{" image_setting+ "}"
+image_stmt : "image" [ESCAPED_STRING] "{" image_setting+ "}"
 ?image_setting : path_option
     | size_2d_option
     | "mask" "=" WORD -> mask_option
@@ -37,19 +38,19 @@ image_stmt : "image" ESCAPED_STRING? "{" image_setting+ "}"
     | color_option
     | path_option
 
-text_stmt : "text" ESCAPED_STRING? "{" text_setting+ "}"
+text_stmt : "text" [ESCAPED_STRING] "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option
     | "size" "=" INTEGER -> size_int_option
     | position_option
-    | "rotation" "=" INTEGER -> rotation_option
-    | "fill" "=" ESCAPED_STRING -> fill_option // This is a color
-    | "font" "=" ESCAPED_STRING -> font_option
+    | "rotation" "=" INTEGER -> rotation_int_option
+    | "fill" "=" STRING_VALUE -> fill_option // This is a color
+    | "font" "=" STRING_VALUE -> font_option
     | stroke_spec
 
 border_spec : "border" "{" border_setting+ "}"
 // Changing this to directly use color_option rule
 // causes a reduce/reduce conflict with stroke_setting
-?border_setting : /color/ "=" ESCAPED_STRING -> color_option
+?border_setting : "color" "=" STRING_VALUE -> color_option
     | width_spec
 
 stroke_spec : "stroke" "{" stroke_setting+ "}"
@@ -61,18 +62,21 @@ width_spec : "width" "=" INTEGER
     | "width" "{" one_side+ "}"
 one_side : /[ltrb]/ "=" INTEGER
 
-path_option : "path" "=" ESCAPED_STRING
+path_option : "path" "=" STRING_VALUE
 margin_int_option : "margin" "=" INTEGER
 size_2d_option : "size" "=" SIZE
-position_option : "position" "=" ESCAPED_STRING
-color_option : "color" "=" ESCAPED_STRING
+position_option : "position" "=" STRING_VALUE
+color_option : "color" "=" STRING_VALUE
 
 SIZE : /\d+(x\d+)?/
 INTEGER : /[-+]?\d+/
-// BARE_STRING : /[^ \t,\n"']+/
+BARE_STRING : /[^ \t,\n"']+/
 %import common.ESCAPED_STRING
+%import common.WORD
+
+STRING_VALUE : ESCAPED_STRING | BARE_STRING
+
 %import common.SH_COMMENT
 %import common.WS
-%import common.WORD
 %ignore SH_COMMENT
 %ignore WS

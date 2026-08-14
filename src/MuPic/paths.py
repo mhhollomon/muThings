@@ -1,16 +1,14 @@
-import os
+from pathlib import Path
 
-CONFIG_DIR : str = ''
 
-def set_resolve_path(path : str) :
-    global CONFIG_DIR
-    CONFIG_DIR = path
+def resolve_path(path : str | Path, relpath : str | Path | None = None) -> Path:
+    path = Path(path)
 
-def resolve_path(path : str, relpath : str | None = None) -> str:
-    relpath_clean : str = relpath if relpath is not None else CONFIG_DIR
-    if os.path.isabs(path):
+    if path.is_absolute() :
         return path
-    elif path.startswith('./'):
-        return os.path.abspath(path)
-    else:
-        return os.path.abspath(os.path.join(relpath_clean, path))
+    elif str(path).startswith('./'):
+        return path.resolve()
+    elif relpath is None :
+        return path.resolve()
+    
+    return (Path(relpath) / path).resolve()

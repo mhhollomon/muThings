@@ -67,12 +67,15 @@ class position :
             raise ValueError(f"Invalid position string: {pos_str}")
 
     def __str__(self) -> str :
-        return f"'{self.pos_str}'"
+        return f'"{self.pos_str}"'
 
     def _parse_simple(self) :
-            w, h = self.pos_str.split('-')
-            w = w.strip()
-            h = h.strip()
+            p = self.pos_str.split('-')
+            if len(p) < 2 or len(p) > 3 :
+                raise ValueError(f"Invalid simple position string: {self.pos_str}")
+            w = p[0].strip()
+            h = p[1].strip()
+            offset = int(p[2].strip()) if len(p) == 3 else 10
             if w not in ('left', 'center', 'right') :
                 raise ValueError(f"Invalid width in position string: {self.pos_str}")
             
@@ -81,6 +84,7 @@ class position :
         
             self._width = POS_MAP[w]
             self._height = POS_MAP[h]
+            self.offset = offset
             self.ref = 'output'
             self._valid = True
             self.ptype = 'simple'

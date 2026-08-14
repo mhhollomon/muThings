@@ -135,26 +135,26 @@ class ImageElement :
             raise ValueError(f"Unknown ref_anchor: {pos.ref_anchor}")
 
         if side == 'l' :
-            w_ref = ref_bbox.start.x
-            l_ref = ref_bbox.start.y + int(ref_bbox.extent.height * anchor_factor)
+            w_ref = ref_bbox.origin.x
+            l_ref = ref_bbox.origin.y + int(ref_bbox.extent.height * anchor_factor)
             standoff = sizet(-offset, 0)
             ele_offset = sizet(-elem_size.width, -int(elem_size.height * anchor_factor))
 
         elif side == 'r' :
-            w_ref = ref_bbox.start.x + ref_bbox.extent.width
-            l_ref = ref_bbox.start.y + int(ref_bbox.extent.height * anchor_factor)
+            w_ref = ref_bbox.origin.x + ref_bbox.extent.width
+            l_ref = ref_bbox.origin.y + int(ref_bbox.extent.height * anchor_factor)
             standoff = sizet(offset, 0)
             ele_offset = sizet(0, -int(elem_size.height * anchor_factor))
 
         elif side == 't' :
-            w_ref = ref_bbox.start.x + int(ref_bbox.extent.width * anchor_factor)
-            l_ref = ref_bbox.start.y
+            w_ref = ref_bbox.origin.x + int(ref_bbox.extent.width * anchor_factor)
+            l_ref = ref_bbox.origin.y
             standoff = sizet(0, -offset)
             ele_offset = sizet(-int(elem_size.width * anchor_factor), -elem_size.height)
 
         elif side == 'b' :
-            w_ref = ref_bbox.start.x + int(ref_bbox.extent.width * anchor_factor)
-            l_ref = ref_bbox.start.y + ref_bbox.extent.height
+            w_ref = ref_bbox.origin.x + int(ref_bbox.extent.width * anchor_factor)
+            l_ref = ref_bbox.origin.y + ref_bbox.extent.height
             standoff = sizet(0, offset)
             ele_offset = sizet(-int(elem_size.width * anchor_factor), 0)
             
@@ -227,8 +227,8 @@ class ImageElement :
         logger.debug(f"Offsets = ({width_offset}, {height_offset})")
 
         # Match the references position
-        width_offset += ref_rect.start.x
-        height_offset += ref_rect.start.y
+        width_offset += ref_rect.origin.x
+        height_offset += ref_rect.origin.y
 
         logger.debug(f"Final offsets = ({width_offset}, {height_offset})")
 

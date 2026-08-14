@@ -6,7 +6,7 @@ from .element import *
 from .settings import *
 
 class MusicImage :
-    def __init__(self, config : ConfigOld) -> None:
+    def __init__(self, config : Settings) -> None:
         self.config = config
         self.elements : Dict[str, ImageElement] = {}
         
@@ -18,11 +18,10 @@ class MusicImage :
 
         self.img = output_img
 
-        ele = CoverElement('cover', self.config.cover, self)
-        ele.generate()
+        if self.config.cover is not None :
+            ele = CoverElement('cover', self.config.cover, self)
+            ele.generate()
         
-        ele = GraphicElement('logo', self.config.logo, self)
-        ele.generate()
 
         for i, block in enumerate(self.config.elements):
             name = block.name or f'block_{i}'

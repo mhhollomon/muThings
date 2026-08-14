@@ -1,8 +1,28 @@
-include "path"
+# NEW CONFIG
+# -------
+# Paths
+# --------
+# Any path (e.g. for include or images) is resolved as follows :
+# - If the path is absolute, it is used as is.
+# - If it starts with './' then it is resolved relative to the current directory.
+# - Otherwise, it is resolved realtive to the directory containing the
+#      the configuration file currently being read.
+# Examples :
+#    assume that '/a/b/file.mupic' is the current file
+#    assume that '/c/d' is the current working directory
+#  '/e/f/moo.pg'   ==> (rule 1) /e/f/moo.png
+#  './e/f/moo.png' ==> (rule 2) /c/d/e/f/moo.png
+#   'e/f/moo.pnh   => (rule 3) /a/b/e/f/moo.png
+#  '../e/f/moo.png' ==> (rule 3) /a/e/f/moo.png
+
+
+# Read another configuration file and use its data
+# as the base data. The information from the current
+# file will be merged into this.
+include "test/resource/ex-inc.mupic"
 
 default font "some-font-name"
-
-default fill "white"
+default fill "rosy_red"
 
 output {
     path = "path"
@@ -35,7 +55,7 @@ image "name" {
     position = "right-bottom"
 }
 
-text "name" {
+text "unique_name" {
     text = "My Text"
     size = 200
     position = "pixel(40%, 40%)"
@@ -51,6 +71,7 @@ text "name" {
 # Unnamed text element
 text {
     text = "Sneaky"
+    size = 100
 }
 
 # unnamed image element
