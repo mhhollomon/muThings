@@ -52,13 +52,13 @@ class TextElement(ImageElement) :
         else:
             max_text_width = output_size.width - (gutter * 2)
 
-        if (text_size.width > max_text_width):
-            # TODO : Need to retink this. What should max_text_width be?
-            # The text is too long, so we need to scale it down
-            new_size = self._settings.size * (max_text_width / text_size.width)
-            logger.debug(f"Scaling text size from {self._settings.size} to {new_size}")
-            title_font = ImageFont.truetype(self._settings.font, new_size)
-            text_size = _get_text_size(self._settings.text, title_font)
+        # if (text_size.width > max_text_width):
+        #     # TODO : Need to retink this. What should max_text_width be?
+        #     # The text is too long, so we need to scale it down
+        #     new_size = self._settings.size * (max_text_width / text_size.width)
+        #     logger.debug(f"Scaling text size from {self._settings.size} to {new_size}")
+        #     title_font = ImageFont.truetype(self._settings.font, new_size)
+        #     text_size = _get_text_size(self._settings.text, title_font)
 
         if self._settings.rotation in [90, -90]:
             final_text_size = sizet(text_size.height, text_size.width)
@@ -68,8 +68,7 @@ class TextElement(ImageElement) :
         position = self._settings.position
         offsets =  self.offsets_for_position(
             pos=position,
-            elem_size=final_text_size,
-            gutter=10
+            elem_size=final_text_size
             )
 
 
@@ -91,7 +90,7 @@ class TextElement(ImageElement) :
 
         if self._settings.rotation == 0 :
             draw = ImageDraw.Draw(self.parent.img)
-            draw_offsets = offsets
+            draw_offsets = offsets.to_tuple()
 
         else :
             text_image = Image.new("RGBA", text_size.to_tuple())
@@ -102,7 +101,9 @@ class TextElement(ImageElement) :
 
         if text_image is not None:
             text_image = text_image.rotate(-self._settings.rotation, expand=1, resample=Image.Resampling.BILINEAR)
-            self.parent.img.paste(text_image, offsets, mask=text_image)
+            self.parent.img.paste(text_image, offsets.to_tuple(), mask=text_image)
 
 
-        self.bbox = rect(point(*offsets), final_text_size)
+        self.bbox['content'] = rect(point(*offsets), final_text_size)
+        self.bbox['full'] = rect(point(*offsets), final_text_size)
+        self.generated = True

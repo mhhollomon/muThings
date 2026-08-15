@@ -1,3 +1,7 @@
+from PIL import Image
+
+
+
 def dictmerge(a: dict, b: dict) -> dict:
     """Merge b into a.
     'a' is modified in-place.
@@ -15,3 +19,8 @@ def dictmerge(a: dict, b: dict) -> dict:
         else:
             a[key] = b[key]
     return a
+
+#----------------------------------------------------------------------------
+
+def clamped_mask(input : Image.Image) -> Image.Image :
+    return input.convert('L').point(lambda x : 0 if x < 10 else 255) # type: ignore

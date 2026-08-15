@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
 from ..geometry import sizet, rect, point
 from ..position import position
+from ..settings import WidthSettings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,17 +12,15 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------
 
 class ImageElement :
-    generated = False
-    _bbox = rect(point(0,0), sizet(0,0))
 
     def __init__(self, name : str, parent : 'MusicImage', add_to_parent : bool = True) :
         self.name = name
         self.parent = parent
-        self._settings : Any = {}
+        self.bbox : dict[str, rect] = {}
+        self.generated = False
 
         if add_to_parent :
             parent._add_element(self)
-
 
     @property
     def name(self) :
@@ -36,200 +35,162 @@ class ImageElement :
         self._name = name
 
 
-    @property
-    def bbox(self) :
-        if not self.generated :
-            raise ValueError(f"ImageElement {self.name} has not been generated yet")
-        return self._bbox
+    def border_widths(self) -> WidthSettings | None :
+        raise NotImplementedError
 
-    @bbox.setter
-    def bbox(self, bbox : rect) :
-        if bbox is None :
-            raise ValueError("ImageElement bbox cannot be None")
-        if bbox.extent.width == 0 or bbox.extent.height == 0 :
-            raise ValueError("ImageElement bbox cannot be empty")
-        logger.debug(f"Setting bbox for {self.name} to {bbox}")
-        self._bbox = bbox
-        self.generated = True
+    def margin_widths(self) -> WidthSettings | None :
+        raise NotImplementedError
 
-    def get_bbox(self, **kwargs) :
+#-----------------------------------------------------------------------------
+
+    def set_bbox(self, sub : str, new_bbox : rect) -> None :
+    
+        if sub not in ('full', 'border', 'margin', 'content') :
+            raise ValueError(f"incorrect bbox subelement {sub} in {self.name}")
+
+        logger.debug(f"setting {self.name} {sub} bbox to {new_bbox}")
+        self.bbox[sub] = new_bbox
+
+#-----------------------------------------------------------------------------
+
+    def get_bbox(self, sub : str, piece : str | None = None) :
         """
         Returns the element's bbox. 
-        Basically here to allow overrides in subclasses.
         """
-        return self.bbox
+        logger.debug(f"getting {self.name} {sub} bbox (piece={piece})")
+        if not self.generated :
+            raise ValueError(f"Element {self.name} has not been generated yet")
+        if sub not in self.bbox :
+            raise ValueError(f"Element {self.name} has no bbox for sub {sub}")
 
+        cbox = self.bbox[sub]
+        
+        if piece is None :
+            logger.debug(f"returning {self.name} {sub} bbox {cbox}")
+            return cbox.copy()
 
-    def _pixel_offsets(self, pos : position, elem_size : sizet, gutter : int) -> Tuple[int, int] :
-
-        output_rect = self.parent.get_elem('output').bbox
-
-        if '%' in pos._width :
-            w_offset = int(pos._width[:-1]) * output_rect.extent.width // 100
+        if sub == 'border' :
+            widths = self.border_widths()
+        elif sub == 'margin' :
+            widths = self.margin_widths()
         else :
-            w_offset = int(pos._width)
+            raise ValueError(f"Invalid sub {sub}")
 
-        if '%' in pos._height :
-            h_offset = int(pos._height[:-1]) * output_rect.extent.height // 100
+        if widths is None :
+            raise ValueError(f"Element {self.name} has no {sub} widths")
+
+        if piece == 'left' :
+            if widths.l == 0 :
+                raise ValueError(f"Left {sub} is 0 for element {self.name}")
+            origin = cbox.origin.copy()
+            extent = sizet(widths.l, cbox.extent.height)
+        elif piece == 'right' :
+            if widths.r == 0 :
+                raise ValueError(f"Right {sub} is 0 for element {self.name}")
+            origin = point(cbox.origin.x + cbox.extent.width - widths.r, cbox.origin.y)
+            extent = sizet(widths.r, cbox.extent.height)
+        elif piece == 'top' :
+            if widths.t == 0 :
+                raise ValueError(f"Top {sub} is 0 for element {self.name}")
+            origin = cbox.origin
+            extent = sizet(cbox.extent.width, widths.t)
+        elif piece == 'bottom' :
+            if widths.b == 0 :
+                raise ValueError(f"Bottom {sub} is 0 for element {self.name}")
+            origin = point(cbox.origin.x, cbox.origin.y + cbox.extent.height - widths.b)
+            extent = sizet(cbox.extent.width, widths.b)
         else :
-            h_offset = int(pos._height)
+            raise ValueError(f"Invalid piece specifier {piece}")
 
-        # h_offset and w_offset are where our anchor should be.
-        # Now, convert the offsets to the top left of the element.
-        if pos.anchor[0] == 'max' :
-            w_offset -=  elem_size.width 
-        elif pos.anchor[0] == 'mid' :
-            w_offset -= elem_size.width // 2
-        elif pos.anchor[0] == 'min' :
-            pass
-        else :
-            raise ValueError(f"Unknown anchor: {pos.anchor[0]}")
+        return rect(origin, extent)
 
-        logger.debug(f"Anchor offset = {w_offset}, {h_offset}")
 
-        if pos.anchor[1] == 'max' :
-            h_offset -= elem_size.height
-        elif pos.anchor[1] == 'mid' :
-            h_offset -= elem_size.height // 2
-        elif pos.anchor[1] == 'min' :
-            pass
-        else :
-            raise ValueError(f"Unknown anchor: {pos.anchor[1]}")
 
-        logger.debug(f"element offset = {w_offset}, {h_offset}")
 
-        # Check to make sure the element is fully in the output rec (if possible).
-        if w_offset > output_rect.extent.width - elem_size.width - gutter:
-            w_offset = output_rect.extent.width - elem_size.width - gutter
+#-----------------------------------------------------------------------------
 
-        if w_offset < gutter:
-            w_offset = gutter
-
-        if h_offset > output_rect.extent.height - elem_size.height - gutter:
-            h_offset = output_rect.extent.height - elem_size.height - gutter
-
-        if h_offset < gutter:
-            h_offset = gutter
-
-        logger.debug(f"final offset: {w_offset}, {h_offset}")
-        return w_offset, h_offset
-
-    def _attach_offsets(self, pos : position, elem_size : sizet) -> Tuple[int, int]:
-        ref_bbox =  self.parent.get_elem(pos.ref).bbox
+    def _attach_offsets(self, pos : position, elem_size : sizet) -> point:
+        ref_elem = self.parent.get_elem(pos.target.element)
+        ref_bbox = ref_elem.get_bbox(sub=pos.target.sub, piece=pos.target.piece)
 
         logger.debug(f"attach : ref_bbox = {ref_bbox}")
         logger.debug(f"attach : elem_size = {elem_size}")
 
-        side = pos.side[0].lower()
-        logger.debug(f"attach : side = {side}")
-        offset = int(pos.offset)
-        logger.debug(f"attach : offset = {offset}")
+        return ref_bbox.origin
 
-        if pos.ref_anchor == 'min' :
-            anchor_factor = 0
-        elif pos.ref_anchor == 'mid' :
-            anchor_factor = 0.5
-        elif pos.ref_anchor == 'max' :
-            anchor_factor = 1
+
+#-----------------------------------------------------------------------------
+
+    def _overlay_offsets(self, pos : position, elem_size : sizet) -> point :
+        ref_elem = self.parent.get_elem(pos.target.element)
+        ref_bbox = ref_elem.get_bbox(sub=pos.target.sub, piece=pos.target.piece)
+
+        logger.debug(f"overlay offsets - ref_bbox = {ref_bbox}")
+
+        offset_pt = point(
+            int(ref_bbox.extent.width * (pos.pos.x / 100.0)),
+            int(ref_bbox.extent.height * (pos.pos.y / 100.0))
+        )
+
+        attach_point = ref_bbox.origin + offset_pt
+        logger.debug(f'overlay offsets - attach_point = {attach_point}')
+
+        anchor = pos.anchor.x
+        adjust_fact = 0 if anchor == 'min' else 0.5 if anchor == 'mid' else 1
+        adjust_x = int(elem_size.width * adjust_fact)
+
+        anchor = pos.anchor.y
+        adjust_fact = 0 if anchor == 'min' else 0.5 if anchor == 'mid' else 1
+        adjust_y = int(elem_size.height * adjust_fact)
+
+        adjustment = (adjust_x, adjust_y)
+        logger.debug(f'overlay offsets - adjustment = {adjustment}')
+
+        adjusted_pt = attach_point - adjustment
+        logger.debug(f'overlay offsets - adjusted_pt = {adjusted_pt}')
+       
+        anchor = pos.anchor.x
+        if anchor == 'min' :
+            tweak_x = pos.offset - (adjusted_pt.x - ref_bbox.origin.x)
+            tweak_x = 0 if tweak_x < 0 else tweak_x
+        elif anchor == 'max' :
+            tweak_x = -(pos.offset - (ref_bbox.end.x - (adjusted_pt.x + elem_size.width)))
+            tweak_x = 0 if tweak_x > 0 else tweak_x
         else :
-            raise ValueError(f"Unknown ref_anchor: {pos.ref_anchor}")
+            tweak_x = 0
 
-        if side == 'l' :
-            w_ref = ref_bbox.origin.x
-            l_ref = ref_bbox.origin.y + int(ref_bbox.extent.height * anchor_factor)
-            standoff = sizet(-offset, 0)
-            ele_offset = sizet(-elem_size.width, -int(elem_size.height * anchor_factor))
-
-        elif side == 'r' :
-            w_ref = ref_bbox.origin.x + ref_bbox.extent.width
-            l_ref = ref_bbox.origin.y + int(ref_bbox.extent.height * anchor_factor)
-            standoff = sizet(offset, 0)
-            ele_offset = sizet(0, -int(elem_size.height * anchor_factor))
-
-        elif side == 't' :
-            w_ref = ref_bbox.origin.x + int(ref_bbox.extent.width * anchor_factor)
-            l_ref = ref_bbox.origin.y
-            standoff = sizet(0, -offset)
-            ele_offset = sizet(-int(elem_size.width * anchor_factor), -elem_size.height)
-
-        elif side == 'b' :
-            w_ref = ref_bbox.origin.x + int(ref_bbox.extent.width * anchor_factor)
-            l_ref = ref_bbox.origin.y + ref_bbox.extent.height
-            standoff = sizet(0, offset)
-            ele_offset = sizet(-int(elem_size.width * anchor_factor), 0)
-            
+        anchor = pos.anchor.y
+        if anchor == 'min' :
+            tweak_y = pos.offset - (adjusted_pt.y - ref_bbox.origin.y)
+            tweak_y = 0 if tweak_y < 0 else tweak_y
+        elif anchor == 'max' :
+            tweak_y = -(pos.offset - (ref_bbox.end.y - (adjusted_pt.y + elem_size.height)))
+            tweak_y = 0 if tweak_y > 0 else tweak_y
         else :
-            raise ValueError(f"Invalid side: {side}")
+            tweak_y = 0
 
-        ref_point = point(w_ref, l_ref)
-        logger.debug(f"attach : ref_point = {ref_point.to_tuple()}")
-        logger.debug(f"attach : standoff = {standoff.to_tuple()}")
+        offset_tweak = (tweak_x, tweak_y)
+        logger.debug(f'overlay offsets - offset_tweak = {offset_tweak}')
 
-        final_point = ref_point + standoff + ele_offset
+        final_offset = adjusted_pt + offset_tweak
+        logger.debug(f'overlay offsets - final_offset = {final_offset}')
 
-        logger.debug(f"attach : point = {final_point.to_tuple()}")
+        return final_offset
 
-        return final_point.to_tuple()
-    
-    def offsets_for_position(self, pos : position, elem_size : sizet, 
-                             gutter : int) -> Tuple[int, int] :
-        if not pos.valid():
-            raise ValueError("Position is not valid")
+
+
+#-----------------------------------------------------------------------------
+
+    def offsets_for_position(self, pos : position, elem_size : sizet) -> point :
 
         logger.debug(f"""Position Inputs :
- position = {pos.pos_str}
+ position = {pos}
  elem_size = {elem_size.to_tuple()},
- gutter = {gutter}
  """
     )
         
-        if pos.ptype == 'pixel' :
-            return self._pixel_offsets(pos, elem_size, gutter)
-        elif pos.ptype == 'attach' :
+        if pos.ptype == 'attach' :
             return self._attach_offsets(pos, elem_size)
-
-        ref_elem = self.parent.get_elem(pos.ref)
-
-        if pos.ref == 'border' :
-            ref_rect = ref_elem.get_bbox(side=pos.side[0])
         else :
-            ref_rect = ref_elem.bbox
+            return self._overlay_offsets(pos, elem_size)
 
-        logger.debug(f"ref_rect = {ref_rect.to_tuple()}")
-        
-        # Calculate the offset
-        if pos.w == 'min':
-            width_offset = pos.offset
-        elif pos.w == 'mid':
-            width_offset = (ref_rect.extent.width - elem_size.width) // 2
-        elif pos.w == 'max':
-            width_offset = ref_rect.extent.width - elem_size.width - pos.offset
-
-        if width_offset > ref_rect.extent.width - elem_size.width - pos.offset:
-            width_offset = ref_rect.extent.width - elem_size.width - pos.offset
-
-        if width_offset < 1:
-            width_offset = 1
-
-        if pos.h == 'min':
-            height_offset = pos.offset
-        elif pos.h == 'mid':
-            height_offset = (ref_rect.extent.height - elem_size.height) // 2
-        elif pos.h == 'max':
-            height_offset = ref_rect.extent.height - elem_size.height - pos.offset
-
-        if height_offset > ref_rect.extent.height - elem_size.height - pos.offset:
-            height_offset = ref_rect.extent.height - elem_size.height - pos.offset
-
-        if height_offset < 1:
-            height_offset = 1
-
-        logger.debug(f"Offsets = ({width_offset}, {height_offset})")
-
-        # Match the references position
-        width_offset += ref_rect.origin.x
-        height_offset += ref_rect.origin.y
-
-        logger.debug(f"Final offsets = ({width_offset}, {height_offset})")
-
-        return (width_offset, height_offset)

@@ -4,34 +4,43 @@ start : simple_pos
 
 // --- SIMPLE
 simple_pos : LR_POS "-" TB_POS [ "-" INTEGER ]
-LR_POS : "left" | "right" | "center"
-TB_POS : "top" | "bottom" | "center"
+LR_POS : /left\b|center\b|right\b/i
+TB_POS : /top\b|bottom\b|center\b/i
 
 // --- ATTACH
-attach_pos : WS* "attach" WS* "(" WS* ref_value WS* pos_values [ WS* anchor_values] [WS* offset ] WS* ")" WS*
-ref_value : REF_STRING_VALUE ":" WORD [":" WORD]
-one_pos_value : "," WS* (PERCENT | MINMAX)
-pos_values : one_pos_value WS* one_pos_value
-anchor_values : "," WS* MINMAX WS* "," WS* MINMAX
-offset : "," WS* INTEGER
+attach_pos : "attach" "(" triple "," side "," pos_values ["," anchor_values] ["," offset] ")"
+
+pos_values : (MINMAX | PERCENT) "," (MINMAX | PERCENT)
+anchor_values : MINMAX "," MINMAX
+side : PIECE
+offset : INTEGER
+
+
 
 // --- OVERLAY
-overlay_pos : WS* "overlay" WS* "(" WS* ref_value WS* pos_values [ WS* anchor_values] [WS* offset ] WS* ")" WS*
+overlay_pos : "overlay" "(" triple "," pos_values ["," anchor_values] ["," offset] ")"
 
 // ---- COMMON STUFF
+
+// alteration needed because of the higher priority of SUB_ELEMENT.
+// If 'border' is given as the ELEMENT_NAME it will be parsed as
+// a SUB_ELEMENT.
+triple : (ELEMENT_NAME | SUB_ELEMENT) ["." SUB_ELEMENT] ["." PIECE]
 
 // Unsigned only
 INTEGER.10 : /\d+/
 
 PERCENT.10 : INTEGER "%"
+SUB_ELEMENT.10 : /full\b|margin\b|border\b|content\b/i
+PIECE.10 : /left\b|right\b|top\b|bottom\b/i
+ELEMENT_NAME : ESCAPED_STRING | REF_BARE_STRING
 
-REF_BARE_STRING : /[^)( \t,\n"':]+/
+REF_BARE_STRING : /[^)( \t,\n"':\.;]+/
 
-%import common.WORD
 %import common.ESCAPED_STRING
 
 MINMAX.10 : "min" | "mid" | "max"
 REF_STRING_VALUE : ESCAPED_STRING | REF_BARE_STRING
 
-// Note we are not going to ignore whitespace.
 %import common.WS
+%ignore WS

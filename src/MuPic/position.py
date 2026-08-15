@@ -1,185 +1,88 @@
 
-from typing import Tuple
+from dataclasses import dataclass
+from typing import NamedTuple
 
-import re
-from lark import Token, Transformer, v_args, visitors
+from lark import Token, Transformer, v_args
+
+from .parsers import get_parser
+
+#------------------------------------------------------------------------------
+@dataclass
+class PosTriple :
+    element : str
+    sub : str
+    piece : str | None
+
+    def to_tuple(self) :
+        return (self.element, self.sub, self.piece)
+
+    def __getitem__(self, key):
+        return self.to_tuple()[key]
+
+    def __eq__(self, other) :
+        if isinstance(other, PosTriple) :
+            return self.to_tuple() == other.to_tuple()
+        elif isinstance(other, tuple) :
+            return self.to_tuple() == other
+        else :
+            return False
+
+    def to_str(self) :
+        f = [x for x in self.to_tuple() if x is not None]
+        if any(x in f[0] for x in ';)(:, ') :
+            f[0] = f'"{f[0]}"'
+        triple = '.'.join(f)
+        return triple
+
+
+class AnchorSpec(NamedTuple) :
+    x : str
+    y : str
+
+    def to_string(self) :
+        return f"{self.x}, {self.y}"
+
+class PostnSpec(NamedTuple) :
+    x :  int
+    y :  int
+
+    def to_str(self) -> str:
+            
+        return f"{self.x}%, {self.y}%"
 
 #---------------------------------------------------------
 # POSITION
 #---------------------------------------------------------
-POS_MAP = {
-    'bottom' : 'max',
-    'center' : 'mid',
-    'top' : 'min',
-    'right' : 'max',
-    'left' : 'min'
-}
-# reference(width, height, [offset], [side]) -- side only for border.
-POS_PATTERN = re.compile(r'(\w+) \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\d+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
-
-# pixel (width, height, [w anchor], [h anchor])
-PIXEL_PATTERN = re.compile(r'pixel \s* \( \s* (\d+\%?) \s*,\s* (\d+\%?)  (?: \s*,\s* (\w+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
-
-# attach (ref, side, [offset], [anchor])
-ATTACH_PATTERN = re.compile(r'attach \s* \( \s* (\w+) \s*,\s* (\w+) (?: \s*,\s* (\d+))? (?: \s*,\s* (\w+))? \s* \)', re.RegexFlag.X)
-
-# ('style', ('ele', 'sub', 'side'), (x, y), (anc_x, anc_y), offset)
-# center-center-10 =>
-# ('overlay', ('output', 'content', None), ( 50%, 50%), ('mid', 'mid'), 10)
-# overlay(border:left, min, mid, 10) =>
-# ('overlay', ('cover', 'border', 'left'), ( 0%, 50%), ('min', 'mid'), 10)
-# attach("something fancy", 20%, mid, mid, mid, 15) =>
-# ('attach', ('something fancy', content, None), ( 20%, 50%), ('mid', 'mid'), 15)
 
 class position :
-    def __init__(self, pos_str : str ) -> None :
+    def __init__(self, pos_str : str) :
+
+        ret_tuple = self._parse_pos(pos_str)
         self.pos_str = pos_str
-        self.ptype = ''
 
-        # valid() method to query
-        self._valid = False
+        self.ptype : str = ret_tuple[0]
+        self.target = PosTriple(*ret_tuple[1])
+        self.side : str= ret_tuple[2]
+        self.pos = PostnSpec(*ret_tuple[3])
+        self.anchor = AnchorSpec(*ret_tuple[4])
+        self.offset : int = ret_tuple[5]
 
-        # relative (min, mid, max) used by simple
-        # use w and h porperties to query
-        self._width = ''
-        self._height = ''
-
-        # offset for the position (int) used by attach and function
-        self.offset = 0
-
-        # reference item - used by attach and function
-        self.ref = ''
-
-        # side of the reference item - used by attach and border
-        self.side = ''
-
-        # what part of the item to use when calculating position
-        self.anchor : Tuple[str, str] = ('min', 'min')
-
-        # used by attach. Which part of the ref element side to use
-        # when calculating position. Defaults to mid
-        self.ref_anchor : str = 'mid'
-
-        if self.pos_str is None :
-            return 
-        
-        self.pos_str = self.pos_str.strip().lower()
-
-        if self.pos_str == '' :
-            return
-
-        if '-' in self.pos_str :
-            self._parse_simple()
-        elif '(' in self.pos_str :
-            self._parse_function()
-        else :
-            raise ValueError(f"Invalid position string: {pos_str}")
+    def _parse_pos(self, pos_str : str) :
+        parser = get_parser('position')
+        tree = parser.parse(pos_str)
+        return positionXform().transform(tree)
 
     def __str__(self) -> str :
-        return f'"{self.pos_str}"'
+        # normalize
+        triple = self.target.to_str()
+        pos = self.pos.to_str()
+        anchor = self.anchor.to_string()
 
-    def _parse_simple(self) :
-            p = self.pos_str.split('-')
-            if len(p) < 2 or len(p) > 3 :
-                raise ValueError(f"Invalid simple position string: {self.pos_str}")
-            w = p[0].strip()
-            h = p[1].strip()
-            offset = int(p[2].strip()) if len(p) == 3 else 10
-            if w not in ('left', 'center', 'right') :
-                raise ValueError(f"Invalid width in position string: {self.pos_str}")
-            
-            if h not in ('top', 'center', 'bottom') :
-                raise ValueError(f"Invalid height in position string: {self.pos_str}")
-        
-            self._width = POS_MAP[w]
-            self._height = POS_MAP[h]
-            self.offset = offset
-            self.ref = 'output'
-            self._valid = True
-            self.ptype = 'simple'
+        side = '' if self.ptype == 'overlay' else f", {self.side}"
 
-    def _parse_attach(self) :
-        m = ATTACH_PATTERN.fullmatch(self.pos_str)
-        if not m :
-            raise ValueError(f"Invalid attach position string: {self.pos_str}")
+        return f"{self.ptype}({triple}{side}, {pos}, {anchor}, {self.offset})"
 
-        self.ref = m.groups()[0]
-        self.side = m.groups()[1]
-        self.ptype = 'attach'
-        self.offset = int(m.groups()[2] or 0)
-        self.ref_anchor = m.groups()[3] or 'mid'
-        self._valid = True
-
-    def _parse_function(self) :
-
-        if self.pos_str.startswith('pixel') :
-            self._parse_pixel()
-            return
-
-        if self.pos_str.startswith('attach') :
-            self._parse_attach()
-            return
-        
-        m = POS_PATTERN.fullmatch(self.pos_str)
-        if not m :
-            raise ValueError(f"Invalid function position string: {self.pos_str}")
-
-        ref, width, height, offset, side = m.groups()
-
-        if ref not in ('output', 'cover', 'border', 'full_output') :
-            raise ValueError(f"Invalid reference in position string: {self.pos_str}")
-
-        if width not in ('min', 'mid', 'max') :
-            raise ValueError(f"Invalid width in position string: {self.pos_str}")
-
-        if height not in ('min', 'mid', 'max') :
-            raise ValueError(f"Invalid height in position string: {self.pos_str}")
-        
-        if ref == 'border' :
-            if side not in ('left', 'right', 'top', 'bottom') :
-                raise ValueError(f"Invalid side in position string: {self.pos_str}")
-        elif side is not None :
-                raise ValueError(f"Cannot give side unless reference is border in position string: {self.pos_str}")
-
-        self._width = width
-        self._height = height
-        self.ref = ref
-        self.offset = int(offset or 0)
-        self._valid = True
-        self.side = side or ''
-        self.ptype = 'function'
-
-    def _parse_pixel(self) :
-        m = PIXEL_PATTERN.fullmatch(self.pos_str)
-        if not m :
-            return False
-
-        width, height = m.groups()[0:2]
-        if len(m.groups()) == 3 :
-            self.anchor = (m.groups()[2], 'mid')
-        elif len(m.groups()) == 4 :
-            self.anchor = (m.groups()[2] or 'min', m.groups()[3] or 'mid')
-
-        self._width = width
-        self._height = height
-        self.ref = 'output'
-
-        self._valid = True
-        self.ptype = 'pixel'
-        return True
-
-    def valid(self) -> bool:
-        return self._valid
-    
-    @property
-    def w(self) -> str :
-        return self._width
-
-    @property
-    def h(self) -> str :
-        return self._height
-    
-
+#---------------------------------------------------------
 
 class positionXform(Transformer) :
 
@@ -195,44 +98,50 @@ class positionXform(Transformer) :
     def INTEGER(self, s : Token) -> int:
         return int(s.value)
 
-    def WS(self, _) :
-        return visitors.Discard
-
-    @v_args(inline=True)
-    def STRING_VALUE(self, s : Token) -> str:
-        value = s.value
-        if value.startswith('"') :
-            value = value[1:-1]
-        return value
-
     @v_args(inline=True)
     def PERCENT(self, s : Token) -> int:
         return int(s.value[:-1])
 
     @v_args(inline=True)
-    def REF_STRING_VALUE(self, s : Token) -> str:
+    def ELEMENT_NAME(self, s : Token) -> str:
         value = s.value
         if value.startswith('"') :
             value = value[1:-1]
         return value
 
     @v_args(inline=True)
+    def SUB_ELEMENT(self, s : Token) -> str:
+        return s.value.lower()
+
+    @v_args(inline=True)
     def POS_VALUE(self, s : Token) -> str | int:
-        value = s.value
+        value = s.value.lower()
+
         if value.endswith('%') :
             value = int(value[:-1])
         return value
 
     @v_args(inline=True)
-    def WORD(self, s : Token) -> str:
-        return s.value
+    def MINMAX(self, s : Token) -> str:
+        return s.value.lower()
 
     @v_args(inline=True)
-    def MINMAX(self, s : Token) -> str:
-        return s.value
-    
+    def PIECE(self, s : Token) -> str:
+        return s.value.lower()
+
+    @v_args(inline=True)
+    def side(self, s : Token) -> str:
+        return s
+
+    @v_args(inline=True)
+    def triple(self, ele, sub, piece) :
+        return (ele, sub, piece)
+
     @v_args(inline=True)
     def simple_pos(self, w, h, offset):
+        w = w.lower()
+        h = h.lower()
+
         if offset is None :
             offset = 10
 
@@ -260,13 +169,52 @@ class positionXform(Transformer) :
         else :
             raise ValueError(f"Invalid height in position string: {h}")
 
-        return ('overlay', ('output', 'content', None), (w, h), (anchor_w, anchor_h), offset)
+        return ('overlay', 
+                PosTriple('output', 'content', None), None, (w, h), 
+                (anchor_w, anchor_h), offset)
 
-    @v_args(inline=True)
-    def attach_pos(self, ref, pos, anchor, offset) :
-        print(f"ref: {ref}, pos: {pos}, anchor: {anchor}, offset: {offset}")
+    def _target_to_str(self, t : tuple) :
+        f = [x for x in t if x is not None]
+        return '.'.join(f)
+
+    POS_MAP = {
+        'min' : 0,
+        'mid' : 50,
+        'max' : 100
+    }
+    def _fix_pos(self, style : str, sub_def : str, target : tuple, side : str | None,
+                 pos : tuple, anchor : tuple | None, offset : int | None) -> tuple:
+        print(f"{style} -- target: {target}, side: {side}, pos: {pos}, anchor: {anchor}, offset: {offset}")
+
+        # default for offset
         if offset is not None :
             offset = int(offset)
+        else :
+            offset = 0
+
+        pos_x = self.POS_MAP[pos[0]] if isinstance(pos[0], str) else pos[0]
+        pos_y = self.POS_MAP[pos[1]] if isinstance(pos[1], str) else pos[1]
+
+        pos = (pos_x, pos_y)
+
+        # Fix up target
+        # (border, none, piece) => (cover, border, piece)
+        if target[0:2] == ('border', None) :
+            target = ('cover', 'border', target[2])
+
+        # (element, None, None) => (element, `sub_def`, None)
+        elif target[1] is None :
+            if target[2] is not None :
+                raise ValueError(f"Invalid target: {self._target_to_str(target)}")
+            
+            target = (target[0], sub_def, None)
+
+        if target[1] in ('margin', 'border') and target[2] is None :
+            raise ValueError(f"Invalid target - must have piece for piecewise sub target: {self._target_to_str(target)}")
+
+        pt = PosTriple(*target)
+
+        # default for anchor
         if anchor is None :
             if isinstance(pos[0], int) :
                 anchor_x = 'max' if pos[0] > 70 else 'min' if pos[0] < 30 else 'mid'
@@ -279,50 +227,27 @@ class positionXform(Transformer) :
                 anchor_y = pos[1]
             anchor = (anchor_x, anchor_y)
 
-        return ('attach', ref, pos, anchor, offset)
 
-    def ref_value(self, children) -> tuple :
-        ref_ele = children[0]
-        sub_ele = None
-        side = None
-        if ref_ele == 'border' :
-            ref_ele = 'cover'
-            sub_ele = 'border'
-            if children[2] is not None:
-                raise ValueError(f"Invalid reference value: {children}")
-            if children[1] in ('left', 'right', 'top', 'bottom') :
-                side = children[1]
-        elif children[1] in ('left', 'right', 'top', 'bottom') :
-            side = children[1]
-            sub_ele = 'content'
-        elif len(children) != 3 :
-            raise ValueError(f"Invalid reference value: {children}")
-        else :
-            sub_ele = children[1]
-            side = children[2]
-            if side not in ('left', 'right', 'top', 'bottom') :
-                raise ValueError(f"Invalid side in reference value: {children}")
+        return (style, pt, side, pos, anchor, offset)
 
-
-        return (ref_ele, sub_ele, side)
 
     @v_args(inline=True)
-    def one_pos_value(self,  t : Token | str) :
-        if isinstance(t, Token) :
-            value = t.value
-        else :
-            value = t
-        if isinstance(value, str) :
-            if value not in ('min', 'mid', 'max') :
-                raise ValueError(f"Invalid position value in position string: {value}")
-        elif isinstance(value, int) :
-            if value > 100 :
-                raise ValueError(f"Invalid position value in position string: {value}%")
-        
-        return value
+    def attach_pos(self, target : tuple, side : str, pos : tuple, 
+                   anchor : tuple | None, offset : int | None) -> tuple :
+
+        return self._fix_pos('attach', 'full', target, side, pos, anchor, offset)
+
+    @v_args(inline=True)
+    def overlay_pos(self, target : tuple, pos : tuple, 
+                    anchor : tuple | None, offset : int | None) -> tuple :
+
+        return self._fix_pos('overlay', 'full', target, None, pos, anchor, offset)
+
+
 
     @v_args(inline=True)
     def pos_values(self, left, right) :
+        print(f"left: {left}, right: {right}")
         return (left, right)
 
     @v_args(inline=True)

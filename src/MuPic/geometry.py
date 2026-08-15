@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import re
 
 import logging
@@ -7,11 +7,9 @@ logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------
 class point :
-    x : int
-    y : int
-    _done : bool = False
 
     def __init__(self, x : int | float | str, y : int | float | str) :
+        super().__setattr__("_done" , False)
         self.x = int(x)
         self.y = int(y)
         self._done = True
@@ -21,6 +19,9 @@ class point :
 
     def __getitem__(self, key : int) :
         return self.to_tuple()[key]
+
+    def __len__(self) -> int :
+        return 2
 
     def set_x(self, x : int | float | str) -> 'point':
         return point(x, self.y)
@@ -35,7 +36,7 @@ class point :
     def copy(self) -> 'point' :
         return point(int(self.x), int(self.y))
 
-    def __add__(self, other) :
+    def __add__(self, other) -> 'point' :
         if isinstance(other, point) :
             return point(int(self.x + other.x), int(self.y + other.y))
         elif isinstance(other, tuple) :
@@ -43,11 +44,11 @@ class point :
         elif isinstance(other, (int, float)) :
             return point(int(self.x + other), int(self.y + other))
         elif isinstance(other, sizet) :
-            return self + other.to_tuple()
+            return point(int(self.x + other.width), int(self.y + other.height))
         else :
             raise TypeError(f"Unsupported type for addition with point: {type(other)}")
 
-    def __sub__(self, other) :
+    def __sub__(self, other) -> 'point' :
         if isinstance(other, point) :
             return point(int(self.x - other.x), int(self.y - other.y))
         elif isinstance(other, tuple) :
@@ -55,7 +56,7 @@ class point :
         elif isinstance(other, (int, float)) :
             return point(int(self.x - other), int(self.y - other))
         elif isinstance(other, sizet) :
-            return self - other.to_tuple()
+            return point(int(self.x - other.width), int(self.y - other.height))
         else :
             raise TypeError(f"Unsupported type for subtraction with point: {type(other)}")
 
@@ -75,11 +76,9 @@ class point :
 
 GEOMETRY_PATTERN = re.compile(r'(\d+)x(\d+)')
 class sizet :
-    width : int
-    height : int
-    _done : bool = False
 
     def __init__(self, width : int | float | str | Tuple[int | float, int | float], height : int | float | str | None = None) :
+        super().__setattr__("_done" , False)
         if height is None :
             if isinstance(width, tuple) :
                 width, height = width
@@ -184,6 +183,10 @@ class sizet :
 class rect :
     origin : point
     extent: sizet
+    _done : bool = field(init=False, default=False, repr=False)
+
+    def __post_init__(self) :
+        self._done = True
 
     def to_tuple(self) -> tuple :
         return (self.origin.to_tuple(), self.extent.to_tuple())
@@ -191,3 +194,13 @@ class rect :
     def copy(self) -> 'rect' :
         return rect(point(self.origin.x, self.origin.y), 
                     sizet(self.extent.width, self.extent.height)) 
+
+    @property
+    def end(self) -> point :
+        return self.origin + self.extent
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if not self._done :
+            super().__setattr__(name, value)
+        else :
+            raise TypeError("rect is immutable")

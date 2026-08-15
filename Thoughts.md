@@ -69,3 +69,6 @@ ELEMENT_NAME : ESCAPED_STRING | BARE_STRING
 ```
 
 
+output = (style, (__triple__), __side__, (__pos__), (__anchor__), __offset__)
+
+side will be None for `overlay`

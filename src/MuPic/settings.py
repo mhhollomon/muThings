@@ -256,7 +256,7 @@ class CoverSettings(PathSetting) :
 class ImageSettings(PathSetting) :
     __REQ_ARGS__ = ('name', 'size', 'position')
     name : str
-    size : int
+    size : sizet
     position : position
     mask : str = 'auto'
     # legal to have no path - just a background color.
@@ -290,9 +290,6 @@ class ImageSettings(PathSetting) :
             print(f"{new_prefix}margin = {self.margin}")
         print(f"{prefix}}}")
 
-
-    def validate(self) -> bool :
-        return self.size > 0
 
 # -------------------------------------------------------------------------
 

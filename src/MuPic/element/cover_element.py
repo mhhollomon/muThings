@@ -11,7 +11,7 @@ from ..settings import *
 from ..geometry import rect, point
 
 from .element import ImageElement
-from .border_element import BorderElement
+from .border_helper import BorderHelper
 
 import logging
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class CoverElement(ImageElement) :
 
         cfg : CoverSettings = self._settings
 
-        output_rect = self.parent.elements['output'].bbox
+        output_rect = self.parent.elements['output'].get_bbox('content')
         output_size = output_rect.extent
         output_origin = output_rect.origin
 
@@ -60,17 +60,22 @@ class CoverElement(ImageElement) :
             else:
                 raise Exception(f"Invalid cover alignment: {cfg.align}")
 
-        
-        border_size = full_cover_size - cfg.margin * 2
-        border_offset = full_cover_origin + point(cfg.margin, cfg.margin)
+        if cfg.margin > 0 :
+            self.set_bbox('margin', rect(full_cover_origin, full_cover_size))
+
+            border_size = full_cover_size - cfg.margin * 2
+            border_offset = full_cover_origin + point(cfg.margin, cfg.margin)
 
         if cfg.border is not None :
-            border_ele = BorderElement('border', cfg.border, self.parent)
-            border_img = border_ele.generate(rect(border_offset,border_size))
+            border_helper = BorderHelper(cfg.border)
+            border_img = border_helper.generate(rect(border_offset,border_size))
 
-            self.parent.img.paste(border_img, border_offset.to_tuple())
+            self.set_bbox('border', rect(border_offset, border_size))
+            self.set_bbox('content', border_helper.get_content_rect())
 
-            cover_rect = border_ele.get_cover_rect()
+            self.parent.img.paste(border_img, border_offset.to_tuple(), mask=border_img)
+
+            cover_rect = border_helper.get_content_rect()
             cover_size = cover_rect.extent
             logger.debug(f"calculated cover size = {cover_size.to_tuple()}")
             logger.debug(f"Calculated cover offsets = {cover_rect.origin.to_tuple()}")
@@ -108,3 +113,4 @@ class CoverElement(ImageElement) :
             cover_img = Image.new('RGB', cover_size.to_tuple(), cfg.color)
 
         self.parent.img.paste(cover_img, cover_rect.origin.to_tuple())
+        self.generated = True
