@@ -11,6 +11,7 @@ class _info(NamedTuple) :
 
 _PARSERS = {
     'config' : _info('config.lark', 'mupic_config_file'),
+    'position' : _info('position.lark', 'start'),
 }
 
 @lru_cache
