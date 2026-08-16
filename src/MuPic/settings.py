@@ -260,6 +260,7 @@ class ImageSettings(PathSetting) :
     position : position
     mask : str = 'auto'
     # legal to have no path - just a background color.
+    # but one needs to be set.
     path : str | None = None
     color : str | None = None
     border : BorderSettings | None = None
@@ -322,6 +323,8 @@ class TextSettings(SettingsBase) :
     font : str
     position : position
     fill : str
+    gap  : int = 0
+    color : str | None = None
     stroke : StrokeSettings | None = None
     rotation : int = 0
 
@@ -345,6 +348,10 @@ class TextSettings(SettingsBase) :
         print(f"{new_prefix}font = {self.font}")
         print(f"{new_prefix}position = {self.position}")
         print(f"{new_prefix}fill = {self.fill}")
+        if self.gap > 0 :
+            print(f"{new_prefix}gap = {self.gap}")
+        if self.color is not None :
+            print(f"{new_prefix}color = {self.color}")
         if self.stroke is not None :
             self.stroke.print(new_prefix)
         print(f"{new_prefix}rotation = {self.rotation}")

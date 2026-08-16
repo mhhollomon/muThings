@@ -42,10 +42,12 @@ text_stmt : "text" [ESCAPED_STRING] "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option
     | "size" "=" INTEGER -> size_int_option
     | position_option
+    | color_option
     | "rotation" "=" INTEGER -> rotation_int_option
     | "fill" "=" STRING_VALUE -> fill_option // This is a color
     | "font" "=" STRING_VALUE -> font_option
     | stroke_spec
+    | "gap" "=" INTEGER -> gap_int_option
 
 border_spec : "border" "{" border_setting+ "}"
 // Changing this to directly use color_option rule

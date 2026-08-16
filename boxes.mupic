@@ -1,0 +1,32 @@
+# ./mupic -c boxes.mupic
+
+output {
+    path = test-out/boxes.png
+    size = 1920x1080
+    color = white
+    border {
+        width = 10
+        color = darkblue
+    }
+}
+
+image "thin_box" {
+    size = 900x5
+    color = red
+    position = "overlay(output.content, 50%, 10%, mid, mid)"
+}
+
+# image "title_box" {
+#     size = 310x84
+#     color = red
+#     position = "overlay(output.content, 50%, 10%, mid, mid)"
+# }
+
+text "news" {
+    text = "NEWS"
+    size = 100
+    fill = white
+    color = red
+    gap = 20
+    position = "overlay(output.content, 50%, 10%, mid, mid)"
+}

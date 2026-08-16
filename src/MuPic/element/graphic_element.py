@@ -51,7 +51,7 @@ class GraphicElement(ImageElement):
 
         return gray_img
 
-    def _build_image(self) -> Tuple[Image.Image, Image.Image | None] | None :
+    def _build_image(self) -> Tuple[Image.Image, Image.Image | None] :
 
         file_path : str = self.settings.path or ''
 
@@ -75,28 +75,32 @@ class GraphicElement(ImageElement):
             return (img_img, gray_img)
         
     def generate(self) -> None :
-        if not self.settings.path_valid():
-            return
+
+        cfg = self.settings
+        logger.info(f"Adding {self.name} Element")
+
+        if cfg.path is not None:   
+            logger.debug(f"Loading image from {cfg.path}")
+            img_img, mask_img = self._build_image()
+        elif cfg.color is None :
+            raise ValueError(f"Both color and path are missing for {self.name}")
+        else :
+            img_img = Image.new("RGB", cfg.size.to_tuple(), color=cfg.color)
+            mask_img = None
         
-        logo_img = self._build_image()
-        if logo_img is None:
-            logger.info(f"Skipping image")
-            return
-        
-        logger.info(f"Adding {self.name} image")
-        logo_img, mask_img = logo_img
-        logo_width, logo_height = logo_img.size
         position = self.settings.position
+
+        img_size = sizet(*img_img.size)
 
         offsets =  self.offsets_for_position(
             pos=position,
-            elem_size=sizet(logo_width, logo_height)
+            elem_size=img_size
             )
 
         # Paste the logo
-        self.parent.img.paste(logo_img, offsets.to_tuple(), mask=mask_img)
-        self.set_bbox('content', rect(offsets, sizet(logo_width, logo_height)))
-        self.set_bbox('full', rect(offsets, sizet(logo_width, logo_height)))
+        self.parent.img.paste(img_img, offsets.to_tuple(), mask=mask_img)
+        self.set_bbox('content', rect(offsets, img_size))
+        self.set_bbox('full', rect(offsets, img_size))
 
         self.generated = True
 
