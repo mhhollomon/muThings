@@ -9,6 +9,30 @@
 # 3. image/text elements in the order they appear in the file
 
 # ---------------------------------
+# Layouts
+# ---------------------------------
+# Most items may have up to 3 areas that are a part
+# of their bounding box - margin, border, and content.
+# Unless otherwise noted, when a size is given to an element,
+# this size will include all three areas. In particular,
+# this means that the content will be placed into a smaller
+# area than the given size if either a margin or a border
+# is specified.
+#
+# For text elements, however, this is not true. See below for details.
+#
+# Areas from outside in :
+# 1. Margin - Defined by a width that is used for all 4 sides.
+#   The margin is transparent. Whatever is beneath will show through.
+# 2. Border - Each side of the border can be a different size including 0.
+#   The border will be painted the specified color.
+# 2.5 Gap - Text only transparent area between the content and the border.
+# 3. Content - The image or text.
+#
+# There are slightly different rules for different element types.
+# See below.
+
+# ---------------------------------
 # COLORS
 # ---------------------------------
 # You can use the following formats for colors:
@@ -28,51 +52,21 @@
 #    Height is one of 'top', 'center', 'bottom'
 #    Offset is the standoff from the edge of the output image.
 #    The default offset is 10.
+# 
+# Overlay :
+#   Designed to place elements on top of other elements. However, no clipping
+#   is done except at final image level.
 #
-# Function :
-#   The name of the function is the element that is used as a reference.
-#   The following functions are available:
-#     output(w, h, [offset])
-#     full_output(w, h, [offset])
-#     cover(w, h, [offset])
-#     border(w, h, [offset], side)
-#   both 'w' and 'h' are one of 'min', 'mid', or 'max'
-#   `offset` is an integer - the number of pixels to leave between
-#       the container and element.
-#   'side' is one of 'left', 'right', 'top', 'bottom'
-#
-#   'output(max, max)' is the equivalent of `right-bottom`
-#
-#  Pixel Function :
-#   The pixel() function is used to place an element at a specified location
-#   relative to the output in either exact pixels, or a percentage of the
-#   output size.
-#   The top left corner of the element is the anchor position that will be placed
-#   at the specified location.
-#   The functions will do its best to make sure the whole element is visible on the output.
-#   Also, the gutter will honored.
-#   pixel(x, y)
-#     Place the element 'x' pixels from the left edge and 'y' pixels from the top edge.
-#    pixel(x%, y%)
-#     Place the element x% of the way from the left edge and y% of the way from the top edge.
-#
-#   pixel can also take 4 paramters to set the anchor point in the element.
-#     pixel(x, y, anchor_x, anchor_y)
-#     pixel(x%, y%, anchor_x, anchor_y)
-#     The default is 'min' for both.
-#
-#   anchor_x is one of 'min', 'mid', or 'max'
-#   anchor_y is one of 'min', 'mid', or 'max'
+#   overlay(triple, relative_position, [anchor], [offset])
 #
 #  Attach Function :
 #   The attach() function is used to place an element relative to another element.
-#   The element will be placed using the `offset` parameter as a standoff
-#   from the edge of the reference.
-#   attach(ref, side, offset)
+#
+#   attach(triple, side, pos, [anchor], offset)
 #     ref is the element that is used as a reference.
 #     side is one of 'left', 'right', 'top', 'bottom'
 #     offset is the standoff from the reference element.
-#
+
 # ---------------------------------
 # Paths
 # ---------------------------------
@@ -89,26 +83,6 @@
 #   'e/f/moo.pnh   => (rule 3) /a/b/e/f/moo.png
 #  '../e/f/moo.png' ==> (rule 3) /a/e/f/moo.png
 #
-# ---------------------------------
-# Layouts
-# ---------------------------------
-# Most items may have up to 3 areas that are a part
-# of their bounding box - margin, border, and content.
-# Unless otherwise noted, when a size is given to an element,
-# this size will include all three areas. In particular,
-# this means that the content will be placed into a smaller
-# area than the given size if either a margin or a border
-# is specified.
-#
-# Areas from outside in :
-# 1. Margin - Defined by a width that is used for all 4 sides.
-#   The margin is transparent. Whatever is beneath will show through.
-# 2. Border - Each side of the border can be a different size.
-#   The border will be painted the specified color.
-# 3. Content - The image or text.
-#
-# There are slightly different rules for different element types.
-# See below.
 
 #---------------------------------
 # Include file
@@ -223,8 +197,8 @@ output {
 # A "cover" image that is prominent on the output.
 # This is different from an image element (see below) by
 # always being placed relative to the output content area and
-# the cropping controls.
-# This is draw after the output layer but before any image or text elements
+# the existance of cropping controls.
+# This is drawn after the output layer but before any image or text elements
 # regardless of the order in the file.
 # optional.
 
@@ -344,7 +318,15 @@ text "name" {
     #  90 - text reads top to bottom
     # 180 - text reads right to left (and upside down)
     # Optional. Defaults to 0
-    rotation : 0
+    rotation = 0
+
+    # Border
+    # Same as for cover or output
+    # optional. Defaults to no border.
+    border {
+        color = "rgb(0,0,0)"
+        width = 0
+    }
 
 }
 
@@ -367,6 +349,11 @@ text "name" {
 # to draw colored rectangles on the output.
 
 image "logo" {
+
+    # Note that while both path and color are optional,
+    # one must be given.
+    # If both are given, path takes precedence.
+
     # The path to the image.
     # The image can be any type supported by the `pillow` module.
     # This path is resolved using the rules in the `Paths` section above.
@@ -385,14 +372,10 @@ image "logo" {
     # required.
     size = 200x200
 
-    # margin
-    # optional. defaults to 0
-    margin = 5
-
     # position
     # See intro for details.
     # required.
-    position = attach(some_ele, mid, mid)
+    position = "attach(some_ele, mid, mid)"
 
     # Algorithm to compute a mask for the logo image.
     # "self" - uses the luminance channel of the image as-is. This means that
