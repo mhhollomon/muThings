@@ -1,4 +1,4 @@
-# ./mupic -c dieng-plateau.mupic
+# ./mupic -c tests/dieng-plateau.mupic
 
 output {
     path = test-out/dieng-plateau.png

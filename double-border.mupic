@@ -8,7 +8,6 @@ output {
     }
     color = darkblue
     fit = contain
-    #background = guitar.jpg
 }
 
 cover {
