@@ -346,9 +346,11 @@ class TextSettings(SettingsBase) :
     def print(self, prefix : str = '') :
         print(f"{prefix}text \"{self.name}\" {{")
         new_prefix = prefix + '  '
-        print(f"{new_prefix}text = {self.text}")
+        print(f"{new_prefix}text = \"{self.text}\"")
         print(f"{new_prefix}size = {self.size}")
         print(f"{new_prefix}font = {self.font}")
+        if self.border is not None :
+            self.border.print(new_prefix)
         print(f"{new_prefix}position = {self.position}")
         print(f"{new_prefix}fill = {self.fill}")
         if self.gap > 0 :

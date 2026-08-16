@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class BorderHelper:
-    def __init__(self, settings : BorderSettings, mode : str = 'substract') :
+    def __init__(self, settings : BorderSettings, mode : str = 'subtract') :
         self.settings = deepcopy(settings)
         self.mode = mode
 
@@ -27,21 +27,26 @@ class BorderHelper:
 
 
     def generate(self, size_rect : rect) -> Image.Image :
-        logger.debug(f"--- Generating border rect = {size_rect}")
+        logger.debug(f"--- Generating border rect = {size_rect} mode = {self.mode}")
 
         ws = self.settings.width
 
-        if self.mode == 'substract':
+        if self.mode == 'subtract':
             self.border_bbox = size_rect
             origin = self.border_bbox.origin + (ws.l, ws.t)
             extent = self.border_bbox.extent - (ws.l + ws.r, ws.t + ws.b)
             self.content_bbox = rect(origin, extent)
-        else :
-            ws = self.settings.width
-            self.content_bbox = size_rect
-            origin = size_rect.origin - (ws.l, ws.t)
+
+        elif self.mode == 'add':
+            origin = point(0, 0)
             extent = size_rect.extent + (ws.l + ws.r, ws.t + ws.b)
+
+            new_content_origin = size_rect.origin + (ws.l, ws.t)
+            self.content_bbox = rect(new_content_origin, size_rect.extent)
+
             self.border_bbox = rect(origin, extent)
+        else :
+            raise ValueError(f"Invalid BorderHelper mode {self.mode}")
 
         img = Image.new("RGB", self.border_bbox.extent.to_tuple(), color=self.settings.color)
         content_img = Image.new("L", self.content_bbox.extent.to_tuple(), color='black')

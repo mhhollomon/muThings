@@ -78,7 +78,7 @@ class GraphicElement(ImageElement):
     def generate(self) -> None :
 
         cfg = self.settings
-        logger.info(f"Adding {self.name} Element")
+        logger.info(f"---- Image -- Adding {self.name} image")
 
         offsets =  self.offsets_for_position(
             pos=cfg.position,
@@ -123,4 +123,5 @@ class GraphicElement(ImageElement):
         self.parent.img.paste(final_img, offsets.to_tuple(), mask=mask_img)
 
         self.generated = True
+        logger.debug(f"---- End {self.name} image")
 

@@ -6,6 +6,10 @@ from lark import Token, Transformer, v_args
 
 from .parsers import get_parser
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 #------------------------------------------------------------------------------
 @dataclass
 class PosTriple :
@@ -40,6 +44,8 @@ class AnchorSpec(NamedTuple) :
     y : str
 
     def to_string(self) :
+        if self.y is None :
+            return f"{self.x}"
         return f"{self.x}, {self.y}"
 
 class PostnValue(NamedTuple) :
@@ -59,11 +65,16 @@ class PostnValue(NamedTuple) :
             return int(base * self.value / 100)
 
 class PostnSpec(NamedTuple) :
-    x :  int
-    y :  int
+    x :  PostnValue
+    y :  PostnValue
 
     def to_str(self) -> str:
-        return f"{self.x}%, {self.y}%"
+        if self.y is None :
+            return f"{self.x.to_str()}"
+        return f"{self.x.to_str()}, {self.y.to_str()}"
+
+    def __str__(self) :
+        return self.to_str()
 
 #---------------------------------------------------------
 # POSITION
@@ -129,20 +140,28 @@ class positionXform(Transformer) :
         return s.value.lower()
 
     @v_args(inline=True)
-    def POS_VALUE(self, s : Token) -> str | int:
-        value = s.value.lower()
-
-        if value.endswith('%') :
-            value = int(value[:-1])
-        return value
-
-    @v_args(inline=True)
     def MINMAX(self, s : Token) -> str:
         return s.value.lower()
 
     @v_args(inline=True)
     def PIECE(self, s : Token) -> str:
         return s.value.lower()
+
+    @v_args(inline=True)
+    def POS_VALUE(self, s : Token) -> PostnValue:
+        value = s.value.lower()
+
+        if value.endswith('%') :
+            value = int(value[:-1])
+            mode = '%'
+        elif value.endswith('px') :
+            value = int(value[:-2])
+            mode = 'px'
+        else :
+            value = int(value)
+            mode = 'px'
+
+        return PostnValue(value, mode)
 
     @v_args(inline=True)
     def side(self, s : Token) -> str:
@@ -185,7 +204,8 @@ class positionXform(Transformer) :
             raise ValueError(f"Invalid height in position string: {h}")
 
         return ('overlay', 
-                PosTriple('output', 'content', None), None, (w, h), 
+                PosTriple('output', 'content', None), None, 
+                (PostnValue(w, '%'), PostnValue(h, '%')), 
                 (anchor_w, anchor_h), offset)
 
     def _target_to_str(self, t : tuple) :
@@ -199,7 +219,7 @@ class positionXform(Transformer) :
     }
     def _fix_pos(self, style : str, sub_def : str, target : tuple, side : str | None,
                  pos : tuple, anchor : tuple | None, offset : int | None) -> tuple:
-        print(f"{style} -- target: {target}, side: {side}, pos: {pos}, anchor: {anchor}, offset: {offset}")
+        logger.debug(f"{style} input -- target: {target}, side: {side}, pos: {pos}, anchor: {anchor}, offset: {offset}")
 
         # default for offset
         if offset is not None :
@@ -207,6 +227,7 @@ class positionXform(Transformer) :
         else :
             offset = 0
 
+        # Fix up pos
         pos_x = self.POS_MAP[pos[0]] if isinstance(pos[0], str) else pos[0]
         pos_y = self.POS_MAP[pos[1]] if isinstance(pos[1], str) else pos[1]
 
@@ -231,15 +252,22 @@ class positionXform(Transformer) :
 
         # default for anchor
         if anchor is None :
-            if isinstance(pos[0], int) :
-                anchor_x = 'max' if pos[0] > 70 else 'min' if pos[0] < 30 else 'mid'
-            else :
-                anchor_x = pos[0]
-
-            if isinstance(pos[1], int) :
-                anchor_y = 'max' if pos[1] > 70 else 'min' if pos[1] < 30 else 'mid'
+            if isinstance(pos[0], PostnValue) :
+                if pos[0].mode == 'px' :
+                    anchor_x = 'min'
+                else :
+                    anchor_x = 'max' if pos[0].value > 70 else 'min' if pos[0].value < 30 else 'mid'
             else :
                 anchor_y = pos[1]
+
+            if pos[1] is not None and isinstance(pos[1], PostnValue) :
+                if pos[1].mode == 'px' :
+                    anchor_y = 'min'
+                else :
+                    anchor_y = 'max' if pos[1].value > 70 else 'min' if pos[1].value < 30 else 'mid'
+            else :
+                anchor_y = pos[1]
+
             anchor = (anchor_x, anchor_y)
 
 
@@ -247,22 +275,36 @@ class positionXform(Transformer) :
 
 
     @v_args(inline=True)
-    def attach_pos(self, target : tuple, side : str, pos : tuple, 
-                   anchor : tuple | None, offset : int | None) -> tuple :
+    def attach_pos(self, target : tuple, side : str, pos : PostnValue, 
+                   anchor : tuple | str | None, offset : int | None) -> tuple :
 
-        return self._fix_pos('attach', 'full', target, side, pos, anchor, offset)
+        if isinstance(anchor, str) :
+            anchor = (anchor, None)
+
+        pos_spec = PostnSpec(pos, None)  # type: ignore
+
+        return self._fix_pos('attach', 'full', target, side, pos_spec, anchor, offset)
 
     @v_args(inline=True)
     def overlay_pos(self, target : tuple, pos : tuple, 
                     anchor : tuple | None, offset : int | None) -> tuple :
 
-        return self._fix_pos('overlay', 'full', target, None, pos, anchor, offset)
+        return self._fix_pos('overlay', 'content', target, None, pos, anchor, offset)
 
 
 
     @v_args(inline=True)
+    def one_pos_value(self, value) :
+        if isinstance(value, PostnValue) :
+            return value
+
+        value = value.lower()
+        value = self.POS_MAP[value]
+
+        return PostnValue(value, '%')
+        
+    @v_args(inline=True)
     def pos_values(self, left, right) :
-        print(f"left: {left}, right: {right}")
         return (left, right)
 
     @v_args(inline=True)

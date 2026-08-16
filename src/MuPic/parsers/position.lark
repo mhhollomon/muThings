@@ -8,17 +8,17 @@ LR_POS : /left\b|center\b|right\b/i
 TB_POS : /top\b|bottom\b|center\b/i
 
 // --- ATTACH
-attach_pos : "attach" "(" triple "," side "," pos_values ["," anchor_values] ["," offset] ")"
+attach_pos : "attach" "(" triple "," side "," one_pos_value ["," MINMAX] ["," offset] ")"
 
-pos_values : (MINMAX | PERCENT) "," (MINMAX | PERCENT)
 anchor_values : MINMAX "," MINMAX
 side : PIECE
 offset : INTEGER
 
-
+one_pos_value : MINMAX | POS_VALUE
 
 // --- OVERLAY
 overlay_pos : "overlay" "(" triple "," pos_values ["," anchor_values] ["," offset] ")"
+pos_values : one_pos_value "," one_pos_value
 
 // ---- COMMON STUFF
 
@@ -27,10 +27,11 @@ overlay_pos : "overlay" "(" triple "," pos_values ["," anchor_values] ["," offse
 // a SUB_ELEMENT.
 triple : (ELEMENT_NAME | SUB_ELEMENT) ["." SUB_ELEMENT] ["." PIECE]
 
-INTEGER.10 : /\d+/
-SIGNED_INT : /[+-]?\d+/
+INTEGER.5 : /\d+/
 
-PERCENT.10 : SIGNED_INT "%"
+// A possibly signed integer followed by a unit
+POS_VALUE.10 : /[+-]?\d+(%|px)?/
+
 SUB_ELEMENT.10 : /full\b|margin\b|border\b|content\b/i
 PIECE.10 : /left\b|right\b|top\b|bottom\b/i
 ELEMENT_NAME : ESCAPED_STRING | REF_BARE_STRING
@@ -39,7 +40,7 @@ REF_BARE_STRING : /[^)( \t,\n"':\.;]+/
 
 %import common.ESCAPED_STRING
 
-MINMAX.10 : "min" | "mid" | "max"
+MINMAX.10 : /min\b|mid\b|max\b/i
 REF_STRING_VALUE : ESCAPED_STRING | REF_BARE_STRING
 
 %import common.WS

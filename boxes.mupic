@@ -1,5 +1,7 @@
 # ./mupic -c boxes.mupic
 
+default fill black
+
 output {
     path = test-out/boxes.png
     size = 1920x1080
@@ -27,60 +29,110 @@ text "news" {
 
 text "one" {
     text = "• Unicode support"
-    fill = black
     size = 50
     position = "overlay(output.content, 10%, 15% )"
 }
 
 text "two" {
     text = "• Border for full image"
-    fill = black
     size = 50
-    position = "attach(one, bottom, min, min, min, min, 15)"
+    position = "attach(one, bottom, min, min, 15)"
 }
 
 text "three" {
     text = "• Borders for embedded images"
-    fill = black
     size = 50
-    position = "attach(two, bottom, min, min, min, min, 15)"
+    position = "attach(two, bottom, min, min, 15)"
 }
 
-text "four" {
+text "t4" {
     text = "• Color background for text"
-    fill = black
     size = 50
     color = "#88dd88"
     gap = 8
-    position = "attach(three, bottom, -1%, min, min, min, 15)"
+    position = "attach(three, bottom, -8px, min, 15)"
 }
 
 text "t5" {
     text = "• Border for text"
-    fill = black
     size = 50
     gap = 8
     border  {
         width = 5
         color = "#88dd88"
     }
-    position = "attach(four, bottom, 0%, min, min, min, 15)"
+    position = "attach(t4, bottom, -2, min, 15)"
 }
 
 text "t6" {
-    text = "• Images can just be a color (see line above)"
-    fill = black
+    text = "• Images can just be a color (see line in header)"
     size = 50
-    position = "attach(t5, bottom, +1%, min, min, min, 15)"
+    position = "attach(t5, bottom, +10px, min, 15)"
 }
+
+text "t7" {
+    text = "• Negative relative positioning"
+    size = 50
+    position = "attach(t6, bottom, 0, min, 15)"
+}
+
+text "t8" {
+    text = "• Used to align decorated text above"
+    font = "/mnt/c/Windows/fonts/arialbi.ttf"
+    size = 30
+    position = "attach(t7, bottom, 50px, min, 15)"
+}
+
+text "t9" {
+    text = "• Pixel and percentage relative positioning"
+    size = 50
+    position = "attach(t8, bottom, -50px, min, 30)"
+}
+
 
 image "bordered" {
     path = "/mnt/c/Users/mhhol/Desktop/More Stuff/viking-treble-clef-no-fill.png"
     size = 300x300
-    color = yellow
     border {
         width = 11
         color = darkblue
     }
-    position = "overlay(output.content, max, max, max, max, 20)"
+    position = "overlay(output, max, max, 20)"
+}
+
+text "borderhost" {
+    text = "Add elements to borders"
+    gap = 5
+    border {
+        width = 60
+        color = yellow
+    }
+    size = 70
+    position = "overlay(output, min, max, 20)"
+}
+
+text "topborder" {
+    text = "♥ Top border"
+    size = 30
+    position = "overlay(borderhost.border.top, mid, mid)"
+}
+
+text "bottomborder" {
+    text = "♥ Bottom border"
+    size = 30
+    position = "overlay(borderhost.border.bottom, mid, mid)"
+}
+
+text "leftborder" {
+    text = "♥ left"
+    size = 30
+    rotation = -90
+    position = "overlay(borderhost.border.left, mid, mid)"
+}
+
+text "rightborder" {
+    text = "♥ right"
+    size = 30
+    rotation = 90
+    position = "overlay(borderhost.border.right, mid, mid)"
 }

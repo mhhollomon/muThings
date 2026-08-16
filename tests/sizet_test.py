@@ -60,3 +60,6 @@ def test_sizet() :
 
     s = sizet(3,4) - 5
     assert s == (-2,-1)
+
+    s = sizet(3, 4) + sizet(5, 6)
+    assert s == (8, 10)

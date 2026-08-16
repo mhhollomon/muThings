@@ -127,14 +127,17 @@ class ImageElement :
         logger.debug(f"attach : ref_bbox = {ref_bbox}")
         logger.debug(f"attach : elem_size = {elem_size}")
 
-        adjust_factor = pos.pos.x
+        # attach only has one pos factor. The constructor makes sure it is the x.
+        rel_pos = pos.pos.x
+        # attach only has one anchor. The constructor makes sure it is the x.
         anchor = pos.anchor.x
+
         anchor_fact = 0 if anchor == 'min' else 0.5 if anchor == 'mid' else 1
         min_diff = pos.offset
         logger.debug(f"attach : min_diff = {min_diff}")
 
         if pos.side == 'top' : 
-            x_adjust = int(elem_size.width * (adjust_factor / 100.0))
+            x_adjust = rel_pos.calc(elem_size.width)
             attach_point = ref_bbox.origin + (x_adjust, 0)
             anchor_x_adjust = -int(elem_size.width * (anchor_fact / 100.0))
             anchor_y_adjust = -elem_size.height
@@ -151,7 +154,7 @@ class ImageElement :
             final_offsets = offsets
 
         elif pos.side == 'bottom' :
-            x_adjust = int(elem_size.width * (adjust_factor / 100.0))
+            x_adjust = rel_pos.calc(elem_size.width)
             attach_point = ref_bbox.origin + (x_adjust, ref_bbox.extent.height)
             logger.debug(f"attach offsets : attach_point = {attach_point}")
 
@@ -169,14 +172,14 @@ class ImageElement :
                 final_offsets = offsets
 
         elif pos.side == 'left' :
-            y_adjust = int(elem_size.height * (adjust_factor / 100.0))
+            y_adjust = rel_pos.calc(elem_size.height)
             attach_point = ref_bbox.origin + (0, y_adjust)
             anchor_x_adjust = -elem_size.width
             anchor_y_adjust = -int(elem_size.height * (anchor_fact / 100.0))
             offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
 
         elif pos.side == 'right' :
-            y_adjust = int(elem_size.height * (adjust_factor / 100.0))
+            y_adjust = rel_pos.calc(elem_size.height)
             attach_point = ref_bbox.origin + (ref_bbox.extent.width, y_adjust)
             anchor_x_adjust = 0
             anchor_y_adjust = -int(elem_size.height * (anchor_fact / 100.0))
@@ -198,8 +201,8 @@ class ImageElement :
         logger.debug(f"overlay offsets - ref_bbox = {ref_bbox}")
 
         offset_pt = point(
-            int(ref_bbox.extent.width * (pos.pos.x / 100.0)),
-            int(ref_bbox.extent.height * (pos.pos.y / 100.0))
+            pos.pos.x.calc(ref_bbox.extent.width),
+            pos.pos.y.calc(ref_bbox.extent.height)
         )
 
         attach_point = ref_bbox.origin + offset_pt
@@ -213,10 +216,10 @@ class ImageElement :
         adjust_fact = 0 if anchor == 'min' else 0.5 if anchor == 'mid' else 1
         adjust_y = int(elem_size.height * adjust_fact)
 
-        adjustment = (adjust_x, adjust_y)
-        logger.debug(f'overlay offsets - adjustment = {adjustment}')
+        anchor_adjust = (adjust_x, adjust_y)
+        logger.debug(f'overlay offsets - anchor_adjust = {anchor_adjust}')
 
-        adjusted_pt = attach_point - adjustment
+        adjusted_pt = attach_point - anchor_adjust
         logger.debug(f'overlay offsets - adjusted_pt = {adjusted_pt}')
        
         anchor = pos.anchor.x
@@ -246,8 +249,6 @@ class ImageElement :
         logger.debug(f'overlay offsets - final_offset = {final_offset}')
 
         return final_offset
-
-
 
 #-----------------------------------------------------------------------------
 

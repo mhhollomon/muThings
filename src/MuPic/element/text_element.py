@@ -21,9 +21,12 @@ logger = logging.getLogger(__name__)
 
 def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> sizet:
     # Using ImageFont.getbbox is not good enough for multiline text
-    img = Image.new("L", (1, 1))
-    draw = ImageDraw.Draw(img)
-    box = draw.multiline_textbbox((0,0), text=text, font=font)
+    if "\n" in text :
+        img = Image.new("L", (1, 1))
+        draw = ImageDraw.Draw(img)
+        box = draw.multiline_textbbox((0,0), text=text, font=font)
+    else :
+        box = font.getbbox(text)
     size = sizet(int(box[2]-box[0]), int(box[3]-box[1]))
     return size
 
@@ -63,13 +66,14 @@ class TextElement(ImageElement) :
 
         offsets =  self.offsets_for_position(
             pos=cfg.position,
-            elem_size=final_text_size
+            elem_size=full_rec.extent
             )
         
         content_rec = content_rec.add_offsets(offsets)
         logger.debug(f"Text -- content_rec after offsets = {content_rec}")
         self.set_bbox('content', content_rec)
         full_rec = full_rec.add_offsets(offsets)
+        logger.debug(f"Text -- full_rec after offsets = {full_rec}")
         self.set_bbox('full', full_rec)
         # If we add margin, this will need to change. But good for now.
         self.set_bbox('border', full_rec)
@@ -84,7 +88,6 @@ class TextElement(ImageElement) :
             anchor_params = {}
         else :
             anchor_params = { 'anchor' : 'lt' }
-            #anchor_params = {}
 
 
         logger.debug(f"Text Position: {offsets}")
@@ -116,4 +119,4 @@ class TextElement(ImageElement) :
         self.bbox['full'] = rect(point(*offsets), final_text_size)
         self.generated = True
 
-        logger.info(f"---- End {self.name} text")
+        logger.debug(f"---- End {self.name} text")

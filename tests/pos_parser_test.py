@@ -16,13 +16,13 @@ def _parse_text(text : str)  :
 def test_simple_parser() :
 
     output = _parse_text('CENTER-center-20')
-    assert output == ('overlay', ('output', 'content', None), None, (50, 50), ('mid', 'mid'), 20)
+    assert output == ('overlay', ('output', 'content', None), None, ((50, '%'), (50, '%')), ('mid', 'mid'), 20)
 
     output = _parse_text('left-ToP')
-    assert output == ('overlay', ('output', 'content', None), None, (0, 0), ('min', 'min'), 10)
+    assert output == ('overlay', ('output', 'content', None), None, ((0, '%'), (0, '%')), ('min', 'min'), 10)
 
     output = _parse_text('right-bottom')
-    assert output == ('overlay', ('output', 'content', None), None, (100, 100), ('max', 'max'), 10)
+    assert output == ('overlay', ('output', 'content', None), None, ((100, '%'), (100, '%')), ('max', 'max'), 10)
 
     # Errors
 
@@ -48,52 +48,70 @@ def test_simple_parser() :
 
 def test_attach_parser() :
 
-    output = _parse_text("attach (output.border.left, left, mid, 20%)")
-    assert output == ('attach', ('output','border','left'), 'left', (50, 20), ('mid', 'min'), 0)
+    # Percent position value, anchor, no offset
+    output = _parse_text("attach (output.border.left, left, 20%, mid)")
+    assert output == ('attach', ('output','border','left'), 'left', ((20, '%'), None), ('mid', None), 0)
 
-    output = _parse_text("attach (output.border.left, left, max, -20%)")
-    assert output == ('attach', ('output','border','left'), 'left', (100, -20), ('max', 'min'), 0)
+    # Negative Percent position value, anchor,  no offset
+    output = _parse_text("attach (output.border.left, left, -20%, max)")
+    assert output == ('attach', ('output','border','left'), 'left', ((-20, '%'), None), ('max', None), 0)
 
-    output = _parse_text("attach (output.border.left, right, mid, 20%, mid, min)")
-    assert output == ('attach', ('output','border','left'), 'right', (50, 20), ('mid', 'min'), 0)
+    # pixel position value, no anchor, no offset
+    output = _parse_text("attach (output.border.left, right, 200px)")
+    assert output == ('attach', ('output','border','left'), 'right', ((200, 'px'), None), ('min', None), 0)
 
-    output = _parse_text("attach (output.border.left, TOP, mid, 20%, mid, min, 30)")
-    assert output == ('attach', ('output','border','left'), 'top',(50, 20), ('mid', 'min'), 30)
+    # negative pixel position value, no anchor, no offset
+    output = _parse_text("attach (output.border.left, right, -200px)")
+    assert output == ('attach', ('output','border','left'), 'right', ((-200, 'px'), None), ('min', None), 0)
 
-    output = _parse_text("attach (output.content, BoTTom, mid, 80%, 30)")
-    assert output == ('attach', ('output','content', None), 'bottom', (50, 80), ('mid', 'max'), 30)
+    # minmax position value, anchor, offset
+    output = _parse_text("attach (output.border.left, TOP, mid, max, 30)")
+    assert output == ('attach', ('output','border','left'), 'top', ((50, '%'), None), ('max', None), 30)
 
-    output = _parse_text("attach (border.left, left, max, 60%)")
-    assert output == ('attach', ('cover','border','left'), 'left', (100, 60), ('max', 'mid'), 0)
+    # minmax position value, no anchor, offset
+    output = _parse_text("attach (output.content, BoTTom, min, 50)")
+    assert output == ('attach', ('output','content', None), 'bottom', ((0, '%'), None), ('min', None), 50)
 
+    # minmax position value, no anchor, no offset, shortcut triple
+    output = _parse_text("attach (border.left, left, MIN )")
+    assert output == ('attach', ('cover','border','left'), 'left', ((0, '%'), None), ('min', None), 0)
 
-    output = _parse_text(" attach ( \"border\".left , top, min , 60% )  ")
-    assert output == ('attach', ('cover','border','left'), 'top', (0, 60), ('min', 'mid'), 0)
+    # quoted element name
+    output = _parse_text(" attach ( \"border\".left , top, min)  ")
+    assert output == ('attach', ('cover','border','left'), 'top', ((0, '%'), None), ('min', None), 0)
 
-    output = _parse_text(" attach ( \"groovy ref : thing\".content , BOTTOM, mid , 60% )  ")
-    assert output == ('attach', ('groovy ref : thing','content', None), 'bottom', (50, 60), ('mid', 'mid'), 0)
+    # quoted element name with spaces and other things
+    output = _parse_text(" attach ( \"groovy ref : thing\".content , BOTTOM, min )  ")
+    assert output == ('attach', ('groovy ref : thing','content', None), 'bottom', ((0, '%'), None), ('min', None), 0)
 
+    # Wrong shortcut
     with pytest.raises(exceptions.VisitError) :
-        output = _parse_text(" attach ( cover.left , RIGHT ,mid , 60% )  ")
+        output = _parse_text(" attach ( cover.left , RIGHT ,mid )  ")
+
+    # badly formed triple
+    with pytest.raises(exceptions.UnexpectedCharacters) :
+        output = _parse_text("attach (output : border.left, min)")
 
     with pytest.raises(exceptions.UnexpectedCharacters) :
-        output = _parse_text("attach (output : border.left, min, 80%, 30)")
-
-    with pytest.raises(exceptions.UnexpectedCharacters) :
-        output = _parse_text("attach (output.border.:left, min, 80%, 30)")
+        output = _parse_text("attach (output.border.:left, min)")
 
     with pytest.raises(exceptions.UnexpectedToken) :
-        output = _parse_text("attach (output.border.left., min, 80%, 30)")
+        output = _parse_text("attach (output.border.left., min,)")
 
+    # Bad position
     with pytest.raises(exceptions.UnexpectedToken) :
-        output = _parse_text("attach (output.border.left, bad, 80%, 30)")
+        output = _parse_text("attach (output.border.left, bad)")
+
+    # Bad position
+    with pytest.raises(exceptions.UnexpectedToken) :
+        output = _parse_text("attach (output.border.left, 900pt)")
 
 def test_overlay_parser() :
     output = _parse_text("overlay (output.border.left,  mid, 20%)")
-    assert output == ('overlay', ('output','border','left'), None, (50, 20), ('mid', 'min'), 0)
+    assert output == ('overlay', ('output','border','left'), None, ((50, '%'), (20, '%')), ('mid', 'min'), 0)
 
     output = _parse_text("overlay (funky.full,  mid, 20%, min, max)")
-    assert output == ('overlay', ('funky','full', None), None, (50, 20), ('min', 'max'), 0)
+    assert output == ('overlay', ('funky','full', None), None, ((50, '%'), (20, '%')), ('min', 'max'), 0)
 
     with pytest.raises(exceptions.VisitError) :
         output = _parse_text("overlay (funky.margin,  mid, 20%, min, max)")
@@ -110,5 +128,5 @@ def test_position() :
     p = position("overlay (\"funny element name\".full,  mid, 20%, min, max, 40)")
     assert str(p) == 'overlay("funny element name".full, 50%, 20%, min, max, 40)'
 
-    p = position("attach (\"funny element name\".full, left,  mid, 20%, min, max, 40)")
-    assert str(p) == 'attach("funny element name".full, left, 50%, 20%, min, max, 40)'
+    p = position("attach (\"funny element name\".full, left,  mid, max, 40)")
+    assert str(p) == 'attach("funny element name".full, left, 50%, max, 40)'
