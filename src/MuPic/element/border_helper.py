@@ -19,17 +19,32 @@ logger = logging.getLogger(__name__)
 
 
 class BorderHelper:
-    def __init__(self, settings : BorderSettings) :
+    def __init__(self, settings : BorderSettings, mode : str = 'substract') :
         self.settings = deepcopy(settings)
+        self.mode = mode
+
+        self.border_bbox = None
 
 
     def generate(self, size_rect : rect) -> Image.Image :
-        logger.debug(f"--- Generating border rect = {size_rect.to_tuple()}")
-        self.border_bbox = size_rect
-        self.content_bbox = self.get_content_rect()
-        img = Image.new("RGB", size_rect.extent.to_tuple(), color=self.settings.color)
-        content_img = Image.new("L", self.content_bbox.extent.to_tuple(), color='black')
+        logger.debug(f"--- Generating border rect = {size_rect}")
+
         ws = self.settings.width
+
+        if self.mode == 'substract':
+            self.border_bbox = size_rect
+            origin = self.border_bbox.origin + (ws.l, ws.t)
+            extent = self.border_bbox.extent - (ws.l + ws.r, ws.t + ws.b)
+            self.content_bbox = rect(origin, extent)
+        else :
+            ws = self.settings.width
+            self.content_bbox = size_rect
+            origin = size_rect.origin - (ws.l, ws.t)
+            extent = size_rect.extent + (ws.l + ws.r, ws.t + ws.b)
+            self.border_bbox = rect(origin, extent)
+
+        img = Image.new("RGB", self.border_bbox.extent.to_tuple(), color=self.settings.color)
+        content_img = Image.new("L", self.content_bbox.extent.to_tuple(), color='black')
         origin_on_border = point(ws.l, ws.t)
         img.paste(content_img, origin_on_border.to_tuple())
 
@@ -40,11 +55,12 @@ class BorderHelper:
         return img
 
     def get_content_rect(self) -> rect :
-        ws = self.settings.width
-        logger.debug(f"BorderHelper -- ws = {ws}")
-        origin = self.border_bbox.origin + (ws.l, ws.t)
-        logger.debug(f"BorderHelper -- content origin = {origin}")
-        extent = self.border_bbox.extent - (ws.l + ws.r, ws.t + ws.b)
-        logger.debug(f"BorderHelper -- content extent = {extent}")
-
-        return rect(origin, extent)       
+        if self.border_bbox is None:
+            raise ValueError("BorderHelper -- get_content_rect called before generate")
+        return self.content_bbox
+    
+    def get_border_rect(self) -> rect :
+        if self.border_bbox is None:
+            raise ValueError("BorderHelper -- get_content_rect called before generate")
+        return self.border_bbox
+        

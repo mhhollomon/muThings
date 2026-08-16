@@ -16,12 +16,6 @@ image "thin_box" {
     position = "overlay(output.content, 50%, 10%, mid, mid)"
 }
 
-# image "title_box" {
-#     size = 310x84
-#     color = red
-#     position = "overlay(output.content, 50%, 10%, mid, mid)"
-# }
-
 text "news" {
     text = "NEWS"
     size = 100
@@ -29,4 +23,64 @@ text "news" {
     color = red
     gap = 20
     position = "overlay(output.content, 50%, 10%, mid, mid)"
+}
+
+text "one" {
+    text = "• Unicode support"
+    fill = black
+    size = 50
+    position = "overlay(output.content, 10%, 15% )"
+}
+
+text "two" {
+    text = "• Border for full image"
+    fill = black
+    size = 50
+    position = "attach(one, bottom, min, min, min, min, 15)"
+}
+
+text "three" {
+    text = "• Borders for embedded images"
+    fill = black
+    size = 50
+    position = "attach(two, bottom, min, min, min, min, 15)"
+}
+
+text "four" {
+    text = "• Color background for text"
+    fill = black
+    size = 50
+    color = "#88dd88"
+    gap = 8
+    position = "attach(three, bottom, -1%, min, min, min, 15)"
+}
+
+text "t5" {
+    text = "• Border for text"
+    fill = black
+    size = 50
+    gap = 8
+    border  {
+        width = 5
+        color = "#88dd88"
+    }
+    position = "attach(four, bottom, 0%, min, min, min, 15)"
+}
+
+text "t6" {
+    text = "• Images can just be a color (see line above)"
+    fill = black
+    size = 50
+    position = "attach(t5, bottom, +1%, min, min, min, 15)"
+}
+
+image "bordered" {
+    path = "/mnt/c/Users/mhhol/Desktop/More Stuff/viking-treble-clef-no-fill.png"
+    size = 300x300
+    color = yellow
+    border {
+        width = 11
+        color = darkblue
+    }
+    position = "overlay(output.content, max, max, max, max, 20)"
 }

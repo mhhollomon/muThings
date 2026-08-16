@@ -42,12 +42,27 @@ class AnchorSpec(NamedTuple) :
     def to_string(self) :
         return f"{self.x}, {self.y}"
 
+class PostnValue(NamedTuple) :
+    value : int
+    mode : str
+
+    def to_str(self) -> str :
+        if self.mode == 'px' :
+            return f"{self.value}px"
+        else :
+            return f"{self.value}%"
+
+    def calc(self, base : int) -> int :
+        if self.mode == 'px' :
+            return self.value
+        else :
+            return int(base * self.value / 100)
+
 class PostnSpec(NamedTuple) :
     x :  int
     y :  int
 
     def to_str(self) -> str:
-            
         return f"{self.x}%, {self.y}%"
 
 #---------------------------------------------------------

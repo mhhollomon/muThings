@@ -324,6 +324,7 @@ class TextSettings(SettingsBase) :
     position : position
     fill : str
     gap  : int = 0
+    border : BorderSettings | None = None
     color : str | None = None
     stroke : StrokeSettings | None = None
     rotation : int = 0
@@ -334,6 +335,8 @@ class TextSettings(SettingsBase) :
         d['position'] = position(d['position'])
         if 'stroke' in d :
             d['stroke'] = StrokeSettings(**d['stroke'])
+        if 'border' in d :
+            d['border'] = BorderSettings.from_dict(d['border'])
         try :
             t = TextSettings(**d)
         except Exception as e :

@@ -24,14 +24,6 @@ class OutputElement(ImageElement) :
         super().__init__(name, parent)
 
         self.settings  = output_settings
-
-    def border_widths(self) -> WidthSettings | None :
-        b = self.settings.border
-        return None if b is None else b.width
-
-    def margin_widths(self) -> WidthSettings | None:
-        m = self.settings.margin
-        return None if m < 1 else WidthSettings(m, m, m, m)
     
     def generate(self) -> Image.Image :
 

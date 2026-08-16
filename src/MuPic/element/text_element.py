@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 from PIL import Image, ImageDraw, ImageFont
 
+from MuPic.element.border_helper import BorderHelper
+
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
@@ -36,23 +38,41 @@ class TextElement(ImageElement) :
     def generate(self) -> None :
         cfg = self.settings
         
-        logger.info(f"Adding {self.name} text")
+        logger.info(f"---- Text -- Adding {self.name} text")
 
 
         title_font = ImageFont.truetype(cfg.font, cfg.size)
         text_size = _get_text_size(cfg.text, title_font) + (cfg.gap * 2)
-
 
         if cfg.rotation in [90, -90]:
             final_text_size = sizet(text_size.height, text_size.width)
         else:
             final_text_size = text_size
 
+
+        if cfg.border is not None :
+            bh = BorderHelper(cfg.border, mode='add')
+            border_img = bh.generate(rect(point(0,0), final_text_size))
+            content_rec = bh.get_content_rect()
+            logger.debug(f"Text -- content_rec before offsets = {content_rec}")
+            full_rec = bh.get_border_rect()
+        else :
+            content_rec = rect(point(0,0), final_text_size)
+            full_rec = rect(point(0,0), final_text_size)
+            border_img = None
+
         offsets =  self.offsets_for_position(
             pos=cfg.position,
             elem_size=final_text_size
             )
-
+        
+        content_rec = content_rec.add_offsets(offsets)
+        logger.debug(f"Text -- content_rec after offsets = {content_rec}")
+        self.set_bbox('content', content_rec)
+        full_rec = full_rec.add_offsets(offsets)
+        self.set_bbox('full', full_rec)
+        # If we add margin, this will need to change. But good for now.
+        self.set_bbox('border', full_rec)
 
         if cfg.stroke is not None :
             stroke_params = { 'stroke_fill' : cfg.stroke.color,
@@ -64,6 +84,7 @@ class TextElement(ImageElement) :
             anchor_params = {}
         else :
             anchor_params = { 'anchor' : 'lt' }
+            #anchor_params = {}
 
 
         logger.debug(f"Text Position: {offsets}")
@@ -80,9 +101,19 @@ class TextElement(ImageElement) :
         if cfg.rotation != 0 :
             text_image = text_image.rotate(-cfg.rotation, expand=1, resample=Image.Resampling.BILINEAR)
 
-        self.parent.img.paste(text_image, offsets.to_tuple(), mask=text_image)
+        if border_img is not None :
+            border_img.paste(text_image, (content_rec.origin - offsets).to_tuple(), mask=text_image)
+            final_image = border_img
+            mask_image = border_img
+        else :
+            final_image = text_image
+            mask_image = text_image
+
+        self.parent.img.paste(final_image, offsets.to_tuple(), mask=mask_image)
 
 
-        self.bbox['content'] = rect(point(*offsets), final_text_size)
+        self.bbox['content'] = content_rec
         self.bbox['full'] = rect(point(*offsets), final_text_size)
         self.generated = True
+
+        logger.info(f"---- End {self.name} text")

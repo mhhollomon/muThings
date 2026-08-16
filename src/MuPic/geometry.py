@@ -195,6 +195,10 @@ class rect :
         return rect(point(self.origin.x, self.origin.y), 
                     sizet(self.extent.width, self.extent.height)) 
 
+    def add_offsets(self, offsets : point | tuple) -> 'rect' :
+        new_origin = self.origin + offsets
+        return rect(new_origin, self.extent)
+
     @property
     def end(self) -> point :
         return self.origin + self.extent

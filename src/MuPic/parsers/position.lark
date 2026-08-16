@@ -27,10 +27,10 @@ overlay_pos : "overlay" "(" triple "," pos_values ["," anchor_values] ["," offse
 // a SUB_ELEMENT.
 triple : (ELEMENT_NAME | SUB_ELEMENT) ["." SUB_ELEMENT] ["." PIECE]
 
-// Unsigned only
 INTEGER.10 : /\d+/
+SIGNED_INT : /[+-]?\d+/
 
-PERCENT.10 : INTEGER "%"
+PERCENT.10 : SIGNED_INT "%"
 SUB_ELEMENT.10 : /full\b|margin\b|border\b|content\b/i
 PIECE.10 : /left\b|right\b|top\b|bottom\b/i
 ELEMENT_NAME : ESCAPED_STRING | REF_BARE_STRING

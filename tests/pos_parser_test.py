@@ -51,6 +51,9 @@ def test_attach_parser() :
     output = _parse_text("attach (output.border.left, left, mid, 20%)")
     assert output == ('attach', ('output','border','left'), 'left', (50, 20), ('mid', 'min'), 0)
 
+    output = _parse_text("attach (output.border.left, left, max, -20%)")
+    assert output == ('attach', ('output','border','left'), 'left', (100, -20), ('max', 'min'), 0)
+
     output = _parse_text("attach (output.border.left, right, mid, 20%, mid, min)")
     assert output == ('attach', ('output','border','left'), 'right', (50, 20), ('mid', 'min'), 0)
 

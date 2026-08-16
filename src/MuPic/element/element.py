@@ -36,11 +36,22 @@ class ImageElement :
 
 
     def border_widths(self) -> WidthSettings | None :
-        raise NotImplementedError
+        s = getattr(self, 'settings', None)
+        if s is None :
+            return None
+        b = getattr(s, 'border', None)
+        if b is None :
+            return None
+        w = getattr(b, 'width', None)
+        return w
+    
 
     def margin_widths(self) -> WidthSettings | None :
-        raise NotImplementedError
-
+        s = getattr(self, 'settings', None)
+        if s is None :
+            return None
+        m = getattr(s, 'margin', None)
+        return None if m is None or m < 1 else WidthSettings(m, m, m, m)
 #-----------------------------------------------------------------------------
 
     def set_bbox(self, sub : str, new_bbox : rect) -> None :
@@ -116,8 +127,67 @@ class ImageElement :
         logger.debug(f"attach : ref_bbox = {ref_bbox}")
         logger.debug(f"attach : elem_size = {elem_size}")
 
-        return ref_bbox.origin
+        adjust_factor = pos.pos.x
+        anchor = pos.anchor.x
+        anchor_fact = 0 if anchor == 'min' else 0.5 if anchor == 'mid' else 1
+        min_diff = pos.offset
+        logger.debug(f"attach : min_diff = {min_diff}")
 
+        if pos.side == 'top' : 
+            x_adjust = int(elem_size.width * (adjust_factor / 100.0))
+            attach_point = ref_bbox.origin + (x_adjust, 0)
+            anchor_x_adjust = -int(elem_size.width * (anchor_fact / 100.0))
+            anchor_y_adjust = -elem_size.height
+            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+
+            ele_end = offsets + elem_size
+
+            diff = ref_bbox.origin.y - ele_end.y
+            if diff < min_diff :
+                final_offsets = offsets - (0, min_diff - diff)
+            else :
+                final_offsets = offsets
+
+            final_offsets = offsets
+
+        elif pos.side == 'bottom' :
+            x_adjust = int(elem_size.width * (adjust_factor / 100.0))
+            attach_point = ref_bbox.origin + (x_adjust, ref_bbox.extent.height)
+            logger.debug(f"attach offsets : attach_point = {attach_point}")
+
+            anchor_x_adjust = -int(elem_size.width * (anchor_fact / 100.0))
+            anchor_y_adjust = 0
+            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+            logger.debug(f"attach offsets : adjusted offsets = {offsets}")
+
+            diff = offsets.y - ref_bbox.end.y
+            if diff < min_diff :
+                adj = min_diff - diff
+                logger.debug(f"attach offsets : diff = {diff}, min_diff = {min_diff}, adj = {adj}")
+                final_offsets = offsets + (0, min_diff - diff)
+            else :
+                final_offsets = offsets
+
+        elif pos.side == 'left' :
+            y_adjust = int(elem_size.height * (adjust_factor / 100.0))
+            attach_point = ref_bbox.origin + (0, y_adjust)
+            anchor_x_adjust = -elem_size.width
+            anchor_y_adjust = -int(elem_size.height * (anchor_fact / 100.0))
+            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+
+        elif pos.side == 'right' :
+            y_adjust = int(elem_size.height * (adjust_factor / 100.0))
+            attach_point = ref_bbox.origin + (ref_bbox.extent.width, y_adjust)
+            anchor_x_adjust = 0
+            anchor_y_adjust = -int(elem_size.height * (anchor_fact / 100.0))
+            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+
+        else : 
+            raise ValueError(f"Invalid attach side {pos.side}")
+
+
+
+        return final_offsets
 
 #-----------------------------------------------------------------------------
 
@@ -184,13 +254,15 @@ class ImageElement :
     def offsets_for_position(self, pos : position, elem_size : sizet) -> point :
 
         logger.debug(f"""Position Inputs :
- position = {pos}
- elem_size = {elem_size.to_tuple()},
- """
+    position = {pos}
+    elem_size = {elem_size}"""
     )
         
         if pos.ptype == 'attach' :
-            return self._attach_offsets(pos, elem_size)
+            final_offsets = self._attach_offsets(pos, elem_size)
         else :
-            return self._overlay_offsets(pos, elem_size)
+            final_offsets = self._overlay_offsets(pos, elem_size)
+
+        logger.debug(f"Position Calculated final_offsets = {final_offsets}")
+        return final_offsets
 

@@ -2,10 +2,12 @@ from copy import deepcopy
 
 from typing import TYPE_CHECKING, Tuple
 
+
 if TYPE_CHECKING:
     from ..music_image import MusicImage
 
 from .element import ImageElement
+from .border_helper import BorderHelper
 from ..settings import ImageSettings
 from ..geometry import sizet, rect, point
 
@@ -51,14 +53,13 @@ class GraphicElement(ImageElement):
 
         return gray_img
 
-    def _build_image(self) -> Tuple[Image.Image, Image.Image | None] :
+    def _build_image(self, needed_size : int) -> Image.Image :
 
         file_path : str = self.settings.path or ''
 
         with Image.open(file_path) as img_img:
 
             img_width, img_height = img_img.size
-            needed_size : int = self.settings.size.width
 
             if img_width > img_height:
                 # Landscape
@@ -69,38 +70,57 @@ class GraphicElement(ImageElement):
 
             img_img = img_img.resize(new_size)
 
-            gray_img = self._compute_mask(img_img, self.settings.mask)
+            #gray_img = self._compute_mask(img_img, self.settings.mask)
 
 
-            return (img_img, gray_img)
+            return img_img
         
     def generate(self) -> None :
 
         cfg = self.settings
         logger.info(f"Adding {self.name} Element")
 
+        offsets =  self.offsets_for_position(
+            pos=cfg.position,
+            elem_size=cfg.size
+            )
+
+        self.set_bbox('full', rect(offsets, cfg.size))
+
+        border_img : Image.Image | None = None
+
+        if cfg.border is not None :
+            bh = BorderHelper(cfg.border)
+            border_img = bh.generate(rect(offsets, cfg.size))
+            self.set_bbox('border', rect(offsets, cfg.size))
+            content_rec = bh.get_content_rect()
+            self.set_bbox('content', content_rec)
+        else :
+            content_rec = rect(offsets, cfg.size)
+            self.set_bbox('content', content_rec)
+
         if cfg.path is not None:   
-            logger.debug(f"Loading image from {cfg.path}")
-            img_img, mask_img = self._build_image()
+            logger.debug(f"graphics element {self.name} -- Loading image from {cfg.path}")
+            img_img = self._build_image(content_rec.extent.width)
         elif cfg.color is None :
             raise ValueError(f"Both color and path are missing for {self.name}")
         else :
-            img_img = Image.new("RGB", cfg.size.to_tuple(), color=cfg.color)
-            mask_img = None
-        
-        position = self.settings.position
+            logger.debug(f"graphics element {self.name} -- color = {cfg.color}")
+            img_img = Image.new("RGB", content_rec.extent.to_tuple(), color=cfg.color)
 
-        img_size = sizet(*img_img.size)
+        if border_img is not None:
+            logger.debug(f"graphics element {self.name} -- pasting image into border")
+            mask_img = self._compute_mask(img_img, cfg.mask)
+            content_offset = content_rec.origin - offsets
+            border_img.paste(img_img, content_offset.to_tuple(), mask=mask_img)
+            final_img = border_img
+        else :
+            final_img = img_img
 
-        offsets =  self.offsets_for_position(
-            pos=position,
-            elem_size=img_size
-            )
+        mask_img = self._compute_mask(final_img, cfg.mask)        
 
         # Paste the logo
-        self.parent.img.paste(img_img, offsets.to_tuple(), mask=mask_img)
-        self.set_bbox('content', rect(offsets, img_size))
-        self.set_bbox('full', rect(offsets, img_size))
+        self.parent.img.paste(final_img, offsets.to_tuple(), mask=mask_img)
 
         self.generated = True
 

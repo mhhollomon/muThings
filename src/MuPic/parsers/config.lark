@@ -34,9 +34,9 @@ image_stmt : "image" [ESCAPED_STRING] "{" image_setting+ "}"
     | "mask" "=" WORD -> mask_option
     | position_option
     | border_spec
-    | margin_int_option
     | color_option
     | path_option
+    | border_spec
 
 text_stmt : "text" [ESCAPED_STRING] "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option
@@ -48,6 +48,7 @@ text_stmt : "text" [ESCAPED_STRING] "{" text_setting+ "}"
     | "font" "=" STRING_VALUE -> font_option
     | stroke_spec
     | "gap" "=" INTEGER -> gap_int_option
+    | border_spec
 
 border_spec : "border" "{" border_setting+ "}"
 // Changing this to directly use color_option rule
