@@ -371,10 +371,11 @@ class TextSettings(SettingsBase) :
 # -------------------------------------------------------------------------
 
 class Settings(SettingsBase) :
-    defaults : DefaultSettings
-    output  : OutputSettings
-    cover   : CoverSettings | None = None
-    elements  : List[TextSettings | ImageSettings]
+    # defaults : DefaultSettings
+    # output  : OutputSettings
+    # cover   : CoverSettings | None = None
+    # elements  : List[TextSettings | ImageSettings]
+    # grid : str | None
 
     def __init__(self, setting : dict[str, Any]) :
         super().__init__()
@@ -382,6 +383,12 @@ class Settings(SettingsBase) :
         self.output = OutputSettings.from_dict(setting['output'])
         if 'cover' in setting :
             self.cover = CoverSettings.from_dict(setting['cover'])
+        else :
+            self.cover = None
+        if 'grid' in setting :
+            self.grid = setting['grid']
+        else :
+            self.grid = None
         self.elements = []
         for e in setting['elements'] :
             etype = e['type']

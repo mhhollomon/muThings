@@ -39,17 +39,23 @@ class Configuration(Transformer) :
     context : Path
     elements : List[ImageSettings | TextSettings]
 
-    def __init__(self, config_file : str | Path) :
+    def __init__(self, config_file : str | Path, args : Namespace | None = None) :
         super().__init__()
         self._config_file = Path(config_file)
 
         self.context = self._config_file.parent
+        self.args = args
 
-    def read_config(self, args : Namespace) -> Settings :
+    def read_config(self) -> Settings :
         settings_dict = self._get_settings()
 
-        if 'output_path' in args and args.output_path is not None :
-            settings_dict['output']['path'] = args.output_path
+        if self.args is not None :
+            if 'output_path' in self.args and self.args.output_path is not None :
+                settings_dict['output']['path'] = self.args.output_path
+
+            if 'grid' in self.args and self.args.grid is not None :
+                logger.debug("Setting grid in read_config")
+                settings_dict['grid'] = self.args.grid
 
         settings_dict = self._handle_defaults(settings_dict)
 

@@ -1,6 +1,7 @@
+import re
 from typing import Dict
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from .element import *
 from .settings import *
@@ -31,7 +32,46 @@ class MusicImage :
                 ele = TextElement(name, block, self)
             ele.generate()
 
+        self._generate_grid()
+
         return output_img
+
+
+    def _generate_grid(self) :
+        if self.config.grid is None :
+            return
+
+        logger.info(f"Generating Grid with {self.config.grid}")
+        if self.config.grid.endswith('%') :
+            factor = float(self.config.grid[:-1]) / 100.0
+            logger.debug(f"grid factor = {factor}")
+            xpix = int(self.output_size[0] * factor)
+            ypix = int(self.output_size[1] * factor)
+        elif re.fullmatch(r'\d+', self.config.grid) :
+            factor = float(self.config.grid) / 100.0
+            logger.debug(f"grid factor = {factor}")
+            xpix = int(self.output_size[0] * factor)
+            ypix = int(self.output_size[1] * factor)
+        elif self.config.grid.endswith('px') :
+            xpix = int(self.config.grid[:-2])
+            ypix = xpix
+        else :
+            raise ValueError(f"Invalid grid value: {self.config.grid}")
+
+        draw = ImageDraw.ImageDraw(self.output_image())
+        p = xpix
+        length = self.output_size[1]
+        while p < self.output_size[0] :
+            draw.line(((p, 0), (p, length)), fill='black', width=1)
+            p += xpix
+
+        p = ypix
+        length = self.output_size[0]
+        while p < self.output_size[1] :
+            draw.line(((0, p), (length, p)), fill='black', width=1)
+            p += ypix
+            
+
 
     def _add_element(self, elem : ImageElement) :
         if elem.name in self.elements :
@@ -44,3 +84,4 @@ class MusicImage :
 
     def output_image(self) -> Image.Image :
         return self.img
+

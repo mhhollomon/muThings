@@ -49,6 +49,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Print the configuration and exit.")
     parser.add_argument("--print_config", "-p", action='store_true', required=False, default=False,
                         help="Print the configuration")
+    parser.add_argument("--grid", "-g", nargs='?', const='10', required=False, default=None,
+                        help="Generate a grid over the rusltigng output image.")
 
 
     # --- OUTPUT ARGUMENTS ---
@@ -78,7 +80,7 @@ def main() :
 
     config_file = args.config_file
 
-    config = Configuration(config_file).read_config(args)
+    config = Configuration(config_file, args).read_config()
 
     if print_config:
         config.print()

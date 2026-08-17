@@ -61,13 +61,13 @@ text "t5" {
         width = 5
         color = "#88dd88"
     }
-    position = "attach(t4, bottom, -2, min, 15)"
+    position = "attach(t4, bottom, -5, min, 15)"
 }
 
 text "t6" {
     text = "• Images can just be a color (see line in header)"
     size = 50
-    position = "attach(t5, bottom, +10px, min, 15)"
+    position = "attach(t5, bottom, +13px, min, 15)"
 }
 
 text "t7" {
