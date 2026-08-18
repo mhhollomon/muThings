@@ -37,6 +37,7 @@ image_stmt : "image" [ESCAPED_STRING] "{" image_setting+ "}"
     | color_option
     | path_option
     | border_spec
+    | margin_int_option
 
 text_stmt : "text" [ESCAPED_STRING] "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option

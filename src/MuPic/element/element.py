@@ -137,11 +137,14 @@ class ImageElement :
         logger.debug(f"attach : min_diff = {min_diff}")
 
         if pos.side == 'top' : 
-            x_adjust = rel_pos.calc(elem_size.width)
+            x_adjust = rel_pos.calc(ref_bbox.extent.width)
             attach_point = ref_bbox.origin + (x_adjust, 0)
-            anchor_x_adjust = -int(elem_size.width * (anchor_fact / 100.0))
+            logger.debug(f"attach offsets : top attach_point = {attach_point}")
+
+            anchor_x_adjust = -int(elem_size.width * anchor_fact)
             anchor_y_adjust = -elem_size.height
-            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+            offsets = attach_point + (anchor_x_adjust, anchor_y_adjust)
+            logger.debug(f"attach offsets : top adjusted offsets = {offsets}")
 
             ele_end = offsets + elem_size
 
@@ -154,14 +157,14 @@ class ImageElement :
             final_offsets = offsets
 
         elif pos.side == 'bottom' :
-            x_adjust = rel_pos.calc(elem_size.width)
+            x_adjust = rel_pos.calc(ref_bbox.extent.width)
             attach_point = ref_bbox.origin + (x_adjust, ref_bbox.extent.height)
-            logger.debug(f"attach offsets : attach_point = {attach_point}")
+            logger.debug(f"attach offsets : bottom attach_point = {attach_point}")
 
-            anchor_x_adjust = -int(elem_size.width * (anchor_fact / 100.0))
+            anchor_x_adjust = -int(elem_size.width * anchor_fact)
             anchor_y_adjust = 0
-            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
-            logger.debug(f"attach offsets : adjusted offsets = {offsets}")
+            offsets = attach_point + (anchor_x_adjust, anchor_y_adjust)
+            logger.debug(f"attach offsets : bottom adjusted offsets = {offsets}")
 
             diff = offsets.y - ref_bbox.end.y
             if diff < min_diff :
@@ -172,23 +175,31 @@ class ImageElement :
                 final_offsets = offsets
 
         elif pos.side == 'left' :
-            y_adjust = rel_pos.calc(elem_size.height)
+            y_adjust = rel_pos.calc(ref_bbox.extent.height)
             attach_point = ref_bbox.origin + (0, y_adjust)
+            logger.debug(f"attach offsets : left attach_point = {attach_point}")
+
             anchor_x_adjust = -elem_size.width
-            anchor_y_adjust = -int(elem_size.height * (anchor_fact / 100.0))
-            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+            anchor_y_adjust = -int(elem_size.height * anchor_fact )
+            offsets = attach_point + (anchor_x_adjust, anchor_y_adjust)
+            logger.debug(f"attach offsets : left adjusted offsets = {offsets}")
+
+            final_offsets = offsets
 
         elif pos.side == 'right' :
-            y_adjust = rel_pos.calc(elem_size.height)
+            y_adjust = rel_pos.calc(ref_bbox.extent.height)
             attach_point = ref_bbox.origin + (ref_bbox.extent.width, y_adjust)
+            logger.debug(f"attach offsets : right attach_point = {attach_point}")
+            
             anchor_x_adjust = 0
-            anchor_y_adjust = -int(elem_size.height * (anchor_fact / 100.0))
-            offsets = attach_point - (anchor_x_adjust, anchor_y_adjust)
+            anchor_y_adjust = -int(elem_size.height * anchor_fact )
+            offsets = attach_point + (anchor_x_adjust, anchor_y_adjust)
+            logger.debug(f"attach offsets : left adjusted offsets = {offsets}")
+
+            final_offsets = offsets
 
         else : 
             raise ValueError(f"Invalid attach side {pos.side}")
-
-
 
         return final_offsets
 

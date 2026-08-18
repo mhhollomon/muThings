@@ -85,18 +85,26 @@ class GraphicElement(ImageElement):
             elem_size=cfg.size
             )
 
-        self.set_bbox('full', rect(offsets, cfg.size))
+        content_rec = rect(offsets, cfg.size)
+        self.set_bbox('full', content_rec)
+
+        if cfg.margin > 0 :
+            self.set_bbox('margin', content_rec)
+            new_origin = content_rec.origin + cfg.margin
+            new_extent = content_rec.extent - (cfg.margin * 2)
+            content_rec = rect(new_origin, new_extent)
+        
+
 
         border_img : Image.Image | None = None
 
         if cfg.border is not None :
             bh = BorderHelper(cfg.border)
-            border_img = bh.generate(rect(offsets, cfg.size))
-            self.set_bbox('border', rect(offsets, cfg.size))
+            border_img = bh.generate(content_rec)
+            self.set_bbox('border', content_rec)
             content_rec = bh.get_content_rect()
             self.set_bbox('content', content_rec)
         else :
-            content_rec = rect(offsets, cfg.size)
             self.set_bbox('content', content_rec)
 
         if cfg.path is not None:   
