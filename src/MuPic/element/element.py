@@ -184,6 +184,8 @@ class ImageElement :
             offsets = attach_point + (anchor_x_adjust, anchor_y_adjust)
             logger.debug(f"attach offsets : left adjusted offsets = {offsets}")
 
+            # TODO : Need to tweak for offset parameter
+
             final_offsets = offsets
 
         elif pos.side == 'right' :
@@ -195,6 +197,8 @@ class ImageElement :
             anchor_y_adjust = -int(elem_size.height * anchor_fact )
             offsets = attach_point + (anchor_x_adjust, anchor_y_adjust)
             logger.debug(f"attach offsets : left adjusted offsets = {offsets}")
+
+            # TODO : Need to tweak for offset parameter
 
             final_offsets = offsets
 
