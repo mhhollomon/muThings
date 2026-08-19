@@ -53,8 +53,15 @@ class BorderHelper:
         origin_on_border = point(ws.l, ws.t)
         img.paste(content_img, origin_on_border.to_tuple())
 
-        alpha = clamped_mask(img)
-        logger.debug(f"alpha mode = {alpha.mode}")
+        # we don't want to make the border transparent - even if it is black.
+        # So we make an alpha channel that is white on the border, then clamp
+        # the content image and paste.
+
+        alpha = Image.new("L", self.border_bbox.extent.to_tuple(), color=255)
+
+        content_alpha = clamped_mask(content_img)
+        alpha.paste(content_alpha, origin_on_border.to_tuple())
+
         img.putalpha(alpha)
 
         return img

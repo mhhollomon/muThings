@@ -1,0 +1,117 @@
+
+output {
+    size = 1200x1200
+    color = white
+    path = test-out/offsets.png
+}
+
+image "center" {
+    size = 400x400
+    border {
+        width = 2
+        color = black
+    }
+    color = blue
+    position = "overlay(output, mid, mid, mid, mid, 10)"
+}
+
+image "left" {
+    size = 250x250
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(center, left, mid, mid, 10)"
+}
+
+image "left_left" {
+    size = 100x100
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(left, left, min, min, 10)"
+}
+
+image "left_left_max" {
+    size = 100x100
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(left, left, max, max, 10)"
+}
+
+image "right" {
+    size = 250x250
+    border {
+        width = 2
+        color = black
+    }
+    color = green
+    position = "attach(center, right, mid, mid, 10)"
+}
+
+image "right_right" {
+    size = 100x100
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(right, right, min, min, 10)"
+}
+
+image "right_right_max" {
+    size = 100x100
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(right, right, max, max, 10)"
+}
+
+image "top" {
+    size = 250x250
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(center, top, mid, mid, 10)"
+}
+
+image "top_top" {
+    size = 100x100
+    border {
+        width = 2
+        color = black
+    }
+    color = red
+    position = "attach(top, top, min, min, 10)"
+}
+
+
+image "bottom" {
+    size = 250x250
+    border {
+        width = 5
+        color = black
+    }
+    color = green
+    position = "attach(center, bottom, mid, mid, 10)"
+}
+
+image "bottom_bottom" {
+    size = 100x100
+    border {
+        width = 10
+        color = black
+    }
+    color = red
+    position = "attach(bottom, bottom, min, min, 10)"
+}

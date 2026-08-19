@@ -70,9 +70,6 @@ class GraphicElement(ImageElement):
 
             img_img = img_img.resize(new_size)
 
-            #gray_img = self._compute_mask(img_img, self.settings.mask)
-
-
             return img_img
         
     def generate(self) -> None :
@@ -113,8 +110,9 @@ class GraphicElement(ImageElement):
         elif cfg.color is None :
             raise ValueError(f"Both color and path are missing for {self.name}")
         else :
-            logger.debug(f"graphics element {self.name} -- color = {cfg.color}")
-            img_img = Image.new("RGB", content_rec.extent.to_tuple(), color=cfg.color)
+            color_size = content_rec.extent
+            logger.debug(f"graphics element {self.name} -- color = {cfg.color} extent = {color_size}")
+            img_img = Image.new("RGB", size=color_size.to_tuple(), color=cfg.color)
 
         if border_img is not None:
             logger.debug(f"graphics element {self.name} -- pasting image into border")
