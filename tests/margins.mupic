@@ -59,6 +59,10 @@ image "top" {
     margin = 10
     color = red
     position = "attach(center, top, mid, mid)"
+    border {
+        width = 2
+        color = black
+    }
 }
 
 image "top_top" {

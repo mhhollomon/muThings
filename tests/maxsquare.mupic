@@ -1,0 +1,28 @@
+
+output {
+    size = 700x700
+    path = ./test-out/maxsquare.png
+    color = white
+}
+
+image "host" {
+    size = 400x600
+    color = lightblue
+    border  {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, mid, mid)"
+}
+
+image "inside" {
+    size = maxsquare
+    color = yellow
+    border  {
+        width = 2
+        color = black
+    }
+    margin = 5
+    position = "overlay(host, min, min)"
+
+}

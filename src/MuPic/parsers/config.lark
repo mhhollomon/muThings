@@ -30,6 +30,7 @@ cover_stmt : "cover" "{" cover_setting+ "}"
 
 image_stmt : "image" [ESCAPED_STRING] "{" image_setting+ "}"
 ?image_setting : path_option
+    | "size" "=" /maxsquare/ -> size_option
     | size_2d_option
     | "mask" "=" WORD -> mask_option
     | position_option

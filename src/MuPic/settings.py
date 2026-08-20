@@ -171,7 +171,7 @@ class OutputSettings(PathSetting) :
     __REQ_ARGS__ = ('size',)
     size : sizet
     path : str | None = None
-    color : str = '"black"'
+    color : str = 'black'
     background : str | None = None
     margin : int = 0
     fit : str = 'contain'
@@ -256,7 +256,7 @@ class CoverSettings(PathSetting) :
 class ImageSettings(PathSetting) :
     __REQ_ARGS__ = ('name', 'size', 'position')
     name : str
-    size : sizet
+    size : sizet | str
     position : position
     mask : str = 'auto'
     # legal to have no path - just a background color.

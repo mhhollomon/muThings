@@ -71,11 +71,27 @@ class GraphicElement(ImageElement):
             img_img = img_img.resize(new_size)
 
             return img_img
+
+    def _calc_size(self, size : str) -> sizet :
+        if size == 'maxsquare' :
+            pos = self.settings.position
+            ref_elem = self.parent.get_elem(pos.target.element)
+            ref_bbox = ref_elem.get_bbox(sub=pos.target.sub, piece=pos.target.piece)
+
+            bbox_min = min(ref_bbox.extent.width, ref_bbox.extent.height)
+
+            return sizet(bbox_min, bbox_min)
+
+        raise ValueError(f"Invalid size {size}")
         
     def generate(self) -> None :
 
         cfg = self.settings
         logger.info(f"---- Image -- Adding {self.name} image")
+
+        if isinstance(cfg.size, str):
+            cfg.size = self._calc_size(cfg.size)
+            logger.debug(f"Calculated size = {cfg.size}")
 
         offsets =  self.offsets_for_position(
             pos=cfg.position,
@@ -90,6 +106,7 @@ class GraphicElement(ImageElement):
             new_origin = content_rec.origin + cfg.margin
             new_extent = content_rec.extent - (cfg.margin * 2)
             content_rec = rect(new_origin, new_extent)
+            logger.debug(f"Image -- content_rec after margin = {content_rec}")
         
 
 
@@ -104,6 +121,8 @@ class GraphicElement(ImageElement):
         else :
             self.set_bbox('content', content_rec)
 
+        logger.debug(f"Image -- content_rec after border = {content_rec}")
+
         if cfg.path is not None:   
             logger.debug(f"graphics element {self.name} -- Loading image from {cfg.path}")
             img_img = self._build_image(content_rec.extent.width)
@@ -117,16 +136,16 @@ class GraphicElement(ImageElement):
         if border_img is not None:
             logger.debug(f"graphics element {self.name} -- pasting image into border")
             mask_img = self._compute_mask(img_img, cfg.mask)
-            content_offset = content_rec.origin - offsets
-            border_img.paste(img_img, content_offset.to_tuple(), mask=mask_img)
+            assert cfg.border is not None
+            border_img.paste(img_img, (cfg.border.width.l, cfg.border.width.t), mask=mask_img)
             final_img = border_img
         else :
             final_img = img_img
 
         mask_img = self._compute_mask(final_img, cfg.mask)        
 
-        # Paste the logo
-        self.parent.img.paste(final_img, offsets.to_tuple(), mask=mask_img)
+        # Paste the image
+        self.parent.img.paste(final_img, content_rec.origin.to_tuple(), mask=mask_img)
 
         self.generated = True
         logger.debug(f"---- End {self.name} image")
