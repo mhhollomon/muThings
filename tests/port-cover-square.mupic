@@ -1,0 +1,17 @@
+# ./mupic ./tests/port-cover-square.mupic
+
+# landscape cover to square on portrait output with margin and border.
+
+output {
+  size = 1080x1920
+  path = ../test-out/port-cover-square.png
+}
+
+cover {
+  fit = square
+  path = "resources/landscape-mode.png"
+  margin = 100
+  align = min
+  crop = mid
+  border = blue, 100
+}
