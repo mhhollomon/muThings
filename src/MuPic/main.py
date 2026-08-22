@@ -41,7 +41,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
 
     # --- Application Level Arguments ---
-    parser.add_argument("--config_file", "-c", type=str, required=True, default=None,
+    parser.add_argument("config_file", type=str, default=None,
                         help="file containing configuration values.")
     parser.add_argument("--debug", "-d", action='store_true', required=False, default=False,
                         help="Enable debug logging.")
@@ -50,7 +50,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--print_config", "-p", action='store_true', required=False, default=False,
                         help="Print the configuration")
     parser.add_argument("--grid", "-g", nargs='?', const='10', required=False, default=None,
-                        help="Generate a grid over the rusltigng output image.")
+                        help="Generate a grid over the resulting output image. GRID may be either a percentage value, or a pixel value (with px)")
 
 
     # --- OUTPUT ARGUMENTS ---
@@ -66,7 +66,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 #--------------------------------------------------------------------------------
 
 def main() :
-    args = build_arg_parser().parse_args()
+    args = build_arg_parser().parse_intermixed_args()
 
     log_level = logging.DEBUG if args.debug else logging.INFO
 
