@@ -237,6 +237,19 @@ class Configuration(Transformer) :
                     raise ValueError(f"Invalid width spec: {child}")
         return OptionTuple('width', settings)
 
+    @v_args(inline=True)
+    def simple_border(self, color : Token, width : Token) -> OptionTuple:
+        width_tuple = self.width_spec([width])
+        color_tuple = OptionTuple('color', color.value)
+        return self._util_consolidate('border', [width_tuple, color_tuple])
+
+    @v_args(inline=True)
+    def scale_size(self, value : Token) -> OptionTuple:
+        return OptionTuple("size", ("scale", float(value.value)))
+
+    def size_maxsquare(self, children) -> OptionTuple:
+        return OptionTuple("size", ("maxsquare",))
+
     def image_stmt(self, children) -> OptionTuple:
         settings = self._util_consolidate('image', children[1:], extras={'type':'image'})
         if children[0] is not None : 

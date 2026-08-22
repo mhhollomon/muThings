@@ -41,6 +41,8 @@
 #    RGB function "rgb(r,g,b)" or percentages "rgb(r%,g%,b%)"
 #    HSL function "hsl(h,s,l)" or percentages "hsl(h,s%,l%)" 
 #    HSV function "hsv(h,s,v)" or percentages "hsv(h,s%,v%)"
+#
+# Hex codes and named colors do not need to be quoted. The others do.
 
 # ---------------------------------
 # POSITIONS
@@ -260,8 +262,7 @@ cover {
 # given in an included file.
 # Names must be unique across all elements. also the names `cover`, `border`, 
 # and `output` may not be used.
-# Dashes and spaces my not be used in names.
-# Names must be quoted.
+# Names with special characters or spaces must be quoted.
 
 # Text and Image files are rendered in the order they appear in the file 
 # (but after the output and cover sections, regardless of order).
@@ -340,15 +341,14 @@ text "name" {
 # given in an included file.
 # Names must be unique across all elements. also the names `cover`, `border`, 
 # and `output` may not be used.
-# Dashes and spaces my not be used in names.
-# Names must be quoted.
+# Names with special characters or spaces must be quoted.
 
 # See the `text` element section for discussion of rendering order.
 
 # Since the actual image is optional, the image element can also be used
 # to draw colored rectangles on the output.
 
-image "logo" {
+image logo {
 
     # Note that while both path and color are optional,
     # one must be given.
@@ -389,7 +389,7 @@ image "logo" {
     # optional
     mask = auto
 
-    # border for the cover image.
+    # border for the image.
     # See the `output` border section for details.
     # optional. Defaults to no border.
     border {

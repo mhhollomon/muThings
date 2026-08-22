@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
 
 if TYPE_CHECKING:
@@ -72,8 +72,8 @@ class GraphicElement(ImageElement):
 
             return img_img
 
-    def _calc_size(self, size : str) -> sizet :
-        if size == 'maxsquare' :
+    def _calc_size(self, size : tuple[str, Any]) -> sizet :
+        if size[0] == 'maxsquare' :
             pos = self.settings.position
             ref_elem = self.parent.get_elem(pos.target.element)
             ref_bbox = ref_elem.get_bbox(sub=pos.target.sub, piece=pos.target.piece)
@@ -81,6 +81,15 @@ class GraphicElement(ImageElement):
             bbox_min = min(ref_bbox.extent.width, ref_bbox.extent.height)
 
             return sizet(bbox_min, bbox_min)
+        elif size[0] == "scale" :
+            pos = self.settings.position
+            ref_elem = self.parent.get_elem(pos.target.element)
+            ref_bbox = ref_elem.get_bbox(sub=pos.target.sub, piece=pos.target.piece)
+
+            factor  = size[1]
+            assert isinstance(factor, float)
+
+            return ref_bbox.extent * factor
 
         raise ValueError(f"Invalid size {size}")
         
@@ -89,7 +98,7 @@ class GraphicElement(ImageElement):
         cfg = self.settings
         logger.info(f"---- Image -- Adding {self.name} image")
 
-        if isinstance(cfg.size, str):
+        if isinstance(cfg.size, tuple):
             cfg.size = self._calc_size(cfg.size)
             logger.debug(f"Calculated size = {cfg.size}")
 
@@ -102,12 +111,20 @@ class GraphicElement(ImageElement):
         self.set_bbox('full', content_rec)
 
         if cfg.margin > 0 :
+            # 'full' and 'margin' bbox are the same.
             self.set_bbox('margin', content_rec)
+
+            # Remove the margin from the content rect
             new_origin = content_rec.origin + cfg.margin
             new_extent = content_rec.extent - (cfg.margin * 2)
             content_rec = rect(new_origin, new_extent)
             logger.debug(f"Image -- content_rec after margin = {content_rec}")
-        
+
+        # Rather than mess with transparency, we simply create
+        # a smaller content that ignores the margin.
+        # The 'full' bbox for the element, however will still
+        # include the margin.
+        full_rec = content_rec
 
 
         border_img : Image.Image | None = None
@@ -145,7 +162,7 @@ class GraphicElement(ImageElement):
         mask_img = self._compute_mask(final_img, cfg.mask)        
 
         # Paste the image
-        self.parent.img.paste(final_img, content_rec.origin.to_tuple(), mask=mask_img)
+        self.parent.img.paste(final_img, full_rec.origin.to_tuple(), mask=mask_img)
 
         self.generated = True
         logger.debug(f"---- End {self.name} image")

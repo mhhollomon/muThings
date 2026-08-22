@@ -12,7 +12,7 @@ attach_pos : "attach" "(" triple "," side "," one_pos_value ["," MINMAX] ["," of
 
 anchor_values : MINMAX "," MINMAX
 side : PIECE
-offset : INTEGER
+offset : /[-+]?\d+/
 
 one_pos_value : MINMAX | POS_VALUE
 
@@ -27,16 +27,17 @@ pos_values : one_pos_value "," one_pos_value
 // a SUB_ELEMENT.
 triple : (ELEMENT_NAME | SUB_ELEMENT) ["." SUB_ELEMENT] ["." PIECE]
 
-INTEGER.5 : /\d+/
 
 // A possibly signed integer followed by a unit
 POS_VALUE.10 : /[+-]?\d+(%|px)?/
+
+INTEGER.5 : /\d+/
 
 SUB_ELEMENT.10 : /full\b|margin\b|border\b|content\b/i
 PIECE.10 : /left\b|right\b|top\b|bottom\b/i
 ELEMENT_NAME : ESCAPED_STRING | REF_BARE_STRING
 
-REF_BARE_STRING : /[^)( \t,\n"':\.;]+/
+REF_BARE_STRING : /[^)( \t,\n"':\.;%]+/
 
 %import common.ESCAPED_STRING
 

@@ -1,0 +1,36 @@
+output {
+    size = 1000x1000
+    color = white
+    path = test-out/image_fits.png
+}
+
+image fit_landscape {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = fit
+    color = blue
+    border = black, 2
+    position = "overlay(output, 100, 100)"
+}
+
+image fill_landscape {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = fill
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 350, 350)"
+}
+
+image stretch_landscape {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = stretch
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 600, 600)"
+}

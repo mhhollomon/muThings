@@ -256,11 +256,13 @@ class CoverSettings(PathSetting) :
 class ImageSettings(PathSetting) :
     __REQ_ARGS__ = ('name', 'size', 'position')
     name : str
-    size : sizet | str
+    size : sizet | tuple[str, Any]
     position : position
+    # fit, fill, stretch
+    fit : str ='fill'
     mask : str = 'auto'
     # legal to have no path - just a background color.
-    # but one needs to be set.
+    # but one of the two needs to be set.
     path : str | None = None
     color : str | None = None
     border : BorderSettings | None = None

@@ -1,0 +1,64 @@
+output {
+    size = 1920x1080
+    color = white
+    path = test-out/doppler.png
+    border = black, 2
+}
+
+image central {
+    size = 400x600
+    color = "hsv(80, 100%, 100%)"
+    position = "overlay(output, mid, mid, mid, mid)"
+}
+
+image left1 {
+    size = scale, 0.8
+    color = "hsv(60, 100%, 90%)"
+    position = "attach(central, left, 90%, max, -50)"
+}
+
+image left2 {
+    size = scale, 0.8
+    color = "hsv(40, 100%, 80%)"
+    position = "attach(left1, left, 90%, max, -40)"
+}
+
+image left3 {
+    size = scale, 0.8
+    color = "hsv(20, 100%, 70%)"
+    position = "attach(left2, left, 90%, max, -30)"
+}
+
+image right1 {
+    size = scale, 0.8
+    color = "hsv(120, 100%, 90%)"
+    position = "attach(central, right, 90%, max, -50)"
+}
+
+image right2 {
+    size = scale, 0.8
+    color = "hsv(160, 100%, 80%)"
+    position = "attach(right1, right, 90%, max, -40)"
+}
+
+image right3 {
+    size = scale, 0.8
+    color = "hsv(200, 100%, 70%)"
+    position = "attach(right2, right, 90%, max, -30)"
+}
+
+image logo {
+    size = 75x75
+    mask = auto
+    position = "overlay(output, max, max, max, max, 10)"
+    path = "/mnt/c/Users/mhhol/Desktop/More Stuff/viking-treble-clef-no-fill.png"
+
+}
+
+text title {
+    size = 30
+    font = /mnt/c/Windows/fonts/ariali.ttf
+    text = "Dopper Shift"
+    position = "overlay(output, mid, max, mid, max, 10)"
+    fill = black
+}

@@ -5,17 +5,17 @@ output {
     path = test-out/offsets.png
 }
 
-image "center" {
+image center {
     size = 400x400
     border {
         width = 2
-        color = black
+        color = #000000
     }
     color = blue
     position = "overlay(output, mid, mid, mid, mid, 10)"
 }
 
-image "left" {
+image left {
     size = 250x250
     border {
         width = 2

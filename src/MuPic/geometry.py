@@ -159,6 +159,13 @@ class sizet :
             return sizet(int(self.width - other), int(self.height - other))
         else :
             raise TypeError(f"Unsupported type for subtraction with sizet: {type(other)}")
+        
+    def __mul__(self, other):
+        if isinstance(other, (int, float)) :
+            return sizet(int(self.width * other), int(self.height * other))
+        else :
+            raise TypeError(f"Unsupported type for multiplication with sizet: {type(other)}")
+
 
     def __eq__(self, other) -> bool :
         if isinstance(other, tuple) :
