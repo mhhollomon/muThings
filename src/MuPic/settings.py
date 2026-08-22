@@ -258,7 +258,7 @@ class ImageSettings(PathSetting) :
     name : str
     size : sizet | tuple[str, Any]
     position : position
-    # fit, fill, stretch
+    # contain, fill, stretch
     fit : str ='fill'
     mask : str = 'auto'
     zorder : int = 0
