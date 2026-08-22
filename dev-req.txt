@@ -1,2 +1,1 @@
-lark[interegular]
 pytest

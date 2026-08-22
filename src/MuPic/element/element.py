@@ -37,7 +37,9 @@ class ImageElement :
 
     def border_widths(self) -> WidthSettings | None :
         s = getattr(self, 'settings', None)
+        logger.debug(f"looking for border widths in {self.name}")
         if s is None :
+            
             return None
         b = getattr(s, 'border', None)
         if b is None :

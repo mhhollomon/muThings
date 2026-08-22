@@ -2,3 +2,6 @@ pillow
 PyYAML
 opencv-python
 lark
+
+# may move this back to test and have a flag for strict mode.
+lark[interegular]

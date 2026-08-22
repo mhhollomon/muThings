@@ -22,11 +22,11 @@ class CoverElement(ImageElement) :
     def __init__(self, name : str, settings : CoverSettings, parent : 'MusicImage') :
         super().__init__(name, parent)
 
-        self._settings = deepcopy(settings)
+        self.settings = deepcopy(settings)
 
     def generate(self) -> None :
 
-        cfg : CoverSettings = self._settings
+        cfg : CoverSettings = self.settings
 
         output_rect = self.parent.elements['output'].get_bbox('content')
         output_size = output_rect.extent
@@ -65,6 +65,9 @@ class CoverElement(ImageElement) :
 
             border_size = full_cover_size - cfg.margin * 2
             border_offset = full_cover_origin + point(cfg.margin, cfg.margin)
+        else :
+            border_size = full_cover_size
+            border_offset = full_cover_origin
 
         if cfg.border is not None :
             border_helper = BorderHelper(cfg.border)
