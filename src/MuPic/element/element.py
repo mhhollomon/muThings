@@ -6,6 +6,8 @@ from ..geometry import sizet, rect, point
 from ..position import position
 from ..settings import WidthSettings
 
+from PIL import Image
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -17,6 +19,8 @@ class ImageElement :
         self.name = name
         self.parent = parent
         self.bbox : dict[str, rect] = {}
+        self.main_image : Image.Image | None = None
+        self.mask_image : Image.Image | None = None
         self.generated = False
 
         if add_to_parent :
@@ -34,6 +38,11 @@ class ImageElement :
             raise ValueError("ImageElement name cannot be empty")
         self._name = name
 
+    def get_images(self) -> tuple[Image.Image, Image.Image | None]:
+        if not self.generated :
+            raise RuntimeError(f"Trying to get images before the element is generated in {self.name}")
+        assert self.main_image is not None
+        return self.main_image, self.mask_image
 
     def border_widths(self) -> WidthSettings | None :
         s = getattr(self, 'settings', None)
@@ -58,7 +67,7 @@ class ImageElement :
 
     def set_bbox(self, sub : str, new_bbox : rect) -> None :
     
-        if sub not in ('full', 'border', 'margin', 'content') :
+        if sub not in ('full', 'border', 'margin', 'content', 'paste') :
             raise ValueError(f"incorrect bbox subelement {sub} in {self.name}")
 
         logger.debug(f"setting {self.name} {sub} bbox to {new_bbox}")

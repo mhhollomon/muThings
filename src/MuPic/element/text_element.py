@@ -77,6 +77,7 @@ class TextElement(ImageElement) :
         self.set_bbox('full', full_rec)
         # If we add margin, this will need to change. But good for now.
         self.set_bbox('border', full_rec)
+        self.set_bbox('paste', full_rec)
 
         if cfg.stroke is not None :
             stroke_params = { 'stroke_fill' : cfg.stroke.color,
@@ -112,11 +113,13 @@ class TextElement(ImageElement) :
             final_image = text_image
             mask_image = text_image
 
-        self.parent.img.paste(final_image, offsets.to_tuple(), mask=mask_image)
+        #self.parent.img.paste(final_image, offsets.to_tuple(), mask=mask_image)
 
 
         self.bbox['content'] = content_rec
         self.bbox['full'] = rect(point(*offsets), final_text_size)
         self.generated = True
+        self.main_image = final_image
+        self.mask_image = mask_image
 
         logger.debug(f"---- End {self.name} text")

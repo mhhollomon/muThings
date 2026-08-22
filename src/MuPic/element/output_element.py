@@ -75,5 +75,4 @@ class OutputElement(ImageElement) :
 
         self.generated = True
 
-
         return output_img

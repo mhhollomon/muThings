@@ -28,7 +28,7 @@ cover_stmt : "cover" "{" cover_setting+ "}"
     | margin_int_option
     | border_spec
 
-image_stmt : "image" [ESCAPED_STRING | CNAME] "{" image_setting+ "}"
+image_stmt : "image" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" image_setting+ "}"
 ?image_setting : path_option
     | "size" "=" "maxsquare" -> size_maxsquare
     | "size" "=" "scale" "," FLOAT -> scale_size
@@ -42,7 +42,7 @@ image_stmt : "image" [ESCAPED_STRING | CNAME] "{" image_setting+ "}"
     | border_spec
     | margin_int_option
 
-text_stmt : "text" [ESCAPED_STRING | CNAME] "{" text_setting+ "}"
+text_stmt : "text" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option
     | "size" "=" INTEGER -> size_int_option
     | position_option

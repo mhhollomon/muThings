@@ -115,5 +115,9 @@ class CoverElement(ImageElement) :
         else :
             cover_img = Image.new('RGB', cover_size.to_tuple(), cfg.color)
 
+        # Go ahead and paste Since it does not participate in the z-order calcs
         self.parent.img.paste(cover_img, cover_rect.origin.to_tuple())
+
+        self.main_image = cover_img
+        self.mask_image = None
         self.generated = True

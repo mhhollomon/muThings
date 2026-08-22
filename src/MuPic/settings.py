@@ -261,6 +261,7 @@ class ImageSettings(PathSetting) :
     # fit, fill, stretch
     fit : str ='fill'
     mask : str = 'auto'
+    zorder : int = 0
     # legal to have no path - just a background color.
     # but one of the two needs to be set.
     path : str | None = None
@@ -283,6 +284,8 @@ class ImageSettings(PathSetting) :
     def print(self, prefix : str = '') :
         print(f"{prefix}image \"{self.name}\" {{")
         new_prefix = prefix + '  '
+        if self.zorder != 0 :
+            print(f"{new_prefix}zorder = {self.zorder}")            
         print(f"{new_prefix}path = {self.path}")
         print(f"{new_prefix}size = {self.size}")
         print(f"{new_prefix}mask = {self.mask}")
@@ -325,6 +328,7 @@ class TextSettings(SettingsBase) :
     font : str
     position : position
     fill : str
+    zorder : int = 0
     gap  : int = 0
     border : BorderSettings | None = None
     color : str | None = None
@@ -348,6 +352,8 @@ class TextSettings(SettingsBase) :
     def print(self, prefix : str = '') :
         print(f"{prefix}text \"{self.name}\" {{")
         new_prefix = prefix + '  '
+        if self.zorder > 0 :
+            print(f"{new_prefix}zorder = {self.zorder}")
         print(f"{new_prefix}text = \"{self.text}\"")
         print(f"{new_prefix}size = {self.size}")
         print(f"{new_prefix}font = {self.font}")

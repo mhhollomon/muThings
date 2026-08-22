@@ -133,10 +133,12 @@ class GraphicElement(ImageElement):
             bh = BorderHelper(cfg.border)
             border_img = bh.generate(content_rec)
             self.set_bbox('border', content_rec)
+            self.set_bbox('paste', content_rec)
             content_rec = bh.get_content_rect()
             self.set_bbox('content', content_rec)
         else :
             self.set_bbox('content', content_rec)
+            self.set_bbox('paste', content_rec)
 
         logger.debug(f"Image -- content_rec after border = {content_rec}")
 
@@ -162,8 +164,11 @@ class GraphicElement(ImageElement):
         mask_img = self._compute_mask(final_img, cfg.mask)        
 
         # Paste the image
-        self.parent.img.paste(final_img, full_rec.origin.to_tuple(), mask=mask_img)
+        #self.parent.img.paste(final_img, full_rec.origin.to_tuple(), mask=mask_img)
 
         self.generated = True
+        self.main_image = final_img
+        self.mask_image = mask_img
+
         logger.debug(f"---- End {self.name} image")
 

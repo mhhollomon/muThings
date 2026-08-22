@@ -24,6 +24,7 @@ class MusicImage :
             ele.generate()
         
 
+        zorder : list[tuple[int, int, str]] = []
         for i, block in enumerate(self.config.elements):
             name = block.name or f'block_{i}'
             if isinstance(block, ImageSettings) :
@@ -31,10 +32,21 @@ class MusicImage :
             else :
                 ele = TextElement(name, block, self)
             ele.generate()
+            zorder.append((ele.settings.zorder, i, name))
+
+        # Now we need figure out the order
+        zorder.sort()
+
+        for zorder_tuple in zorder :
+            logger.debug(f"Pasting in {zorder_tuple}")
+            ele = self.get_elem(zorder_tuple[2])
+            bbox = ele.get_bbox('paste')
+            img, mask = ele.get_images()
+            self.output_image().paste(img, bbox.origin.to_tuple(), mask=mask)
 
         self._generate_grid()
 
-        return output_img
+        return self.output_image()
 
 
     def _generate_grid(self) :

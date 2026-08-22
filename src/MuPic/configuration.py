@@ -154,7 +154,7 @@ class Configuration(Transformer) :
 
         settings['elements'] = new_list
 
-    def _util_consolidate(self, stype : str, children : list, extras:dict = {}) -> OptionTuple:
+    def _util_consolidate(self, stype : str, children : list|tuple, extras:dict = {}) -> OptionTuple:
         """Turns a list of OptionTuples into a dictionary and returns an OptionTuple.
         Checks for duplicates."""
 
@@ -264,22 +264,29 @@ class Configuration(Transformer) :
     def size_maxsquare(self, children) -> OptionTuple:
         return OptionTuple("size", ("maxsquare",))
 
-    def image_stmt(self, children) -> OptionTuple:
-        settings = self._util_consolidate('image', children[1:], extras={'type':'image'})
-        if children[0] is not None : 
-            name = children[0].value
+    @v_args(inline=True)
+    def image_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
+        logger.debug(f"process image_stmt : {name_token}")
+        settings = self._util_consolidate('image', children, extras={'type':'image'})
+        if name_token is not None : 
+            name = name_token.value
             if name.startswith('"') :
                 name = name[1:-1]
             settings.value['name'] = name
+        if zorder_token is not None :
+            settings.value['zorder'] = int(zorder_token.value)
         return settings
 
-    def text_stmt(self, children) -> OptionTuple:
-        settings = self._util_consolidate('text', children[1:], extras={'type':'text'})
-        if children[0] is not None : 
-            name = children[0].value
+    @v_args(inline=True)
+    def text_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
+        settings = self._util_consolidate('text', children, extras={'type':'text'})
+        if name_token is not None : 
+            name = name_token.value
             if name.startswith('"') :
                 name = name[1:-1]
             settings.value['name'] = name
+        if zorder_token is not None :
+            settings.value['zorder'] = int(zorder_token.value)
         return settings
 
     @v_args(inline=True)
