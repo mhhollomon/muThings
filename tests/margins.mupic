@@ -1,18 +1,19 @@
+# ./mupic tests/margins.mupic
 
 output {
     size = 1920x1080
     color = white
-    path = test-out/margins.png
+    path = ../test-out/margins.png
 }
 
-image "center" {
+image center {
     size = 400x400
     margin = 10
     color = blue
     position = "overlay(output, mid, mid, mid, mid)"
 }
 
-image "left" {
+image left {
     size = 250x250
     margin = 10
     color = red
@@ -26,7 +27,7 @@ image "left_left" {
     position = "attach(left, left, min, min)"
 }
 
-image "left_left_max" {
+image left_left_max {
     size = 100x100
     margin = 10
     color = red
@@ -47,7 +48,7 @@ image "right_right" {
     position = "attach(right, right, min, min)"
 }
 
-image "right_right_max" {
+image right_right_max {
     size = 100x100
     margin = 10
     color = red
@@ -65,7 +66,7 @@ image "top" {
     }
 }
 
-image "top_top" {
+image top_top {
     size = 100x100
     margin = 10
     color = red

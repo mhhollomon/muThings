@@ -1,4 +1,5 @@
 # An example include file
+# see include-example.mupic in this same directory
 
 default font "include-font"
 default fill "include-fill"
@@ -24,5 +25,5 @@ cover {
 text "title" {
     fill = "white"
     size = 200
-    position = "right-bottom"
+    position = right-bottom
 }

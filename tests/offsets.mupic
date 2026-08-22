@@ -1,8 +1,12 @@
+# ./mupic tests/offsets.mupic
+
+# Test use of offsets in both overlay and attach
+# TODO : Need to add tests for the negative offsets usable in attach()
 
 output {
     size = 1200x1200
     color = white
-    path = test-out/offsets.png
+    path = ../test-out/offsets.png
 }
 
 image center {

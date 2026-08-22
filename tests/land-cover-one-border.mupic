@@ -1,18 +1,21 @@
-# ./mupic -c ./tests/land-cover-one-border.yml -o ./test-out/land-cover-one-border.png
+# ./mupic ./tests/land-cover-one-border.mupic 
 
 # landscape cover to square on landscape output with margin and border.
-# but only one boder side
+# but only one border side
 
-output :
-  size : 1920x1080
-  color : "black"
+output {
+  size = 1920x1080
+  path = ../test-out/land-cover-one-border.png
+}
 
-cover :
-  fit : square
-  path : "resources/landscape-mode.png"
-  margin : 100
-  crop : mid
-  border :
-    width : 100
-    color : "blue"
-    sides : "l"
+cover {
+  fit = square
+  path = "resources/landscape-mode.png"
+  margin = 100
+  align = mid
+  crop = mid
+  border {
+    width { l=100 }
+    color = "blue"
+    }
+}

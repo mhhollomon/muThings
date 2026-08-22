@@ -1,14 +1,19 @@
+# ./mupic tests/resources/include-example.mupic -n
+
+# Shows how include works. Since most of the resources don't exist
+# just print the final consolidated settings and exit.
+
 include "ex-inc.mupic"
 
 default fill "rosy_red"
 
 output {
     path = "path"
-    color = some-color
+    color = "some-color"
     background = "path"
     margin = 10
     border {
-        color = "color"
+        color = "border_color"
         width { 5 }
     }
 }
@@ -18,13 +23,13 @@ image "name" {
     path = "path"
     size = 200
     mask = auto
-    position = "right-bottom"
+    position = right-bottom
 }
 
 text "unique_name" {
     text = "My Text"
     size = 200
-    position = "pixel(40%, 40%)"
+    position = "overlay(output, 40%, 40%)"
     rotation = 0
     fill = "hsv(0,0%,100%)"
     stroke {
@@ -38,18 +43,18 @@ text "unique_name" {
 text {
     text = "Sneaky"
     size = 100
-    position = "center-center"
+    position = center-center
 }
 
 # unnamed image element
 image {
     path = "path2"
     size = 400x500
-    position = "border(min, min, left)"
+    position = "overlay(border.left, min, min)"
 }
 
 text "title" {
     text = "Groovy Track"
     size = 100
-    position = "left-top"
+    position = left-top
 }

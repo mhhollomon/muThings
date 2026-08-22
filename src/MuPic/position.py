@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from lark import Token, Transformer, v_args
+from lark import Token, Transformer, v_args, exceptions as larkexp
 
 from .parsers import get_parser
 
@@ -95,7 +95,11 @@ class position :
 
     def _parse_pos(self, pos_str : str) :
         parser = get_parser('position')
-        tree = parser.parse(pos_str)
+        try :
+            tree = parser.parse(pos_str)
+        except larkexp.UnexpectedInput as e :
+            raise ValueError(f"Invalid position string `{pos_str}` :\n{e}") from None
+        
         return positionXform().transform(tree)
 
     def __str__(self) -> str :

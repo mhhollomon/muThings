@@ -1,4 +1,6 @@
-# ./mupic boxes.mupic
+# ./mupic tests/boxes.mupic
+
+# Random Text blocks show some of the new functionality.
 
 default fill black
 
@@ -91,7 +93,7 @@ text "t9" {
 
 
 image "bordered" {
-    path = "/mnt/c/Users/mhhol/Desktop/More Stuff/viking-treble-clef-no-fill.png"
+    path = resources/portrait-mode.png
     size = 300x300
     border {
         width = 11

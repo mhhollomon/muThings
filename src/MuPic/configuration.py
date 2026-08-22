@@ -87,7 +87,11 @@ class Configuration(Transformer) :
                 new_ele.append(e)
         input['elements'] = new_ele
 
-        # - background path
+        # -- cover path
+        if 'cover' in input and 'path' in input['cover'] :
+            input['cover']['path'] = resolve_path(input['cover']['path'], self.context)
+
+        # -- background path
         if 'background' in input['output'] :
             input['output']['background'] = resolve_path(input['output']['background'], self.context)
 

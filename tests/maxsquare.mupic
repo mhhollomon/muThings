@@ -1,21 +1,27 @@
+# ./mupic tests/maxsquare.mupic
+
+# Test maxsquare for different aspect rations of the reference element.
 
 output {
-    size = 700x700
-    path = ./test-out/maxsquare.png
+    size = 1200x1000
+    path = ../test-out/maxsquare.png
     color = white
+    border = black, 2
 }
 
-image "host" {
+# -- Test maxsquare for portrait orientation
+
+image "hostportrait" {
     size = 400x600
     color = lightblue
     border  {
         width = 2
         color = black
     }
-    position = "overlay(output, mid, mid)"
+    position = "overlay(output, min, min, 5)"
 }
 
-image "inside" {
+image "insideportrait" {
     size = maxsquare
     color = yellow
     border  {
@@ -23,6 +29,54 @@ image "inside" {
         color = black
     }
     margin = 5
-    position = "overlay(host, min, min)"
+    position = "overlay(hostportrait, min, min)"
+
+}
+
+# -- Test maxsquare for landscape
+
+image "hostlandscape" {
+    size = 600x400
+    color = lightblue
+    border  {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, max, min, 5)"
+}
+
+image "insidelandscape" {
+    size = maxsquare
+    color = yellow
+    border  {
+        width = 2
+        color = black
+    }
+    margin = 5
+    position = "overlay(hostlandscape, min, min)"
+
+}
+
+# -- Test maxsquare for square host
+
+image "hostsquare" {
+    size = 400x400
+    color = lightblue
+    border  {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, max, max, 5)"
+}
+
+image "insidesquare" {
+    size = maxsquare
+    color = yellow
+    border  {
+        width = 2
+        color = black
+    }
+    margin = 5
+    position = "overlay(hostsquare, min, min)"
 
 }
