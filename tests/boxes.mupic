@@ -1,9 +1,9 @@
-# ./mupic -c boxes.mupic
+# ./mupic boxes.mupic
 
 default fill black
 
 output {
-    path = test-out/boxes.png
+    path = ../test-out/boxes.png
     size = 1920x1080
     color = white
     border {

@@ -1,7 +1,7 @@
 output {
     size = 1000x1000
     color = white
-    path = test-out/image_fits.png
+    path = ../test-out/image_fits.png
 }
 
 image fit_landscape {

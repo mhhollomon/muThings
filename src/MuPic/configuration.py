@@ -49,8 +49,14 @@ class Configuration(Transformer) :
     def read_config(self) -> Settings :
         settings_dict = self._get_settings()
 
+        # Handle commandline args last so they can
+        # override the config file.
+
         if self.args is not None :
             if 'output_path' in self.args and self.args.output_path is not None :
+                # Don't use resolve_path() on the path coming from the command line
+                # Let the OS use its normal rules. THis will be less surprising for
+                # the user.
                 settings_dict['output']['path'] = self.args.output_path
 
             if 'grid' in self.args and self.args.grid is not None :
@@ -84,6 +90,10 @@ class Configuration(Transformer) :
         # - background path
         if 'background' in input['output'] :
             input['output']['background'] = resolve_path(input['output']['background'], self.context)
+
+        # -- output path
+        if 'path' in input['output'] :
+            input['output']['path'] = resolve_path(input['output']['path'], self.context)
 
         return input
 
