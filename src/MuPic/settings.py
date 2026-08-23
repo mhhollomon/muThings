@@ -259,7 +259,7 @@ class ImageSettings(PathSetting) :
     size : sizet | tuple[str, Any]
     position : position
     # contain, fill, stretch
-    fit : str ='fill'
+    fit : tuple = ('fill', ('mid',))
     mask : str = 'auto'
     zorder : int = 0
     # legal to have no path - just a background color.
@@ -290,6 +290,7 @@ class ImageSettings(PathSetting) :
         print(f"{new_prefix}size = {self.size}")
         print(f"{new_prefix}mask = {self.mask}")
         print(f"{new_prefix}position = {self.position}")
+        print(f"{new_prefix}fit = {self.fit}")
         if self.border is not None :
             self.border.print(new_prefix)
         if self.margin > 0 :

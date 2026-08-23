@@ -4,35 +4,105 @@ output {
     size = 1000x1000
     color = white
     path = ../test-out/image_fits.png
-}
-
-image fit_landscape {
-    path = resources/landscape-mode.png
-    size=200x200
-    fit = fit
-    color = blue
     border = black, 2
-    position = "overlay(output, 100, 100)"
 }
 
-image fill_landscape {
-    path = resources/landscape-mode.png
-    size=200x200
-    fit = fill
-    border {
-        width = 2
-        color = black
-    }
-    position = "overlay(output, 350, 350)"
-}
-
-image stretch_landscape {
+image stretch_la {
     path = resources/landscape-mode.png
     size=200x200
     fit = stretch
+    color = blue
+    border = black, 2
+    position = "overlay(output, 200, 100)"
+}
+
+
+image contain_min_la {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = contain, min
     border {
         width = 2
         color = black
     }
-    position = "overlay(output, 600, 600)"
+    position = "overlay(output, 200, 350)"
+}
+
+
+image contain_mid_la {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = contain, mid
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 450, 350)"
+}
+
+image contain_max_la {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = contain, max
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 700, 350)"
+}
+
+#-------------- 
+
+image fill_min_la {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = fill, min
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 200, 600)"
+}
+
+image fill_mid_la {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = fill, mid
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 450, 600)"
+}
+
+image fill_max_la {
+    path = resources/landscape-mode.png
+    size=200x200
+    fit = fill, max
+    border {
+        width = 2
+        color = black
+    }
+    position = "overlay(output, 700, 600)"
+}
+
+# ------------------------------
+text stretch_la_txt {
+    text = "stretch"
+    fill = black
+    size = 40
+    position = "attach(stretch_la, left, mid, mid, 20)"
+}
+
+text contain_la_txt {
+    text = "contain"
+    fill = black
+    size = 40
+    position = "attach(contain_min_la, left, mid, mid, 20)"
+}
+text fill_la_txt {
+    text = "fill"
+    fill = black
+    size = 40
+    position = "attach(fill_min_la, left, mid, mid, 20)"
 }

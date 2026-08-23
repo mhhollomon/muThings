@@ -52,23 +52,78 @@ class GraphicElement(ImageElement):
                 gray_img = self._compute_mask(img, 'black', luminance_img)
 
         return gray_img
+            
+    def _build_image(self, needed_size : sizet) -> Image.Image :
 
-    def _build_image(self, needed_size : int) -> Image.Image :
+        cfg = self.settings
 
-        file_path : str = self.settings.path or ''
+        file_path  = cfg.path
+        assert file_path is not None
 
         with Image.open(file_path) as img_img:
 
-            img_width, img_height = img_img.size
+            fit = cfg.fit
+            img_size = sizet(img_img.size)
 
-            if img_width > img_height:
-                # Landscape
-                new_size = (needed_size, int( needed_size * (img_height / img_width)))
-            else:
-                # Portrait
-                new_size = (int(needed_size * (img_width / img_height)), needed_size)
+            if fit[0] == 'stretch' :
+                # forget aspect ratio. Just make the image fill the rectangle
+                new_size = needed_size
+                logger.debug(f"-- Image -- Calculated size = {new_size}")
+                img_img = img_img.resize(new_size.to_tuple())
 
-            img_img = img_img.resize(new_size)
+            elif fit[0] == 'contain' :
+                # Make the image as large as possible while making sure it fits in
+                # entirely into container. But maintain A.R.
+                width_factor = needed_size.width / img_size.width
+                height_factor = needed_size.height / img_size.height
+                new_size = img_size * min(width_factor, height_factor)
+                img_img = img_img.resize(new_size.to_tuple())
+
+                if new_size != needed_size :
+                    # it will be smaller
+                    buffer = Image.new("RGB", size=needed_size.to_tuple(), color=cfg.color)
+                    if fit[1] == 'min' :
+                        paste_pt = sizet(0, 0)
+                    elif fit[1] == 'mid' :
+                        paste_pt = (needed_size - new_size) // 2
+                    else :
+                        paste_pt = (needed_size - new_size)
+
+                    buffer.paste(img_img, paste_pt.to_tuple())
+                    img_img = buffer
+            elif fit[0] == 'fill' :
+                # Make sure the image completely fills the container
+                # while preserving A.R.
+                # This means the image will need to be cropped.
+                width_factor = needed_size.width / img_size.width
+                height_factor = needed_size.height / img_size.height
+                new_size = img_size * max(width_factor, height_factor)
+                img_img = img_img.resize(new_size.to_tuple())
+
+                crop_factor = 0.0 if fit[1] == 'min' else 0.5 if fit[1] == 'mid' else 1.0
+                if new_size != needed_size :
+                    # The image will be bigger than the container.
+                    if new_size.width > needed_size.width :
+                        crop_width = new_size.width - needed_size.width
+                        crop_offset = crop_width * crop_factor
+                        crop = (
+                            crop_offset,
+                            0,
+                            new_size.width + crop_offset,
+                            needed_size.height,
+                        )
+                    else :
+                        crop_height = new_size.height - needed_size.height
+                        crop = (
+                            0,
+                            crop_height * crop_factor,
+                            needed_size.width,
+                            new_size.height + (crop_height * crop_factor),
+                        )
+                    img_img = img_img.crop(crop)
+            else :
+                raise ValueError(f"unknown fit algorithm `{fit[0]}` for {self.name}")
+
 
             return img_img
 
@@ -90,6 +145,12 @@ class GraphicElement(ImageElement):
             assert isinstance(factor, float)
 
             return ref_bbox.extent * factor
+        elif size[0] == "max" :
+            pos = self.settings.position
+            ref_elem = self.parent.get_elem(pos.target.element)
+            ref_bbox = ref_elem.get_bbox(sub=pos.target.sub, piece=pos.target.piece)
+
+            return ref_bbox.extent
 
         raise ValueError(f"Invalid size {size}")
         
@@ -126,7 +187,6 @@ class GraphicElement(ImageElement):
         # include the margin.
         full_rec = content_rec
 
-
         border_img : Image.Image | None = None
 
         if cfg.border is not None :
@@ -134,6 +194,8 @@ class GraphicElement(ImageElement):
             border_img = bh.generate(content_rec)
             self.set_bbox('border', content_rec)
             self.set_bbox('paste', content_rec)
+            
+            # Get the new size for the content
             content_rec = bh.get_content_rect()
             self.set_bbox('content', content_rec)
         else :
@@ -144,7 +206,7 @@ class GraphicElement(ImageElement):
 
         if cfg.path is not None:   
             logger.debug(f"graphics element {self.name} -- Loading image from {cfg.path}")
-            img_img = self._build_image(content_rec.extent.width)
+            img_img = self._build_image(content_rec.extent)
         elif cfg.color is None :
             raise ValueError(f"Both color and path are missing for {self.name}")
         else :

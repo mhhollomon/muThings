@@ -27,7 +27,7 @@ class BorderHelper:
 
 
     def generate(self, size_rect : rect) -> Image.Image :
-        logger.debug(f"--- Generating border rect = {size_rect} mode = {self.mode}")
+        logger.debug(f"--- Generating border - size_rect = {size_rect} mode = {self.mode}")
 
         ws = self.settings.width
 

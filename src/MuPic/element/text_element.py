@@ -80,15 +80,12 @@ class TextElement(ImageElement) :
         self.set_bbox('paste', full_rec)
 
         if cfg.stroke is not None :
+            assert isinstance(cfg.stroke.width, int)
             stroke_params = { 'stroke_fill' : cfg.stroke.color,
                             'stroke_width' : cfg.stroke.width }
         else :
             stroke_params = {}
 
-        if "\n" in cfg.text:
-            anchor_params = {}
-        else :
-            anchor_params = { 'anchor' : 'lt' }
 
 
         logger.debug(f"Text Position: {offsets}")
@@ -99,8 +96,12 @@ class TextElement(ImageElement) :
         draw = ImageDraw.Draw(text_image)
         draw_offsets = (cfg.gap, cfg.gap)
 
-
-        draw.text(draw_offsets, cfg.text, font=title_font, fill=cfg.fill, **anchor_params, **stroke_params)
+        if "\n" in cfg.text:
+            logger.debug(f"Text --- Drawing multiline text")
+            draw.multiline_text(draw_offsets, cfg.text, font=title_font, fill=cfg.fill, **stroke_params)
+        else :
+            logger.debug(f"Text --- Drawing single line text")
+            draw.text(draw_offsets, cfg.text, font=title_font, fill=cfg.fill, anchor='lt', **stroke_params)
 
         if cfg.rotation != 0 :
             text_image = text_image.rotate(-cfg.rotation, expand=1, resample=Image.Resampling.BILINEAR)
@@ -112,8 +113,6 @@ class TextElement(ImageElement) :
         else :
             final_image = text_image
             mask_image = text_image
-
-        #self.parent.img.paste(final_image, offsets.to_tuple(), mask=mask_image)
 
 
         self.bbox['content'] = content_rec

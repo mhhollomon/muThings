@@ -1,5 +1,6 @@
 from argparse import Namespace
 from copy import deepcopy
+import re
 from typing import Any, NamedTuple
 
 from lark import Lark, Transformer, v_args, Token, logger as lark_logger
@@ -195,8 +196,10 @@ class Configuration(Transformer) :
         return super().__default__(data, children, meta)
 
     def ESCAPED_STRING(self, token : Token) -> Token :
-        if token.value.startswith('"') :
-            token.value = token.value[1:-1]
+
+        string = token.value[1:-1]
+        string = re.sub(r'\\\\n', '\n', string)
+        token.value = string
         return token
 
     def STRING_VALUE(self, token : Token) -> Token :
@@ -261,8 +264,10 @@ class Configuration(Transformer) :
     def scale_size(self, value : Token) -> OptionTuple:
         return OptionTuple("size", ("scale", float(value.value)))
 
-    def size_maxsquare(self, children) -> OptionTuple:
-        return OptionTuple("size", ("maxsquare",))
+    @v_args(inline=True)
+    def size_max(self, stype : Token) -> OptionTuple:
+        type_str = stype.value.lower()
+        return OptionTuple("size", (type_str,))
 
     @v_args(inline=True)
     def image_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
@@ -277,6 +282,17 @@ class Configuration(Transformer) :
             settings.value['zorder'] = int(zorder_token.value)
         return settings
 
+    def fit_stretch(self, children) -> OptionTuple :
+        return OptionTuple('fit', ('stretch',))
+
+    @v_args(inline=True)
+    def fit_contain(self, align : Token) -> OptionTuple :
+        return OptionTuple('fit', ('contain', align.value.lower()))
+
+    @v_args(inline=True)
+    def fit_fill(self, align : Token) -> OptionTuple :
+        return OptionTuple('fit', ('fill', align.value.lower()))
+
     @v_args(inline=True)
     def text_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
         settings = self._util_consolidate('text', children, extras={'type':'text'})
@@ -287,6 +303,7 @@ class Configuration(Transformer) :
             settings.value['name'] = name
         if zorder_token is not None :
             settings.value['zorder'] = int(zorder_token.value)
+        logger.debug(f"--- text_stmt raw text string = {settings.value['text']}")
         return settings
 
     @v_args(inline=True)

@@ -295,6 +295,11 @@ class positionXform(Transformer) :
 
         return self._fix_pos('overlay', 'content', target, None, pos, anchor, offset)
 
+    @v_args(inline=True)
+    def output_pos(self, pos : tuple, 
+                    anchor : tuple | None, offset : int | None) -> tuple :
+
+        return self._fix_pos('overlay', 'content', ('output', 'content', None), None, pos, anchor, offset)
 
 
     @v_args(inline=True)

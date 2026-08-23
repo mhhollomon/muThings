@@ -2,7 +2,7 @@ mupic_config_file : include_stmt? default_stmt* _stmts
 
 _stmts : statement*
 
-?statement : output_stmt | cover_stmt
+?statement : output_stmt
     | image_stmt  | text_stmt
 
 include_stmt : "include" ESCAPED_STRING
@@ -20,21 +20,15 @@ OUTPUT_FIT : "cover" | "contain"
     | margin_int_option
     | border_spec
 
-cover_stmt : "cover" "{" cover_setting+ "}"
-?cover_setting : path_option
-    | "fit" "=" WORD -> fit_option
-    | "crop" "=" WORD -> crop_option
-    | "align" "=" WORD -> align_option
-    | margin_int_option
-    | border_spec
-
 image_stmt : "image" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" image_setting+ "}"
 ?image_setting : path_option
-    | "size" "=" "maxsquare" -> size_maxsquare
+    | "size" "=" /max(square)?/ -> size_max
     | "size" "=" "scale" "," FLOAT -> scale_size
     | size_2d_option
     | "mask" "=" WORD -> mask_option
-    | "fit" "=" WORD -> fit_option
+    | "fit" "=" "stretch" -> fit_stretch
+    | "fit" "=" "contain" "," MINMAX -> fit_contain
+    | "fit" "=" "fill" "," MINMAX -> fit_fill
     | position_option
     | border_spec
     | color_option
@@ -63,7 +57,7 @@ border_spec : "border" "{" border_setting+ "}"
 
 stroke_spec : "stroke" "{" stroke_setting+ "}"
 ?stroke_setting : color_option
-    | "width" "=" INTEGER -> width_option
+    | "width" "=" INTEGER -> width_int_option
 
 width_spec : "width" "=" INTEGER
     | "width" "{" INTEGER "}"
@@ -85,6 +79,8 @@ BARE_STRING : /[^ \t,\n"']+/
 %import common.FLOAT
 
 STRING_VALUE : ESCAPED_STRING | BARE_STRING
+MINMAX.10 : /min\b|mid\b|max\b/i
+
 
 // Priority is to make it tried before SH_COMMENT
 HEXCOLOR.10 : /\#[a-fA-F0-9]+/

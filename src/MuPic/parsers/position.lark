@@ -1,6 +1,7 @@
 start : simple_pos
     | attach_pos
     | overlay_pos
+    | output_pos
 
 // --- SIMPLE
 simple_pos : LR_POS "-" TB_POS [ "-" INTEGER ]
@@ -12,15 +13,19 @@ attach_pos : "attach" "(" triple "," side "," one_pos_value ["," MINMAX] ["," of
 
 anchor_values : MINMAX "," MINMAX
 side : PIECE
-offset : /[-+]?\d+/
 
 one_pos_value : MINMAX | POS_VALUE
 
 // --- OVERLAY
 overlay_pos : "overlay" "(" triple "," pos_values ["," anchor_values] ["," offset] ")"
-pos_values : one_pos_value "," one_pos_value
+
+// --- OUTPUT SHORTCUT
+output_pos : "output" "(" pos_values ["," anchor_values] ["," offset] ")"
 
 // ---- COMMON STUFF
+
+pos_values : one_pos_value "," one_pos_value
+offset : /[-+]?\d+/
 
 // alteration needed because of the higher priority of SUB_ELEMENT.
 // If 'border' is given as the ELEMENT_NAME it will be parsed as
