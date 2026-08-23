@@ -4,9 +4,6 @@
 /*.png
 /*.mupic
 
-# but we do want the "doc" yml
-!example_config.yml
-
 # infrastructure
 __pycache__/
 .venv/
