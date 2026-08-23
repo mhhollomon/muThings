@@ -210,46 +210,6 @@ class OutputSettings(PathSetting) :
             self.border.print(new_prefix)
         print(f"{prefix}}}")
 
-
-# -------------------------------------------------------------------------
-
-@dataclass
-class CoverSettings(PathSetting) :
-    __REQ_ARGS__ = ('align', 'crop', 'fit')
-    align : str
-    crop : str
-    fit : str 
-    name : str = 'cover'
-    # This is a convienence field for the code. The user cannot set it.
-    color : str | None = field(default=None, repr=False, init=False)
-    path : str | None = None
-    border : BorderSettings | None = None
-    margin : int = 0
-
-    @classmethod
-    def from_dict(cls, d : dict) :
-        d['name'] = 'cover'
-        if 'path' in d :
-            cls.check_args(d)
-        else :
-            d = dictmerge(deepcopy(d), { x : None for x in cls.__REQ_ARGS__ } )
-        if 'border' in d :
-            d['border'] = BorderSettings.from_dict(d['border'])
-        return cls(**d)
-
-    def print(self, prefix : str = '') :
-        print(f"{prefix}cover {{")
-        new_prefix = prefix + '  '
-        print(f"{new_prefix}path = {self.path}")
-        print(f"{new_prefix}align = {self.align}")
-        print(f"{new_prefix}crop = {self.crop}")
-        print(f"{new_prefix}fit = {self.fit}")
-        if self.border is not None :
-            self.border.print(new_prefix)
-        if self.margin > 0 :
-            print(f"{new_prefix}margin = {self.margin}")
-        print(f"{prefix}}}")
-
 # -------------------------------------------------------------------------
 
 @dataclass
@@ -382,7 +342,6 @@ class TextSettings(SettingsBase) :
 class Settings(SettingsBase) :
     # defaults : DefaultSettings
     # output  : OutputSettings
-    # cover   : CoverSettings | None = None
     # elements  : List[TextSettings | ImageSettings]
     # grid : str | None
 
@@ -390,10 +349,6 @@ class Settings(SettingsBase) :
         super().__init__()
         self.defaults = DefaultSettings(**setting['defaults'])
         self.output = OutputSettings.from_dict(setting['output'])
-        if 'cover' in setting :
-            self.cover = CoverSettings.from_dict(setting['cover'])
-        else :
-            self.cover = None
         if 'grid' in setting :
             self.grid = setting['grid']
         else :
@@ -414,8 +369,6 @@ class Settings(SettingsBase) :
         prefix += '  '
         self.defaults.print(prefix)
         self.output.print(prefix)
-        if self.cover is not None :
-            self.cover.print(prefix)
         for e in self.elements :
             e.print(prefix)
 

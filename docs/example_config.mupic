@@ -1,36 +1,5 @@
-# The configuration file is designed to allow you
-# to set defaults to use for a group of images.
-# So, for instance an album will use the same cover image and logo,
-# but different titles and output files.
-
-# The image is built in the following order
-# 1. The background
-# 2. The cover image
-# 3. image/text elements in the order they appear in the file
-
-# ---------------------------------
-# Layouts
-# ---------------------------------
-# Most items may have up to 3 areas that are a part
-# of their bounding box - margin, border, and content.
-# Unless otherwise noted, when a size is given to an element,
-# this size will include all three areas. In particular,
-# this means that the content will be placed into a smaller
-# area than the given size if either a margin or a border
-# is specified.
-#
-# For text elements, however, this is not true. See below for details.
-#
-# Areas from outside in :
-# 1. Margin - Defined by a width that is used for all 4 sides.
-#   The margin is transparent. Whatever is beneath will show through.
-# 2. Border - Each side of the border can be a different size including 0.
-#   The border will be painted the specified color.
-# 2.5 Gap - Text only transparent area between the content and the border.
-# 3. Content - The image or text.
-#
-# There are slightly different rules for different element types.
-# See below.
+# Please see docs/mupic-concepts.md
+# for deeper discussions of some points.
 
 # ---------------------------------
 # COLORS
@@ -44,30 +13,6 @@
 #
 # Hex codes and named colors do not need to be quoted. The others do.
 
-# ---------------------------------
-# POSITIONS
-# ---------------------------------
-# You can use the following formats for positions:
-#
-# Simple : Width-Height[-offset]
-#    Width is one of 'left', 'center', 'right'
-#    Height is one of 'top', 'center', 'bottom'
-#    Offset is the standoff from the edge of the output image.
-#    The default offset is 10.
-# 
-# Overlay :
-#   Designed to place elements on top of other elements. However, no clipping
-#   is done except at final image level.
-#
-#   overlay(triple, relative_position, [anchor], [offset])
-#
-#  Attach Function :
-#   The attach() function is used to place an element relative to another element.
-#
-#   attach(triple, side, pos, [anchor], offset)
-#     ref is the element that is used as a reference.
-#     side is one of 'left', 'right', 'top', 'bottom'
-#     offset is the standoff from the reference element.
 
 # ---------------------------------
 # Paths
@@ -111,10 +56,10 @@ include "/path/to/file.mupic"
 
 default font  "My Cool Font"
 
-# Fill - The defualt color if the text item unless it is
+# Fill - The default color of any text item unless it is
 # overridden in the configuration for that item.
 # The default is white.
-# Any color firmat from above may be used.
+# Any color format from above may be used.
 # Quotes are needed for the value if there are spaces, tabs, commas or
 # quotes in the value.
 
@@ -163,8 +108,9 @@ output {
     # output. The `color` parameter is not used. In this case,
     # the image is what will be seen in the transparent margin as
     # well as in the content area of the output.
-    # If fit is `contain`, the image is resized to content area
+    # If fit is `contain`, the image is resized to the content area
     # of the output.
+    # See the concepts document about bounding boxes.
     # Note that in both cases, the image is stretched as needed. aspect
     # ratio is not preserved.
     # optional. default = contain
@@ -172,8 +118,12 @@ output {
     fit = cover # or contain
 
     # Define a border.
-    # This will be between the marign and content areas.
+    # This will be between the margin and content areas.
     # optional. Default = no border.
+    #
+    # A shorter border spec is also available.
+    # border = color, width
+
     border {
         # Define the width of each side of the border.
         # If you wnat them to be the same you can just give that
@@ -193,64 +143,6 @@ output {
         color = "hsv(20, 50%, 90%)"
     }
 }
-#---------------------------------
-# Cover Image Configuration
-#---------------------------------
-# A "cover" image that is prominent on the output.
-# This is different from an image element (see below) by
-# always being placed relative to the output content area and
-# the existance of cropping controls.
-# This is drawn after the output layer but before any image or text elements
-# regardless of the order in the file.
-# optional.
-
-cover {
-    # The path to the image.
-    # The image can be any type supported by the `pillow` module.
-    # This path is resolved using the rules in the `Paths` section above.
-    # optional
-    path = /path/to/cover/file.png
-
-    # How the cover is resized to fit on the background.
-    # 'square' will resize the cover, then crop to a square.
-    # 'cover' will resize the cover, then crop to fit the output image.
-    # optional. Defaults to `square`.
-    fit = square
-
-    # One of 'min, 'mid', or 'max'
-    # Aligning depends on the orientation of the output - landscape or portrait.
-    # If landscape then it is relative to the width of the output image.
-    #   (min = left, mid = center, max = right)
-    # If portrait then it is relative to the height of the output image.
-    #   (min = top, mid = center, max = bottom)
-    # This is not used if the fit is `cover`.
-    # optional. Defaults to `min`.
-    align = min
-
-    # One of 'min, 'mid', or 'max'
-    # If the resized image needs to be cropped, this sets what area will be retained.
-    # Similar to 'align', the exact effect depends on the orientation
-    # of the output image.
-    # 'mid' is the default
-    # If the resized image is small, then this controls where in the 
-    # square the image will be placed.
-    # This will happen, for instance, if a portrait image is used
-    # as a cover in a landscape formatted output.
-    # optional. Defaults to `mid`.
-    crop = mid
-
-    # Size of the margin. Default is 0.
-    # optional.
-    margin = 5
-
-    # border for the cover image.
-    # See the `output` border section for details.
-    # optional. Defaults to no border.
-    border {
-        color = "rgb(0,0,0)"
-        width = 0
-    }
-}
 
 #---------------------------------
 # Text Configuration
@@ -260,32 +152,35 @@ cover {
 # While a name is not required, a name is needed if this element is
 # to be used as target of an attach or if you need to override settings
 # given in an included file.
-# Names must be unique across all elements. also the names `cover`, `border`, 
+# Names must be unique across all elements. also the names `border`, 
 # and `output` may not be used.
 # Names with special characters or spaces must be quoted.
 
-# Text and Image files are rendered in the order they appear in the file 
-# (but after the output and cover sections, regardless of order).
+# Text and Image elements are rendered in the order they appear in the file 
+# (but after the output section, regardless of order).
 # Elements in an included file will be rendered before any elements in the
 # including file. Elements with the same name will be merged into a single
 # configuration with the including file's settings taking precedence. However,
 # the element will be rendered in the order set by the included file.
 #
 
-text "name" {
+# See mupic-concepts.md for information about z-order.
+# optional defaults to 0.
+#
+
+text "name",  -20 {
     # The actual text. Multiple lines can be given using "\n" to denote the end of the line.
     # required.
     text = "This is the title"
 
     # Size of the text in pixels (not points)
-    # This size is a maximum. If the text does not fit, it will be scaled down.
-    # required.
+    # This is the size of the font that will be used.
     size = 200
 
     # Position for the text on the output.
-    # See above for details
+    # See mupic-concepts.md for details
     # required.
-    position = "pixel(40%, 40%)"
+    position = "output(40%, 40%)"
 
     # Font to use for the text.
     # defaults to the `default` font setting if not given (see above).
@@ -313,7 +208,7 @@ text "name" {
     }
 
     # Control Rotation
-    # For text, only values allowed are :
+    # For text, the only values allowed are :
     # -90 - text reads bottom to top
     #   0 - text reads left to right
     #  90 - text reads top to bottom
@@ -322,11 +217,11 @@ text "name" {
     rotation = 0
 
     # Border
-    # Same as for cover or output
+    # Same as for output
     # optional. Defaults to no border.
     border {
         color = "rgb(0,0,0)"
-        width = 0
+        width = 5
     }
 
 }
@@ -339,7 +234,7 @@ text "name" {
 # While a name is not required, a name is needed if this element is
 # to be used as target of an attach or if you need to override settings
 # given in an included file.
-# Names must be unique across all elements. also the names `cover`, `border`, 
+# Names must be unique across all elements. also the names `border`, 
 # and `output` may not be used.
 # Names with special characters or spaces must be quoted.
 
@@ -360,22 +255,44 @@ image logo {
     # optional.
     path = /path/to/cover/file.png
 
+    # fit
+    # How to place the image in the element
+    # stretch
+    #   The image is force resized to the content bbox. Aspect Ratio is not preserved.
+    # contain, <align>
+    #   The image is resized to completely fit into the bbox maintaining aspect ratio.
+    #   If the scaled image is smaller than the bbox, align (`min`, `mid`, `max`)
+    #   is used to decide how to place the image in the bbox.
+    # fill, <crop>
+    #   The image is resized to completely fill the bbox maintaining aspect ratio.
+    #   If the scaled image is larger than the bbox, crop (`min`, `mid`, `max`)
+    #   is used to decide which part of the image to save.
+    # See the tests/image_fit.mupic for examples.
+    fit = fill, mid
+
     # background color.
     # optional. Default is `black`
     color = green
 
-    # Size for the image.
-    # If only a single number is given, it is used for both dimensions
-    #   size = 300
-    # is the same as :
-    #   size = 300x300
-    # required.
-    size = 200x200
-
     # position
-    # See intro for details.
+    # See mupic-concepts.md for details
     # required.
     position = "attach(some_ele, mid, mid)"
+
+
+    # Size for the image.
+    # An absolute position can be specified using a WxH format :
+    #   size = 400x600
+    # The size can also be specified as relative to the positioning
+    # target elements content bbox (see the concepts document).
+    #   size = max  # element will be the same size as the target element
+    #   size = maxsquare # The element will be the size of the largest square
+    #                    # that will fit in the target element.
+    #   size = scale, <factor> # The element will be the size of the the target
+    #                          # element scaled by <factor> in both dimensions.
+    # required.
+    size = scale, 0.8
+
 
     # Algorithm to compute a mask for the logo image.
     # "self" - uses the luminance channel of the image as-is. This means that
@@ -392,10 +309,12 @@ image logo {
     # border for the image.
     # See the `output` border section for details.
     # optional. Defaults to no border.
-    border {
-        color = "rgb(0,0,0)"
-        width = 20
-    }
+    border = green, 20
+
+    # margin
+    # Size of the margin in pixels.
+    # optional. Defaults to no margin.
+    margin = 10
 
 }
 

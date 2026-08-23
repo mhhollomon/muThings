@@ -17,12 +17,7 @@ class MusicImage :
         ele = OutputElement('output', self.config.output, self)
         output_img = ele.generate()
 
-        self.img = output_img
-
-        if self.config.cover is not None :
-            ele = CoverElement('cover', self.config.cover, self)
-            ele.generate()
-        
+        self.img = output_img        
 
         zorder : list[tuple[int, int, str]] = []
         for i, block in enumerate(self.config.elements):

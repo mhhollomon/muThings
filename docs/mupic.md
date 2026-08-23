@@ -29,9 +29,14 @@ You can get a complete list of the options in the help message.
 ./mupic --help
 ```
 
+# Concepts
+
+The documentation relys on several concepts used by the software. Please
+see the [mupic concepts document](mupic-concepts.md) for details.
+
 # Configuration file
 
-See documentation in the [example configuration file](example_config.yml)
+See documentation in the [example configuration file](example_config.mupic)
 
-
-## Positioning
+The `.mupic` extension on configuration files is by convention and is not
+required.

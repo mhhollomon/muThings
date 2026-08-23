@@ -1,4 +1,4 @@
-# ./mupic test/image_fits.mupic
+# ./mupic tests/image_fits.mupic
 
 output {
     size = 1000x1000
@@ -37,7 +37,7 @@ image contain_mid_la {
         width = 2
         color = black
     }
-    position = "overlay(output, 450, 350)"
+    position = "attach(contain_min_la, right, min, min, 50)"
 }
 
 image contain_max_la {
@@ -48,7 +48,7 @@ image contain_max_la {
         width = 2
         color = black
     }
-    position = "overlay(output, 700, 350)"
+    position = "attach(contain_mid_la, right, min, min, 50)"
 }
 
 #-------------- 
@@ -72,7 +72,7 @@ image fill_mid_la {
         width = 2
         color = black
     }
-    position = "overlay(output, 450, 600)"
+    position = "attach(fill_min_la, right, min, min, 50)"
 }
 
 image fill_max_la {
@@ -83,7 +83,7 @@ image fill_max_la {
         width = 2
         color = black
     }
-    position = "overlay(output, 700, 600)"
+    position = "attach(fill_mid_la, right, min, min, 50)"
 }
 
 # ------------------------------
