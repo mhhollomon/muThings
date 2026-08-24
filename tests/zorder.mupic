@@ -1,0 +1,30 @@
+#
+# test the new zorder setting
+# notice the difference if you comment out the set line
+# (change it to `asc`)
+
+set zorder desc
+
+output {
+    size = 600x600
+    path = ../test-out/zorder.png
+    color = #336666
+}
+
+image b1 {
+    position = "output(30%, 30%)"
+    size = 200x200
+    color = #0000FF
+}
+
+image b2 {
+    position = "overlay(b1, mid, mid, min, min)"
+    size = max
+    color = #0000AA
+}
+
+image b3 {
+    position = "overlay(b2, mid, mid, min, min)"
+    size = max
+    color = #009999
+}

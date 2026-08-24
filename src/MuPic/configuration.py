@@ -34,6 +34,10 @@ class DefaultOption(NamedTuple) :
     name : str
     value : Any
 
+class SettingsOption(NamedTuple) :
+    name : str
+    value : Any
+
 #--------------------------------------------------------------------------
 
 class Configuration(Transformer) :
@@ -208,7 +212,7 @@ class Configuration(Transformer) :
         return token
 
     def mupic_config_file(self, children) -> dict:
-        settings = {'defaults':{}, 'elements':[] }
+        settings = {'defaults':{}, 'globals':{}, 'elements':[] }
         for child in children :
             if child is None :
                 continue
@@ -219,6 +223,8 @@ class Configuration(Transformer) :
                     settings[child.name] = child.value
             elif isinstance(child, DefaultOption) :
                 settings['defaults'][child.name] = child.value
+            elif isinstance(child, SettingsOption) :
+                settings['globals'][child.name] = child.value
             else :
                 raise ValueError(f"Invalid top-level statement: {child}")
 
@@ -228,9 +234,14 @@ class Configuration(Transformer) :
     def default_stmt(self, name : Token, value : Token) :
         name = name.value
         dvalue = value.value
-        # if dvalue.startswith('"') :
-        #     dvalue = dvalue[1:-1]
         return DefaultOption(name, dvalue)
+
+    @v_args(inline=True)
+    def zorder_stmt(self, value : Token) :
+        dvalue = value.value.lower()
+        if dvalue not in ('asc', 'desc') :
+            raise ValueError(f"zorder setting must be one of 'asc' or 'desc' - invalid value `{dvalue}`")
+        return SettingsOption('zorder', dvalue)
 
     @v_args(inline=True)
     def size_2d_option(self, value : Token) -> OptionTuple:

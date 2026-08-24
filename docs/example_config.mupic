@@ -41,8 +41,19 @@
 # Only one file may be included. However, nesting can go to 20 levels.
 # The file path must be double-quoted.
 # The path will be resolved as in the `Paths` section above.
+# Any include statement must be the first statement in the file.
 
 include "/path/to/file.mupic"
+
+#---------------------------------
+# Settings
+#---------------------------------
+
+# Set the default zorder. The default
+# is that elements later in the file are on top of earliers (asc).
+# This allows you reverse that by using `desc`
+
+set zorder asc
 
 #---------------------------------
 # Defaults

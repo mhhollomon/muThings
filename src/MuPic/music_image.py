@@ -20,6 +20,7 @@ class MusicImage :
         self.img = output_img        
 
         zorder : list[tuple[int, int, str]] = []
+        ele_count = len(self.config.elements)
         for i, block in enumerate(self.config.elements):
             name = block.name or f'block_{i}'
             if isinstance(block, ImageSettings) :
@@ -27,7 +28,8 @@ class MusicImage :
             else :
                 ele = TextElement(name, block, self)
             ele.generate()
-            zorder.append((ele.settings.zorder, i, name))
+            z = ele_count - i if self.config.globals.zorder == 'desc' else i
+            zorder.append((ele.settings.zorder, z, name))
 
         # Now we need figure out the order
         zorder.sort()

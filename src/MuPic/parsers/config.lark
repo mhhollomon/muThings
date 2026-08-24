@@ -1,4 +1,4 @@
-mupic_config_file : include_stmt? default_stmt* _stmts
+mupic_config_file : include_stmt? setting_stmt* default_stmt* _stmts
 
 _stmts : statement*
 
@@ -6,6 +6,8 @@ _stmts : statement*
     | image_stmt  | text_stmt
 
 include_stmt : "include" ESCAPED_STRING
+
+setting_stmt : "set" "zorder" CNAME -> zorder_stmt
 
 default_stmt : "default" DEFLT_PROP STRING_VALUE
 DEFLT_PROP : "font" | "fill"

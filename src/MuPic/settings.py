@@ -335,12 +335,30 @@ class TextSettings(SettingsBase) :
         return self.text is not None and self.text != ''
 
 
+#--------------------------------------------------------------------------
+@dataclass
+class GlobalSettings(SettingsBase) :
+    zorder : str = 'asc'
+
+    @classmethod
+    def from_dict(cls, d : dict) -> 'GlobalSettings' :
+        cls.check_args(d)
+        try :
+            t = GlobalSettings(**d)
+        except Exception as e :
+            raise ValueError(f"Invalid global settings: {d} : {e}") from e
+        return t
+
+    def print(self, prefix : str = '') :
+        print(f"{prefix}set zorder {self.zorder}")
+
 # -------------------------------------------------------------------------
 # Settings CLASS
 # -------------------------------------------------------------------------
 
 class Settings(SettingsBase) :
     # defaults : DefaultSettings
+    # globals : GlobalSettings
     # output  : OutputSettings
     # elements  : List[TextSettings | ImageSettings]
     # grid : str | None
@@ -349,6 +367,7 @@ class Settings(SettingsBase) :
         super().__init__()
         self.defaults = DefaultSettings(**setting['defaults'])
         self.output = OutputSettings.from_dict(setting['output'])
+        self.globals = GlobalSettings.from_dict(setting['globals'])
         if 'grid' in setting :
             self.grid = setting['grid']
         else :
