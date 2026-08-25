@@ -41,8 +41,6 @@ class SettingsOption(NamedTuple) :
 #--------------------------------------------------------------------------
 
 class Configuration(Transformer) :
-    context : Path
-    elements : List[ImageSettings | TextSettings]
 
     def __init__(self, config_file : str | Path, args : Namespace | None = None) :
         super().__init__()
@@ -50,6 +48,9 @@ class Configuration(Transformer) :
 
         self.context = self._config_file.parent
         self.args = args
+
+        self.last_element_name : str | None = None
+        self.template : dict[str, tuple] = {}
 
     def read_config(self) -> Settings :
         settings_dict = self._get_settings()
@@ -284,11 +285,16 @@ class Configuration(Transformer) :
     def image_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
         logger.debug(f"process image_stmt : {name_token}")
         settings = self._util_consolidate('image', children, extras={'type':'image'})
+
         if name_token is not None : 
             name = name_token.value
             if name.startswith('"') :
                 name = name[1:-1]
             settings.value['name'] = name
+            self.last_element_name = name
+        else :
+            self.last_element_name = None
+
         if zorder_token is not None :
             settings.value['zorder'] = int(zorder_token.value)
         return settings
@@ -307,11 +313,16 @@ class Configuration(Transformer) :
     @v_args(inline=True)
     def text_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
         settings = self._util_consolidate('text', children, extras={'type':'text'})
+
         if name_token is not None : 
             name = name_token.value
             if name.startswith('"') :
                 name = name[1:-1]
             settings.value['name'] = name
+            self.last_element_name = name
+        else :
+            self.last_element_name = None
+
         if zorder_token is not None :
             settings.value['zorder'] = int(zorder_token.value)
         logger.debug(f"--- text_stmt raw text string = {settings.value['text']}")
@@ -332,3 +343,66 @@ class Configuration(Transformer) :
         cfg = xform._get_settings()
 
         return OptionTuple('include', cfg)
+
+    def parm_list(self, children : list[Token]) -> list :
+        parms = [ c.value for c in children]
+        pset = set(parms)
+        if len(pset) != len(parms) :
+            raise ValueError(f"Duplicate parameters defined for template : {parms}")
+
+        if 'p' in pset :
+            raise ValueError(f"parameter `p` is reserved and cannot be in the parmater list")
+
+        return parms
+
+    @v_args(inline=True)
+    def template_stmt(self, nameT : Token, parms : list, tbody : Token) :
+        name = nameT.value
+        if name in self.template :
+            raise ValueError(f"Duplicate template name `{name}`")
+        body =  tbody.value.strip()[3:][:-3].strip()
+
+        self.template[name] = (parms, body)
+
+        logger.debug(f"""New Template :
+    parameters = {parms}
+    body = ```{body}```""")
+
+    def render_list(self, children : list[Token]) -> list[str] :
+        parms = [ c.value for c in children]
+        return parms
+
+    @v_args(inline=True)
+    def render_stmt(self, tname : Token, parms : list[str]) :
+        name = tname.value
+        if name not in self.template :
+            raise ValueError(f"No template named `{name}` exists in render statment")
+
+        formals, body = self.template[name]
+        if len(parms) != len(formals) :
+            raise ValueError(f"Incorrect number of arguments given for `{name}` - expecting {len(formals)} received {len(parms)}")
+
+        data : dict = {}
+
+        data = {i[0] : i[1] for i in zip(formals, parms)}
+        data['p'] = self.last_element_name
+
+        new_body = re.sub(r'\$([a-zA-Z])',
+                          lambda match : data[match.groups()[0]],
+                          body)
+        logger.debug(f"Render output = ```{new_body}```") 
+
+        parser = get_parser('config')
+
+        tree = parser.parse(new_body)
+        new_conf = Configuration(self.context, None)
+        settings = new_conf.transform(tree)
+
+        ele = settings['elements']
+        if not len(ele) :
+            logger.warning(f"No elements generated from template `{name}` render")
+
+        self.last_element_name = ele[0].get('name')
+
+        return OptionTuple(ele[0]['type'], ele[0])
+

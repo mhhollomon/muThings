@@ -248,6 +248,8 @@ class ImageSettings(PathSetting) :
             print(f"{new_prefix}zorder = {self.zorder}")            
         print(f"{new_prefix}path = {self.path}")
         print(f"{new_prefix}size = {self.size}")
+        if self.color is not None :
+            print(f"{new_prefix}color = \"{self.color}\"")
         print(f"{new_prefix}mask = {self.mask}")
         print(f"{new_prefix}position = {self.position}")
         print(f"{new_prefix}fit = {self.fit}")
@@ -318,6 +320,8 @@ class TextSettings(SettingsBase) :
         print(f"{new_prefix}text = \"{self.text}\"")
         print(f"{new_prefix}size = {self.size}")
         print(f"{new_prefix}font = {self.font}")
+        if self.color is not None :
+            print(f"{new_prefix}color = {self.color}")
         if self.border is not None :
             self.border.print(new_prefix)
         print(f"{new_prefix}position = {self.position}")

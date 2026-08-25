@@ -4,6 +4,7 @@ _stmts : statement*
 
 ?statement : output_stmt
     | image_stmt  | text_stmt
+    | template_stmt | render_stmt
 
 include_stmt : "include" ESCAPED_STRING
 
@@ -50,6 +51,13 @@ text_stmt : "text" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" text_setting+ "}"
     | "gap" "=" INTEGER -> gap_int_option
     | border_spec
 
+template_stmt : "template" CNAME "(" parm_list ")" TBODY
+parm_list : /[a-zA-Z]/ ("," /[a-zA-Z]/)*
+TBODY.50 : /\{\{\{/ /.+?(?=}}})/s /\}\}\}/
+
+render_stmt : "render" CNAME "(" render_list ")"
+render_list : STRING_VALUE ("," STRING_VALUE)*
+
 border_spec : "border" "{" border_setting+ "}"
     | "border" "=" (HEXCOLOR | ESCAPED_STRING | CNAME) ","  INTEGER-> simple_border
 // Changing this to directly use color_option rule
@@ -74,7 +82,7 @@ color_option : "color" "=" (HEXCOLOR | ESCAPED_STRING | CNAME)
 
 SIZE : /\d+(x\d+)?/
 INTEGER : /[-+]?\d+/
-BARE_STRING : /[^ \t,\n"']+/
+BARE_STRING : /[^)( \t,\n"']+/
 %import common.ESCAPED_STRING
 %import common.WORD
 %import common.CNAME
