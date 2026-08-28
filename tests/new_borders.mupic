@@ -1,0 +1,63 @@
+output {
+    size = 700x1000
+    path = ../test-out/new_borders.png
+    color = white
+}
+
+image one_size {
+    color = #7799ff
+    size = 200x200
+    border {
+        width = 20
+        color = #77ff77
+    }
+    position = "output(100, 100)"
+}
+
+image multi_size {
+    color = #7799ff
+    size = 200x200
+    border {
+        width {l=10 r=10 t=20 b=0}
+        color = #77ff77
+    }
+    position = "output(400, 100)"
+}
+
+image rounded {
+    color = #7799ff
+    size = 200x200
+    border {
+        width = 20
+        color = #77ff77
+        round = 30
+    }
+    position = "output(100, 400)"
+}
+
+image rounded_img {
+    #color = #7777ff
+    path = resources/portrait-mode.png
+    fit = fill, mid
+    mask = auto
+    size = 200x200
+    border {
+        width = 20
+        color = #77ff77
+        round = 30
+    }
+    position = "output(400, 400)"
+}
+
+image straight_img {
+    #color = #7777ff
+    path = resources/portrait-mode.png
+    fit = fill, mid
+    mask = auto
+    size = 200x200
+    border {
+        width = 20
+        color = #77ff77
+    }
+    position = "output(100, 700)"
+}

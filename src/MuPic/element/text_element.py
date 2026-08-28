@@ -54,7 +54,7 @@ class TextElement(ImageElement) :
 
 
         if cfg.border is not None :
-            bh = BorderHelper(cfg.border, mode='add')
+            bh = BorderHelper(cfg.border, cfg.name, mode='add')
             border_img = bh.generate(rect(point(0,0), final_text_size))
             content_rec = bh.get_content_rect()
             logger.debug(f"Text -- content_rec before offsets = {content_rec}")

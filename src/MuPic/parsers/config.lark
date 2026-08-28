@@ -64,6 +64,7 @@ border_spec : "border" "{" border_setting+ "}"
 // causes a reduce/reduce conflict with stroke_setting
 ?border_setting : "color" "=" (HEXCOLOR | ESCAPED_STRING | WORD) -> color_option
     | width_spec
+    | "round" "=" INTEGER -> round_int_option
 
 stroke_spec : "stroke" "{" stroke_setting+ "}"
 ?stroke_setting : color_option

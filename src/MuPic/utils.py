@@ -22,5 +22,17 @@ def dictmerge(a: dict, b: dict) -> dict:
 
 #----------------------------------------------------------------------------
 
-def clamped_mask(input : Image.Image) -> Image.Image :
-    return input.convert('L').point(lambda x : 0 if x < 10 else 255) # type: ignore
+def clamped_mask(input : Image.Image, threshold : int = 10) -> Image.Image :
+
+    upper_threshold = 255 - threshold
+    slope = 255 / (upper_threshold - threshold)
+
+    def new_value(x : float) -> float :
+        if x < threshold :
+            return 0
+        elif x > upper_threshold :
+            return 255
+        else :
+            return (x - threshold) * slope
+
+    return input.convert('L').point(new_value)

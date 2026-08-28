@@ -104,12 +104,9 @@ class WidthSettings(SettingsBase) :
     def is_zero(self) :
         return self.l < 1 and self.r < 1 and self.t < 1 and self.b < 1
 
-    def validate(self) -> bool :
-        for attr in ('l', 'r', 't', 'b') :
-            value = getattr(self, attr)
-            if value < -1 :
-                raise ValueError(f"Invalid width '{value}' for side '{attr}'")
-        return True
+    def all_sides_same(self) :
+        """Check if all sides are the same width."""
+        return self.l == self.r and self.r == self.t and self.t == self.b
 
     def __str__(self) :
         string = "width {"
@@ -126,12 +123,12 @@ class BorderSettings(SettingsBase) :
     __REQ_ARGS__ = ('color', 'width')
     color : str
     width : WidthSettings
+    round : int = 0
 
     @classmethod
     def from_dict(cls, d : dict) :
         cls.check_args(d)
-        if 'width' in d :
-            d['width'] = WidthSettings(**d['width'])
+        d['width'] = WidthSettings(**d['width']) if 'width' in d else WidthSettings()
         return cls(**d)
 
     def exists(self) -> bool :
@@ -183,18 +180,7 @@ class OutputSettings(PathSetting) :
         if 'border' in d :
             d['border'] = BorderSettings.from_dict(d['border'])
 
-        return cls(**d)
-
-    def validate(self) -> None :
-        if self.border is not None :
-            self.border.validate()
-
-        if self.margin < 0 :
-            raise ValueError(f"Margin cannot be negative: {self.margin}")
-
-        if self.size.width <= 0 or self.size.height <= 0 :
-            raise ValueError(f"Dimensions cannot be negative or zero for output: {self.size}")
-        
+        return cls(**d)        
 
     def print(self, prefix: str = ''):
         print(f"{prefix}OutputSettings {{")
@@ -241,6 +227,9 @@ class ImageSettings(PathSetting) :
             raise ValueError(f"Invalid image settings: {d} : {e}") from None
         return t
 
+    def has_border(self) -> bool :
+        return self.border is not None and not self.border.width.is_zero()
+    
     def print(self, prefix : str = '') :
         print(f"{prefix}image \"{self.name}\" {{")
         new_prefix = prefix + '  '

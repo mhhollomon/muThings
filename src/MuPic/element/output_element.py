@@ -50,14 +50,15 @@ class OutputElement(ImageElement) :
         logger.debug(f"border size = {border_size}")
 
         if self.settings.border is not None :
-            bh = BorderHelper(self.settings.border)
+            bh = BorderHelper(self.settings.border, 'output')
 
             border_img = bh.generate(rect(output_offset, output_size))
-            self.set_bbox('border', rect(output_offset, output_size))
+            if border_img :
+                self.set_bbox('border', rect(output_offset, output_size))
 
-            content_bbox = bh.get_content_rect()
+                content_bbox = bh.get_content_rect()
 
-            output_img.paste(border_img, output_offset.to_tuple(), mask=border_img)
+                output_img.paste(border_img, output_offset.to_tuple(), mask=border_img)
         else :
             content_bbox = rect(output_offset, output_size)
 

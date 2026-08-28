@@ -14,7 +14,7 @@ class point :
         self.y = int(y)
         self._done = True
 
-    def to_tuple(self) -> tuple :
+    def to_tuple(self) -> tuple[int, int] :
         return (self.x, self.y)
 
     def __getitem__(self, key : int) :
@@ -104,7 +104,7 @@ class sizet :
         self.height = int(height)
         self._done = True
 
-    def to_tuple(self) -> tuple :
+    def to_tuple(self) -> tuple[int, int] :
         return (self.width, self.height)
 
     def __getitem__(self, key) :
@@ -135,6 +135,9 @@ class sizet :
         # "square" should be treated as landscape
         return self.width >= self.height
 
+    def small_side(self) -> int :
+        return min(self.width, self.height)
+    
     def copy(self) -> 'sizet' :
         return sizet(self.width, self.height)
 

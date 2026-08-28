@@ -20,8 +20,24 @@ template t(i, o) {{{
 }}}
 
 render t(1, 10)
-render t(2, 20)
-render t(3, 30)
-render t(4, 40)
+render t(2, 25)
+render t(3, 40)
+render t(4, 55)
 
-#
+#----------------------------------
+
+image logo 1000 {
+    size = 75x75
+    mask = auto
+    position = "overlay(output, max, max, max, max, 10)"
+    path = "../../muArt/src/common/viking-treble-clef-no-fill.png"
+
+}
+
+text title 1000 {
+    size = 30
+    font = /mnt/c/Windows/fonts/ariali.ttf
+    text = "Mind The Gap"
+    position = "overlay(output, mid, max, mid, max, 10)"
+    fill = black
+}
