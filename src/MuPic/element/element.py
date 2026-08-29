@@ -22,6 +22,7 @@ class ImageElement :
         self.main_image : Image.Image | None = None
         self.mask_image : Image.Image | None = None
         self.generated = False
+        self.layout_done = False
 
         if add_to_parent :
             parent._add_element(self)
@@ -63,6 +64,7 @@ class ImageElement :
             return None
         m = getattr(s, 'margin', None)
         return None if m is None or m < 1 else WidthSettings(m, m, m, m)
+    
 #-----------------------------------------------------------------------------
 
     def set_bbox(self, sub : str, new_bbox : rect) -> None :
@@ -80,7 +82,7 @@ class ImageElement :
         Returns the element's bbox. 
         """
         logger.debug(f"getting {self.name} {sub} bbox (piece={piece})")
-        if not self.generated :
+        if not self.layout_done :
             raise ValueError(f"Element {self.name} has not been generated yet")
         if sub not in self.bbox :
             raise ValueError(f"Element {self.name} has no bbox for sub {sub}")

@@ -19,7 +19,7 @@ image multi_size {
     size = 200x200
     border {
         width {l=10 r=10 t=20 b=0}
-        color = #77ff77
+        color = hsv(120, 53%, 100%)
     }
     position = "output(400, 100)"
 }
@@ -29,7 +29,7 @@ image rounded {
     size = 200x200
     border {
         width = 20
-        color = #77ff77
+        color = hsl(120, 100%, 73%)
         round = 30
     }
     position = "output(100, 400)"
@@ -43,21 +43,35 @@ image rounded_img {
     size = 200x200
     border {
         width = 20
-        color = #77ff77
+        color = rgb( 119, 255, 119 )
         round = 30
     }
     position = "output(400, 400)"
 }
 
-image straight_img {
+# image straight_img {
+#     #color = #7777ff
+#     path = resources/portrait-mode.png
+#     fit = fill, mid
+#     mask = auto
+#     size = 200x200
+#     border {
+#         width = 20
+#         color = #77ff77
+#     }
+#     position = "output(100, 700)"
+# }
+
+image rounded_img_land {
     #color = #7777ff
-    path = resources/portrait-mode.png
+    path = resources/landscape-mode.png
     fit = fill, mid
     mask = auto
     size = 200x200
     border {
         width = 20
-        color = #77ff77
+        color = rgb( 119, 255, 119 )
+        round = 30
     }
-    position = "output(100, 700)"
+    position = "output(400, 700)"
 }

@@ -12,7 +12,7 @@ from .border_helper import BorderHelper
 from ..settings import ImageSettings
 from ..geometry import sizet, rect
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,6 +23,90 @@ class GraphicElement(ImageElement):
         super().__init__(name, parent)
 
         self.settings = deepcopy(graphic_settings)
+        self.bh : BorderHelper | None = None
+        self.img_bg_color = 'black'
+
+    def _debug(self, msg : str) :
+        logger.debug(f"Image {self.name} -- {msg}")
+
+    def layout(self) :
+        """Compute all the bboxen"""
+
+
+        cfg = self.settings
+        self._debug(f"layout {self.name} image")
+
+        # When using antialising with mask, we need to make sure
+        # we are blending with a color as close as possible to the
+        # expected background color.
+        # If this element declares a color, use that
+        # If not, use the color of the output element (this defaults to black).
+        #
+        # This isn't perfect, but it is the best we can do until the split between
+        # layout and image generation happens.
+        #
+        if cfg.color :
+            self.img_bg_color = cfg.color
+        else :
+            self.img_bg_color = self.parent.get_elem('output').settings.color # type: ignore
+
+
+        if isinstance(cfg.size, tuple):
+            # cfg.size is one of the relative size settings.
+            cfg.size = self._calc_size(cfg.size)
+            self._debug(f"Calculated size = {cfg.size}")
+
+        offsets =  self.offsets_for_position(
+            pos=cfg.position,
+            elem_size=cfg.size
+            )
+
+        content_rec = rect(offsets, cfg.size)
+        # --- FULL
+        self.set_bbox('full', content_rec)
+
+        if cfg.margin > 0 :
+            # 'full' and 'margin' bbox are the same.
+            # This is set inside the `if` because margin should not exist
+            # if there is no margin.
+            # --- MARGIN
+            self.set_bbox('margin', content_rec)
+
+            # Remove the margin from the content rect
+            new_origin = content_rec.origin + cfg.margin
+            new_extent = content_rec.extent - (cfg.margin * 2)
+            content_rec = rect(new_origin, new_extent)
+
+        self._debug(f"content_rec after margin = {content_rec}")
+
+        if cfg.has_border() :
+            assert cfg.border is not None
+            self.bh = BorderHelper(cfg.border, cfg.name, color=self.img_bg_color)
+            self.bh.layout(content_rec)
+            # --- PASTE
+            self.set_bbox('paste', content_rec)
+            if self.bh.get_content_rect() is not None:
+
+                # --- BORDER
+                self.set_bbox('border', content_rec)
+            
+            # Get the new size for the content that excludes the border
+            content_rec = self.bh.get_content_rect()
+
+            # --- CONTENT
+            self.set_bbox('content', content_rec)
+
+        else :
+            logger.debug("Image -- No border spec")
+            # --- CONTENT
+            self.set_bbox('content', content_rec)
+            # --- PASTE
+            self.set_bbox('paste', content_rec)
+
+        logger.debug(f"Image -- content_rec after border = {content_rec}")
+
+        self.layout_done = True
+
 
     def _compute_mask(self, img : Image.Image, mask : str, luminance_img : Image.Image | None = None) -> Image.Image | None :
         
@@ -50,8 +134,6 @@ class GraphicElement(ImageElement):
             if 'A' in img.mode or 'a' in img.mode:
                 logger.debug(f"Image {self.name} -- computing mask : using A channel of image")
                 gray_img = img.getchannel('A')
-                img.save("./z-img-as-read.png")
-                gray_img.save("./z-alpha-channel.png")
             else:
                 gray_img = self._compute_mask(img, 'black', luminance_img)
 
@@ -110,22 +192,23 @@ class GraphicElement(ImageElement):
                     # The image will be bigger than the container.
                     if new_size.width > needed_size.width :
                         crop_width = new_size.width - needed_size.width
-                        logger.debug(f"Image {self.name} -- too wide by {crop_width})")
+                        logger.debug(f"Image {self.name} -- too wide by {crop_width}")
                         crop_offset = crop_width * crop_factor
                         crop = (
                             crop_offset,
                             0,
-                            new_size.width + crop_offset,
+                            needed_size.width + crop_offset,
                             needed_size.height,
                         )
                     else :
                         crop_height = new_size.height - needed_size.height
-                        logger.debug(f"Image {self.name} -- too tall by  {crop_height})")
+                        logger.debug(f"Image {self.name} -- too tall by  {crop_height}")
+                        crop_offset = crop_height * crop_factor
                         crop = (
                             0,
-                            crop_height * crop_factor,
+                            crop_offset,
                             needed_size.width,
-                            needed_size.height + (crop_height * crop_factor),
+                            needed_size.height + crop_offset,
                         )
 
                     img_img = img_img.crop(crop)
@@ -168,47 +251,25 @@ class GraphicElement(ImageElement):
         cfg = self.settings
         logger.info(f"---- Image -- Adding {self.name} image")
 
-        if isinstance(cfg.size, tuple):
-            cfg.size = self._calc_size(cfg.size)
-            logger.debug(f"Calculated size = {cfg.size}")
+        self.layout()
 
-        offsets =  self.offsets_for_position(
-            pos=cfg.position,
-            elem_size=cfg.size
-            )
 
-        content_rec = rect(offsets, cfg.size)
-        self.set_bbox('full', content_rec)
-        full_rec = content_rec
-
-        if cfg.margin > 0 :
-            # 'full' and 'margin' bbox are the same.
-            self.set_bbox('margin', content_rec)
-
-            # Remove the margin from the content rect
-            new_origin = content_rec.origin + cfg.margin
-            new_extent = content_rec.extent - (cfg.margin * 2)
-            content_rec = rect(new_origin, new_extent)
-            logger.debug(f"Image -- content_rec after margin = {content_rec}")
-
-        # Rather than mess with transparency, we simply create
-        # a smaller content that ignores the margin.
-        # The 'full' bbox for the element, however will still
-        # include the margin.
-
+        content_rec = self.get_bbox('content')
+        full_rec = self.get_bbox('full')
 
         border_img : Image.Image | None = None
 
+
         if cfg.has_border() :
             assert cfg.border is not None
-            bh = BorderHelper(cfg.border, cfg.name)
-            border_img = bh.generate(content_rec)
+            assert self.bh is not None
+            border_img = self.bh.generate(content_rec)
             self.set_bbox('paste', content_rec)
             if border_img is not None:
                 self.set_bbox('border', content_rec)
             
             # Get the new size for the content
-            content_rec = bh.get_content_rect()
+            content_rec = self.bh.get_content_rect()
             self.set_bbox('content', content_rec)
 
             content_paste = (cfg.border.width.l, cfg.border.width.t)
@@ -229,11 +290,9 @@ class GraphicElement(ImageElement):
         else :
             img_img = None
         
-
-        img_color = cfg.color if cfg.color is not None else 'black'
         mask_color = 255 if cfg.color is not None else 0
 
-        full_img = Image.new("RGB", full_rec.extent.to_tuple(), color=img_color)
+        full_img = Image.new("RGB", full_rec.extent.to_tuple(), color=self.img_bg_color)
         full_mask = Image.new("L", full_rec.extent.to_tuple(), color=mask_color)
 
         mask_img = None
@@ -243,10 +302,8 @@ class GraphicElement(ImageElement):
             full_img.paste(img_img, content_paste, mask=mask_img)
             if mask_img :
                 logger.debug(f"Image {self.name} -- updating full mask with mask_img")
-                mask_img.save('./z-mask-img.png')
                 full_mask.paste(mask_img, content_paste)
 
-            full_mask.save("./z-full-mask-after-img.png")
 
 
         if border_img is not None:
@@ -254,11 +311,7 @@ class GraphicElement(ImageElement):
             full_img.paste(border_img, (0,0), mask=border_img)
             logger.debug(f"Image {self.name} -- updating full mask with border_mask")
             border_mask = border_img.getchannel('A')
-            border_mask.save("./z-border-mask.png")
-            full_mask = Image.blend(full_mask, border_mask, alpha=0.5)
-            full_mask.save("./z-full-mask-blend.png")
-            full_mask = full_mask.point(lambda x : 2.0 * x)
-            full_mask.save("./z-full-mask.png")
+            full_mask = ImageChops.lighter(full_mask, border_mask)
     
         self.generated = True
         self.main_image = full_img

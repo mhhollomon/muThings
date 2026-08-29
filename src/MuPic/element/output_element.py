@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from .element import ImageElement
 from .border_helper import BorderHelper
 
-from ..settings import OutputSettings, WidthSettings
+from ..settings import OutputSettings
 from ..geometry import  rect, point
 
 
@@ -75,5 +75,6 @@ class OutputElement(ImageElement) :
             output_img.paste(bg_img, content_bbox.origin.to_tuple())
 
         self.generated = True
+        self.layout_done = True
 
         return output_img

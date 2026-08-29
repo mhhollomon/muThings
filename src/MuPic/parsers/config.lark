@@ -59,10 +59,10 @@ render_stmt : "render" CNAME "(" render_list ")"
 render_list : STRING_VALUE ("," STRING_VALUE)*
 
 border_spec : "border" "{" border_setting+ "}"
-    | "border" "=" (HEXCOLOR | ESCAPED_STRING | CNAME) ","  INTEGER-> simple_border
+    | "border" "=" (HEXCOLOR | RGBCOLOR | HSVCOLOR | HSLCOLOR | ESCAPED_STRING | CNAME) ","  INTEGER-> simple_border
 // Changing this to directly use color_option rule
 // causes a reduce/reduce conflict with stroke_setting
-?border_setting : "color" "=" (HEXCOLOR | ESCAPED_STRING | WORD) -> color_option
+?border_setting : "color" "=" (HEXCOLOR | RGBCOLOR | HSVCOLOR | HSLCOLOR | ESCAPED_STRING | CNAME) -> color_option
     | width_spec
     | "round" "=" INTEGER -> round_int_option
 
@@ -79,11 +79,19 @@ path_option : "path" "=" STRING_VALUE
 margin_int_option : "margin" "=" INTEGER
 size_2d_option : "size" "=" SIZE
 position_option : "position" "=" STRING_VALUE
-color_option : "color" "=" (HEXCOLOR | ESCAPED_STRING | CNAME)
+color_option : "color" "=" (HEXCOLOR | RGBCOLOR | HSVCOLOR | HSLCOLOR | ESCAPED_STRING | CNAME)
 
 SIZE : /\d+(x\d+)?/
 INTEGER : /[-+]?\d+/
 BARE_STRING : /[^)( \t,\n"']+/
+
+// Priority is to make it tried before SH_COMMENT
+HEXCOLOR.10 : /\#[a-fA-F0-9]+/
+RGBCOLOR.30 : /rgb\( *\d+ *, *\d+ *, *\d+ *\)/i
+HSVCOLOR.30 : /hsv\( *\d+ *, *\d+\% *, *\d+% *\)/i
+HSLCOLOR.30 : /hsl\( *\d+ *, *\d+\% *, *\d+% *\)/i
+
+
 %import common.ESCAPED_STRING
 %import common.WORD
 %import common.CNAME
@@ -93,8 +101,6 @@ STRING_VALUE : ESCAPED_STRING | BARE_STRING
 MINMAX.10 : /min\b|mid\b|max\b/i
 
 
-// Priority is to make it tried before SH_COMMENT
-HEXCOLOR.10 : /\#[a-fA-F0-9]+/
 
 %import common.SH_COMMENT
 %import common.WS

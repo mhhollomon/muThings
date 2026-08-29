@@ -13,6 +13,9 @@ class MusicImage :
         
         self.output_size = self.config.output.size
 
+    def _debug(self, msg : str) -> None :
+        logger.debug(f"Main --- {msg}")
+
     def generate(self) :
         ele = OutputElement('output', self.config.output, self)
         output_img = ele.generate()
@@ -39,6 +42,12 @@ class MusicImage :
             ele = self.get_elem(zorder_tuple[2])
             bbox = ele.get_bbox('paste')
             img, mask = ele.get_images()
+
+            if mask :
+                mask_data = f"{mask.size}:{mask.mode}"
+            else :
+                mask_data = "NONE"
+            self._debug(f"paste img = {img.size}:{img.mode}, mask = {mask_data}, origin = {bbox.origin}")
             self.output_image().paste(img, bbox.origin.to_tuple(), mask=mask)
 
         self._generate_grid()
