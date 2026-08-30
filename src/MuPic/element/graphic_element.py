@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class GraphicElement(ImageElement):
+    DBGCATEGORY = 'Image'
+    LOGGER = logger
+
     def __init__(self, name : str, graphic_settings : ImageSettings, parent : 'MusicImage') :
         super().__init__(name, parent)
 
@@ -26,9 +29,9 @@ class GraphicElement(ImageElement):
         self.bh : BorderHelper | None = None
         self.img_bg_color = 'black'
 
-    def _debug(self, msg : str) :
-        logger.debug(f"Image {self.name} -- {msg}")
-
+    #-----------------------------------------------------
+    # LAYOUT
+    #-----------------------------------------------------
     def layout(self) :
         """Compute all the bboxen"""
 
@@ -79,12 +82,13 @@ class GraphicElement(ImageElement):
 
         self._debug(f"content_rec after margin = {content_rec}")
 
+        # --- PASTE
+        self.set_bbox('paste', content_rec)
+
         if cfg.has_border() :
             assert cfg.border is not None
             self.bh = BorderHelper(cfg.border, cfg.name, color=self.img_bg_color)
             self.bh.layout(content_rec)
-            # --- PASTE
-            self.set_bbox('paste', content_rec)
             if self.bh.get_content_rect() is not None:
 
                 # --- BORDER
@@ -100,8 +104,6 @@ class GraphicElement(ImageElement):
             logger.debug("Image -- No border spec")
             # --- CONTENT
             self.set_bbox('content', content_rec)
-            # --- PASTE
-            self.set_bbox('paste', content_rec)
 
         logger.debug(f"Image -- content_rec after border = {content_rec}")
 
@@ -122,8 +124,8 @@ class GraphicElement(ImageElement):
             gray_img = clamped_mask(luminance_img)
 
         elif mask == 'none' :
-            # no mask
-            gray_img = None
+            # no mask - but weirdness happens so an opaque mask
+            gray_img = Image.new("L", luminance_img.size, color=255 )
 
         elif mask == 'alpha' :
             # use the alpha channel
@@ -132,7 +134,7 @@ class GraphicElement(ImageElement):
         else : # auto
             # use alpha if it is there otherwise use black
             if 'A' in img.mode or 'a' in img.mode:
-                logger.debug(f"Image {self.name} -- computing mask : using A channel of image")
+                self._debug(f"computing mask : using A channel of image")
                 gray_img = img.getchannel('A')
             else:
                 gray_img = self._compute_mask(img, 'black', luminance_img)
@@ -187,12 +189,12 @@ class GraphicElement(ImageElement):
 
                 crop_factor = 0.0 if fit[1] == 'min' else 0.5 if fit[1] == 'mid' else 1.0
                 if new_size != needed_size :
-                    logger.debug(f"Image {self.name} -- need to crop ({new_size} down to {needed_size})")
+                    self._debug(f"need to crop ({new_size} down to {needed_size})")
 
                     # The image will be bigger than the container.
                     if new_size.width > needed_size.width :
                         crop_width = new_size.width - needed_size.width
-                        logger.debug(f"Image {self.name} -- too wide by {crop_width}")
+                        self._debug(f"too wide by {crop_width}")
                         crop_offset = crop_width * crop_factor
                         crop = (
                             crop_offset,
@@ -202,7 +204,7 @@ class GraphicElement(ImageElement):
                         )
                     else :
                         crop_height = new_size.height - needed_size.height
-                        logger.debug(f"Image {self.name} -- too tall by  {crop_height}")
+                        self._debug(f"too tall by  {crop_height}")
                         crop_offset = crop_height * crop_factor
                         crop = (
                             0,
@@ -215,7 +217,7 @@ class GraphicElement(ImageElement):
             else :
                 raise ValueError(f"unknown fit algorithm `{fit[0]}` for {self.name}")
 
-            logger.debug(f"Image {self.name} -- _build_image final size = {img_img.size}")
+            self._debug(f"_build_image final size = {img_img.size}")
 
             return img_img
 
@@ -249,13 +251,13 @@ class GraphicElement(ImageElement):
     def generate(self) -> None :
 
         cfg = self.settings
-        logger.info(f"---- Image -- Adding {self.name} image")
+        self._debug(f"START")
 
-        self.layout()
+        if not self.layout_done :
+            self.layout()
 
 
         content_rec = self.get_bbox('content')
-        full_rec = self.get_bbox('full')
 
         border_img : Image.Image | None = None
 
@@ -264,26 +266,25 @@ class GraphicElement(ImageElement):
             assert cfg.border is not None
             assert self.bh is not None
             border_img = self.bh.generate(content_rec)
-            self.set_bbox('paste', content_rec)
-            if border_img is not None:
-                self.set_bbox('border', content_rec)
+            if border_img is None:
+                full_img_bbox = content_rec
+            else :
+                full_img_bbox = self.bh.get_border_rect()
             
             # Get the new size for the content
             content_rec = self.bh.get_content_rect()
-            self.set_bbox('content', content_rec)
 
             content_paste = (cfg.border.width.l, cfg.border.width.t)
         else :
-            logger.debug("Image -- No border spec")
+            self._debug(f"No border spec")
             content_paste = (0, 0)
-            self.set_bbox('content', content_rec)
-            self.set_bbox('paste', content_rec)
+            full_img_bbox = content_rec
 
-        logger.debug(f"Image -- content_rec after border = {content_rec}")
+        self._debug(f"content_rec after border = {content_rec}")
 
 
         if cfg.path is not None:   
-            logger.debug(f"graphics element {self.name} -- Loading image from {cfg.path}")
+            self._debug(f"Loading image from {cfg.path}")
             img_img = self._build_image(content_rec.extent)
         elif cfg.color is None :
             raise ValueError(f"Both color and path are missing for {self.name}")
@@ -292,30 +293,32 @@ class GraphicElement(ImageElement):
         
         mask_color = 255 if cfg.color is not None else 0
 
-        full_img = Image.new("RGB", full_rec.extent.to_tuple(), color=self.img_bg_color)
-        full_mask = Image.new("L", full_rec.extent.to_tuple(), color=mask_color)
+        full_img = Image.new("RGB", full_img_bbox.extent.to_tuple(), color=self.img_bg_color)
+        full_mask = Image.new("L", full_img_bbox.extent.to_tuple(), color=mask_color)
 
         mask_img = None
         if img_img :
             mask_img = self._compute_mask(img_img, cfg.mask)
-            logger.debug(f"Image {self.name} -- pasting image into final at {content_paste}")
+            self._debug(f"pasting image into final at {content_paste}")
             full_img.paste(img_img, content_paste, mask=mask_img)
             if mask_img :
-                logger.debug(f"Image {self.name} -- updating full mask with mask_img")
+                self._debug(f"updating full mask with mask_img")
                 full_mask.paste(mask_img, content_paste)
 
 
 
         if border_img is not None:
-            logger.debug(f"Image {self.name} -- pasting border into final")
+            self._debug(f"pasting border into final")
             full_img.paste(border_img, (0,0), mask=border_img)
-            logger.debug(f"Image {self.name} -- updating full mask with border_mask")
+            self._debug(f"updating full mask with border_mask")
             border_mask = border_img.getchannel('A')
             full_mask = ImageChops.lighter(full_mask, border_mask)
+
+        self._dbgsave(full_mask, "final-mask")
     
         self.generated = True
         self.main_image = full_img
         self.mask_image = full_mask
 
-        logger.debug(f"---- End {self.name} image")
+        self._debug(f"---- END")
 

@@ -33,51 +33,85 @@ def _get_text_size(text : str, font : ImageFont.FreeTypeFont) -> sizet:
 #---------------------------------------------------------
 
 class TextElement(ImageElement) :
+    DBGCATEGORY = 'Text'
+    LOGGER = logger
+
     def __init__(self, name : str, text_settings : TextSettings, parent : 'MusicImage') :
         super().__init__(name, parent)
 
         self.settings = deepcopy(text_settings)
 
-    def generate(self) -> None :
+        self.bh : BorderHelper | None = None
+
+    #-----------------------------------------------------
+    # LAYOUT
+    #-----------------------------------------------------
+    def layout(self) :
+        """Compute all the bboxen"""
+
         cfg = self.settings
-        
-        logger.info(f"---- Text -- Adding {self.name} text")
+        self._debug(f"layout {self.name} text")
 
-
-        title_font = ImageFont.truetype(cfg.font, cfg.size)
-        text_size = _get_text_size(cfg.text, title_font) + (cfg.gap * 2)
+        self.title_font = ImageFont.truetype(cfg.font, cfg.size)
+        self.text_size = _get_text_size(cfg.text, self.title_font) + (cfg.gap * 2)
 
         if cfg.rotation in [90, -90]:
-            final_text_size = sizet(text_size.height, text_size.width)
+            final_text_size = sizet(self.text_size.height, self.text_size.width)
         else:
-            final_text_size = text_size
+            final_text_size = self.text_size
 
+        if cfg.color :
+            self.text_bg_color = cfg.color
+        else :
+            self.text_bg_color = self.parent.get_elem('output').settings.color # type: ignore
 
         if cfg.border is not None :
-            bh = BorderHelper(cfg.border, cfg.name, mode='add')
-            border_img = bh.generate(rect(point(0,0), final_text_size))
-            content_rec = bh.get_content_rect()
-            logger.debug(f"Text -- content_rec before offsets = {content_rec}")
-            full_rec = bh.get_border_rect()
+            self.bh = BorderHelper(cfg.border, cfg.name, mode='add')
+
+            self.bh.layout(rect(point(0,0), final_text_size))
+            content_rec = self.bh.get_content_rect()
+            self._debug("content_rec before offsets = {content_rec}")
+            full_rec = self.bh.get_border_rect()
         else :
             content_rec = rect(point(0,0), final_text_size)
             full_rec = rect(point(0,0), final_text_size)
-            border_img = None
 
-        offsets =  self.offsets_for_position(
+        self.offsets =  self.offsets_for_position(
             pos=cfg.position,
             elem_size=full_rec.extent
             )
         
-        content_rec = content_rec.add_offsets(offsets)
+        content_rec = content_rec.add_offsets(self.offsets)
         logger.debug(f"Text -- content_rec after offsets = {content_rec}")
+
+        # --- CONTENT
         self.set_bbox('content', content_rec)
-        full_rec = full_rec.add_offsets(offsets)
+
+        full_rec = full_rec.add_offsets(self.offsets)
         logger.debug(f"Text -- full_rec after offsets = {full_rec}")
+
+        # --- FULL
         self.set_bbox('full', full_rec)
+
+        # --- BORDER
         # If we add margin, this will need to change. But good for now.
         self.set_bbox('border', full_rec)
+
+        ## -- PASTE
         self.set_bbox('paste', full_rec)
+
+        self.layout_done = True
+
+    def generate(self) -> None :
+
+        if not self.layout_done :
+            self.layout()
+
+        cfg = self.settings
+        
+        logger.info(f"---- Text --- Adding {self.name} text")
+
+        content_rec = self.get_bbox('content')
 
         if cfg.stroke is not None :
             assert isinstance(cfg.stroke.width, int)
@@ -86,28 +120,28 @@ class TextElement(ImageElement) :
         else :
             stroke_params = {}
 
-
-
-        logger.debug(f"Text Position: {offsets}")
+        self._debug(f"Text Position: {self.offsets}")
 
         color_params = {'color' : cfg.color} if cfg.color is not None else {}
 
-        text_image = Image.new("RGBA", text_size.to_tuple(), **color_params)
+        text_image = Image.new("RGBA", self.text_size.to_tuple(), **color_params)
         draw = ImageDraw.Draw(text_image)
         draw_offsets = (cfg.gap, cfg.gap)
 
         if "\n" in cfg.text:
             logger.debug(f"Text --- Drawing multiline text")
-            draw.multiline_text(draw_offsets, cfg.text, font=title_font, fill=cfg.fill, **stroke_params)
+            draw.multiline_text(draw_offsets, cfg.text, font=self.title_font, fill=cfg.fill, **stroke_params)
         else :
             logger.debug(f"Text --- Drawing single line text")
-            draw.text(draw_offsets, cfg.text, font=title_font, fill=cfg.fill, anchor='lt', **stroke_params)
+            draw.text(draw_offsets, cfg.text, font=self.title_font, fill=cfg.fill, anchor='lt', **stroke_params)
 
         if cfg.rotation != 0 :
-            text_image = text_image.rotate(-cfg.rotation, expand=1, resample=Image.Resampling.BILINEAR)
+            text_image = text_image.rotate(cfg.rotation, expand=1, resample=Image.Resampling.BILINEAR)
+
+        border_img = self.bh.generate(rect(point(0,0),self.text_size)) if self.bh else None
 
         if border_img is not None :
-            border_img.paste(text_image, (content_rec.origin - offsets).to_tuple(), mask=text_image)
+            border_img.paste(text_image, (content_rec.origin - self.offsets).to_tuple(), mask=text_image)
             final_image = border_img
             mask_image = border_img
         else :
@@ -115,8 +149,6 @@ class TextElement(ImageElement) :
             mask_image = text_image
 
 
-        self.bbox['content'] = content_rec
-        self.bbox['full'] = rect(point(*offsets), final_text_size)
         self.generated = True
         self.main_image = final_image
         self.mask_image = mask_image

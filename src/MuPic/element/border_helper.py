@@ -1,18 +1,21 @@
 from copy import deepcopy   
 
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageDraw
 
 from ..geometry import rect, point
 
 
 from ..settings import BorderSettings
+from ..utils import DebugBase
 
 import logging
 logger = logging.getLogger(__name__)
 
 _MULT_FACTOR : int = 4
 
-class BorderHelper:
+class BorderHelper(DebugBase):
+    DBGCATEGORY = 'BorderHelper'
+    
     def __init__(self, settings : BorderSettings, name : str, mode : str = 'subtract', color:str='black') :
         self.settings = deepcopy(settings)
         self.mode = mode
@@ -81,7 +84,7 @@ class BorderHelper:
         width = ws.r
         if width > 0 :
             # If width is even, then the "extra" pixel is on the right of the line
-            border_mid = width // 2 + (1 - width %2)
+            border_mid = width // 2 + 1
             start = (border_ext.width - border_mid, 0)
             # Coordinates are included so need to stop one short
             end = (border_ext.width - border_mid, border_ext.height-1)
@@ -93,7 +96,7 @@ class BorderHelper:
         width = ws.b
         if width > 0 :
             # If width is even, then the "extra" pixel is on the bottom of the line
-            border_mid = width // 2 + (1 - width %2)
+            border_mid = width // 2 + 1
             start = (0, border_ext.height - border_mid)
             # Coordinates are included so need to stop one short
             end = (border_ext.width -1, border_ext.height - border_mid)
@@ -159,6 +162,8 @@ class BorderHelper:
 
         if not self.content_bbox :
             self.layout(size_rect)
+        else :
+            self._debug("Layout already done")
 
         if ws.is_zero() :
             self._debug(f"width is zero")

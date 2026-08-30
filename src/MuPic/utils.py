@@ -1,6 +1,8 @@
 from PIL import Image
 
-
+import logging
+import os
+from pathlib import Path
 
 def dictmerge(a: dict, b: dict) -> dict:
     """Merge b into a.
@@ -36,3 +38,34 @@ def clamped_mask(input : Image.Image, threshold : int = 10) -> Image.Image :
             return (x - threshold) * slope
 
     return input.convert('L').point(new_value)
+
+#----------------------------------------------------------------------------
+
+class DebugBase() :
+    DBGCATEGORY = 'Unknown'
+
+    def _dbgsave(self, img : Image.Image, suffix : str) :
+
+        logger = getattr(self, 'LOGGER', logging.getLogger(self.DBGCATEGORY))
+
+        if not logger.isEnabledFor(logging.DEBUG) :
+            return
+
+        dir = os.environ.get('MUPIC_DEBUG_SAVE_DIR')
+        if not dir :
+            return
+        
+        dir = Path(dir)
+        if not dir.is_dir() :
+            return
+
+        fname =  dir / f"dbg-{self.DBGCATEGORY.lower()}-{suffix}.png"
+
+        img.save(fname, format='png')
+
+    def _debug(self, msg) :
+        logger = getattr(self, 'LOGGER', logging.getLogger(self.DBGCATEGORY))
+        name = getattr(self, 'name', '')
+        logger.debug(f"{self.DBGCATEGORY} {name} -- {msg}")
+
+

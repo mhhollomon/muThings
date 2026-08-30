@@ -128,13 +128,13 @@ text "bottomborder" {
 text "leftborder" {
     text = "♥ left"
     size = 30
-    rotation = -90
+    rotation = 90
     position = "overlay(borderhost.border.left, mid, mid)"
 }
 
 text "rightborder" {
     text = "♥ right"
     size = 30
-    rotation = 90
+    rotation = -90
     position = "overlay(borderhost.border.right, mid, mid)"
 }

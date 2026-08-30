@@ -8,12 +8,14 @@ from ..settings import WidthSettings
 
 from PIL import Image
 
+from ..utils import DebugBase
+
 import logging
 logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------
 
-class ImageElement :
+class ImageElement(DebugBase) :
 
     def __init__(self, name : str, parent : 'MusicImage', add_to_parent : bool = True) :
         self.name = name

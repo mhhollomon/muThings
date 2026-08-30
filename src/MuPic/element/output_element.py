@@ -20,19 +20,71 @@ import logging
 logger = logging.getLogger(__name__)
 
 class OutputElement(ImageElement) :
+    DBGCATEGORY = 'Output'
+    LOGGER = logger
+
     def __init__(self, name : str, output_settings : OutputSettings, parent : 'MusicImage') :
         super().__init__(name, parent)
 
         self.settings  = output_settings
-    
-    def generate(self) -> Image.Image :
+
+        self.bh : BorderHelper | None = None
+
+    #-----------------------------------------------------
+    # LAYOUT
+    #-----------------------------------------------------
+    def layout(self) :
+        """Compute all the bboxen"""
 
         full_output_size = self.settings.size
         full_bbox = rect(point(0,0), full_output_size)
+
+        # --- FULL
         self.set_bbox('full', full_bbox)
 
         output_size = full_output_size
-        output_offset = point(0,0)
+        output_offset = point(0, 0)
+
+        if self.settings.margin > 0 :
+            # Calculate the border_bbox
+            output_size = output_size - self.settings.margin * 2
+            output_offset += self.settings.margin
+
+            # --- MARGIN
+            self.set_bbox('margin', full_bbox)
+
+        # Output should probably not have a border.
+        # You could add a border by overlaying a image element. 
+        # May Trash later.
+        if self.settings.border is not None :
+            self.bh = BorderHelper(self.settings.border, 'output')
+
+            self.bh.layout(rect(output_offset, output_size))
+
+            if self.bh.border_bbox :
+                # --- BORDER
+                self.set_bbox('border', rect(output_offset, output_size))
+
+                content_bbox = self.bh.get_content_rect()
+            else :
+                content_bbox = rect(output_offset, output_size)
+        else :
+            content_bbox = rect(output_offset, output_size)
+
+        # --- CONTENT
+        self.set_bbox('content', content_bbox)
+
+        self.layout_done = True
+
+
+    def generate(self) -> Image.Image :
+
+        if not self.layout_done :
+            self.layout()
+
+        full_output_size = self.settings.size
+        content_bbox = self.get_bbox('content')
+
 
         if self.settings.background is not None and self.settings.fit == 'cover':
             output_img = Image.open(self.settings.background)
@@ -40,33 +92,19 @@ class OutputElement(ImageElement) :
         else :
             output_img = Image.new("RGB", full_output_size.to_tuple(), color=self.settings.color)
 
-        if self.settings.margin > 0 :
-            # Calculate the border_bbox
-            output_size = output_size - self.settings.margin * 2
-            output_offset += self.settings.margin
-            self.set_bbox('margin', full_bbox)
-            
-        border_size = output_size
-        logger.debug(f"border size = {border_size}")
+        if self.bh :
+            border_bbox = self.get_bbox('border')
 
-        if self.settings.border is not None :
-            bh = BorderHelper(self.settings.border, 'output')
-
-            border_img = bh.generate(rect(output_offset, output_size))
+            border_img = self.bh.generate(content_bbox)
             if border_img :
-                self.set_bbox('border', rect(output_offset, output_size))
+                self._debug(f"pasting border at {border_bbox.origin}")
+                output_img.paste(border_img, border_bbox.origin.to_tuple(), mask=border_img)
 
-                content_bbox = bh.get_content_rect()
 
-                output_img.paste(border_img, output_offset.to_tuple(), mask=border_img)
-        else :
-            content_bbox = rect(output_offset, output_size)
-
-        self.set_bbox('content', content_bbox)
 
         if self.settings.background is not None and self.settings.fit == 'contain':
 
-            logger.info("Adding background image")
+            self._debug("Adding background image")
             bg_img = Image.open(self.settings.background)
             if bg_img.mode != 'RGB':
                 bg_img = bg_img.convert('RGB')
