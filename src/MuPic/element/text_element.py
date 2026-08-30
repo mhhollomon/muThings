@@ -50,15 +50,15 @@ class TextElement(ImageElement) :
         """Compute all the bboxen"""
 
         cfg = self.settings
-        self._debug(f"layout {self.name} text")
+        self._debug(f"START Layout")
 
         self.title_font = ImageFont.truetype(cfg.font, cfg.size)
-        self.text_size = _get_text_size(cfg.text, self.title_font) + (cfg.gap * 2)
+        self.unrotated_text_size = _get_text_size(cfg.text, self.title_font) + (cfg.gap * 2)
 
         if cfg.rotation in [90, -90]:
-            final_text_size = sizet(self.text_size.height, self.text_size.width)
+            final_text_size = sizet(self.unrotated_text_size.height, self.unrotated_text_size.width)
         else:
-            final_text_size = self.text_size
+            final_text_size = self.unrotated_text_size
 
         if cfg.color :
             self.text_bg_color = cfg.color
@@ -101,18 +101,38 @@ class TextElement(ImageElement) :
         self.set_bbox('paste', full_rec)
 
         self.layout_done = True
+        self._debug("END layout")
 
-    def generate(self) -> None :
+    #-----------------------------------------------------
+    # RENDER
+    #-----------------------------------------------------
+    def render(self, output_img : Image.Image) -> Image.Image :
 
-        if not self.layout_done :
-            self.layout()
+        logger.info(f"Adding text {self.name}")
 
         cfg = self.settings
-        
-        logger.info(f"---- Text --- Adding {self.name} text")
+        self._debug(f"START Render")
 
-        content_rec = self.get_bbox('content')
+        if not self.layout_done :
+            raise RuntimeError(f"Layout not called before render on {self.name}")
 
+        full_bbox = self.get_bbox('full')
+        content_bbox = self.get_bbox('content')
+
+        ## Background color
+        if cfg.color :
+            color_params = {'color' : cfg.color}
+            # No mask since this is supposed to be a solid background color.
+            bg = Image.new("RGB", full_bbox.extent.to_tuple(), 
+                           **color_params)
+            self._debug(f"pasting color bg at {full_bbox.origin.to_tuple()}")
+            output_img.paste(bg, full_bbox.origin.to_tuple())
+        else :
+            self._debug("No background color")
+            color_params = {}
+
+
+        ## Text
         if cfg.stroke is not None :
             assert isinstance(cfg.stroke.width, int)
             stroke_params = { 'stroke_fill' : cfg.stroke.color,
@@ -120,37 +140,30 @@ class TextElement(ImageElement) :
         else :
             stroke_params = {}
 
-        self._debug(f"Text Position: {self.offsets}")
-
-        color_params = {'color' : cfg.color} if cfg.color is not None else {}
-
-        text_image = Image.new("RGBA", self.text_size.to_tuple(), **color_params)
-        draw = ImageDraw.Draw(text_image)
+        # TODO : Allow masking on text
+        text_img = Image.new("RGBA", self.unrotated_text_size.to_tuple(), 
+                           **color_params)
+        text_draw = ImageDraw.Draw(text_img)
         draw_offsets = (cfg.gap, cfg.gap)
-
-        if "\n" in cfg.text:
-            logger.debug(f"Text --- Drawing multiline text")
-            draw.multiline_text(draw_offsets, cfg.text, font=self.title_font, fill=cfg.fill, **stroke_params)
-        else :
-            logger.debug(f"Text --- Drawing single line text")
-            draw.text(draw_offsets, cfg.text, font=self.title_font, fill=cfg.fill, anchor='lt', **stroke_params)
-
+        anchor_params = {'anchor' : 'lt'} if "\n" not in cfg.text else {}
+        text_draw.text(draw_offsets, cfg.text, font=self.title_font, 
+                       fill=cfg.fill, **anchor_params, **stroke_params)
         if cfg.rotation != 0 :
-            text_image = text_image.rotate(cfg.rotation, expand=1, resample=Image.Resampling.BILINEAR)
+            self._debug(f"Rotating text by {cfg.rotation} degrees")
+            text_img = text_img.rotate(cfg.rotation, expand=1, resample=Image.Resampling.BILINEAR)
 
-        border_img = self.bh.generate(rect(point(0,0),self.text_size)) if self.bh else None
+        self._debug(f"pasting text at {content_bbox.origin.to_tuple()}")
+        output_img.paste(text_img, content_bbox.origin.to_tuple(), mask=text_img)
 
-        if border_img is not None :
-            border_img.paste(text_image, (content_rec.origin - self.offsets).to_tuple(), mask=text_image)
-            final_image = border_img
-            mask_image = border_img
-        else :
-            final_image = text_image
-            mask_image = text_image
+        ## Border
+        if cfg.has_border() :
+            assert cfg.border is not None
+            assert self.bh is not None
+            border_img = self.bh.generate()
+            border_bbox = self.bh.get_border_rect()
+            if border_img is not None:
+                self._debug(f"pasting border at {border_bbox.origin.to_tuple()}")
+                output_img.paste(border_img, border_bbox.origin.to_tuple(), mask=border_img )
 
-
-        self.generated = True
-        self.main_image = final_image
-        self.mask_image = mask_image
-
-        logger.debug(f"---- End {self.name} text")
+        self._debug("END render")
+        return output_img

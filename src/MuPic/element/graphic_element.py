@@ -37,7 +37,7 @@ class GraphicElement(ImageElement):
 
 
         cfg = self.settings
-        self._debug(f"layout {self.name} image")
+        self._debug("LAYOUT start")
 
         # When using antialising with mask, we need to make sure
         # we are blending with a color as close as possible to the
@@ -101,13 +101,14 @@ class GraphicElement(ImageElement):
             self.set_bbox('content', content_rec)
 
         else :
-            logger.debug("Image -- No border spec")
+            self._debug(f"No border spec")
             # --- CONTENT
             self.set_bbox('content', content_rec)
 
-        logger.debug(f"Image -- content_rec after border = {content_rec}")
+        self._debug(f"content_rec after border = {content_rec}")
 
         self.layout_done = True
+        self._debug("LAYOUT end")
 
 
     def _compute_mask(self, img : Image.Image, mask : str, luminance_img : Image.Image | None = None) -> Image.Image | None :
@@ -247,78 +248,49 @@ class GraphicElement(ImageElement):
             return ref_bbox.extent
 
         raise ValueError(f"Invalid size {size}")
-        
-    def generate(self) -> None :
+
+    #-----------------------------------------------------
+    # RENDER
+    #-----------------------------------------------------
+    def render(self, output_img : Image.Image) -> Image.Image :
+
+        logger.info(f"Adding image {self.name}")
 
         cfg = self.settings
-        self._debug(f"START")
+        self._debug(f"START Render")
 
         if not self.layout_done :
-            self.layout()
+            raise RuntimeError(f"Layout not called before render on {self.name}")
 
+        full_bbox = self.get_bbox('full')
+        content_bbox = self.get_bbox('content')
 
-        content_rec = self.get_bbox('content')
+        ## Background color
+        if cfg.color :
+            # No mask since this is supposed to be a solid background color.
+            bg = Image.new("RGB", full_bbox.extent.to_tuple(), 
+                           color=cfg.color)
+            self._debug(f"pasting color bg at {full_bbox.origin.to_tuple()}")
+            output_img.paste(bg, full_bbox.origin.to_tuple())
 
-        border_img : Image.Image | None = None
+        ## Image file
+        if cfg.path is not None:   
+            self._debug(f"Loading image from {cfg.path}")
+            img_img = self._build_image(content_bbox.extent)
+            mask_img = self._compute_mask(img_img, cfg.mask)
+            self._debug(f"pasting image at {content_bbox.origin.to_tuple()}")
+            output_img.paste(img_img, content_bbox.origin.to_tuple(), mask=mask_img)
 
-
+        ## Border
         if cfg.has_border() :
             assert cfg.border is not None
             assert self.bh is not None
-            border_img = self.bh.generate(content_rec)
-            if border_img is None:
-                full_img_bbox = content_rec
-            else :
-                full_img_bbox = self.bh.get_border_rect()
+            border_img = self.bh.generate()
+            border_bbox = self.bh.get_border_rect()
+            if border_img is not None:
+                self._debug(f"pasting border at {border_bbox.origin.to_tuple()}")
+                output_img.paste(border_img, border_bbox.origin.to_tuple(), mask=border_img )
             
-            # Get the new size for the content
-            content_rec = self.bh.get_content_rect()
+        self._debug(f"END Render")
 
-            content_paste = (cfg.border.width.l, cfg.border.width.t)
-        else :
-            self._debug(f"No border spec")
-            content_paste = (0, 0)
-            full_img_bbox = content_rec
-
-        self._debug(f"content_rec after border = {content_rec}")
-
-
-        if cfg.path is not None:   
-            self._debug(f"Loading image from {cfg.path}")
-            img_img = self._build_image(content_rec.extent)
-        elif cfg.color is None :
-            raise ValueError(f"Both color and path are missing for {self.name}")
-        else :
-            img_img = None
-        
-        mask_color = 255 if cfg.color is not None else 0
-
-        full_img = Image.new("RGB", full_img_bbox.extent.to_tuple(), color=self.img_bg_color)
-        full_mask = Image.new("L", full_img_bbox.extent.to_tuple(), color=mask_color)
-
-        mask_img = None
-        if img_img :
-            mask_img = self._compute_mask(img_img, cfg.mask)
-            self._debug(f"pasting image into final at {content_paste}")
-            full_img.paste(img_img, content_paste, mask=mask_img)
-            if mask_img :
-                self._debug(f"updating full mask with mask_img")
-                full_mask.paste(mask_img, content_paste)
-
-
-
-        if border_img is not None:
-            self._debug(f"pasting border into final")
-            full_img.paste(border_img, (0,0), mask=border_img)
-            self._debug(f"updating full mask with border_mask")
-            border_mask = border_img.getchannel('A')
-            full_mask = ImageChops.lighter(full_mask, border_mask)
-
-        self._dbgsave(full_mask, "final-mask")
-    
-        self.generated = True
-        self.main_image = full_img
-        self.mask_image = full_mask
-
-        self._debug(f"---- END")
-
+        return output_img

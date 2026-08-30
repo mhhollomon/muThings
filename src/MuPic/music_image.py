@@ -30,7 +30,7 @@ class MusicImage :
                 ele = GraphicElement(name, block, self)
             else :
                 ele = TextElement(name, block, self)
-            ele.generate()
+            ele.layout()
             z = ele_count - i if self.config.globals.zorder == 'desc' else i
             zorder.append((ele.settings.zorder, z, name))
 
@@ -38,17 +38,10 @@ class MusicImage :
         zorder.sort()
 
         for zorder_tuple in zorder :
-            logger.debug(f"Pasting in {zorder_tuple}")
+            logger.debug(f"Rendering {zorder_tuple}")
             ele = self.get_elem(zorder_tuple[2])
-            bbox = ele.get_bbox('paste')
-            img, mask = ele.get_images()
 
-            if mask :
-                mask_data = f"{mask.size}:{mask.mode}"
-            else :
-                mask_data = "NONE"
-            self._debug(f"paste img = {img.size}:{img.mode}, mask = {mask_data}, origin = {bbox.origin}")
-            self.output_image().paste(img, bbox.origin.to_tuple(), mask=mask)
+            self.img = ele.render(output_img)
 
         self._generate_grid()
 

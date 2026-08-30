@@ -301,6 +301,9 @@ class TextSettings(SettingsBase) :
             raise ValueError(f"Invalid text settings: {d} : {e}") from e
         return t
 
+    def has_border(self) -> bool :
+        return self.border is not None and not self.border.width.is_zero()
+
     def print(self, prefix : str = '') :
         print(f"{prefix}text \"{self.name}\" {{")
         new_prefix = prefix + '  '

@@ -95,7 +95,7 @@ class OutputElement(ImageElement) :
         if self.bh :
             border_bbox = self.get_bbox('border')
 
-            border_img = self.bh.generate(content_bbox)
+            border_img = self.bh.generate()
             if border_img :
                 self._debug(f"pasting border at {border_bbox.origin}")
                 output_img.paste(border_img, border_bbox.origin.to_tuple(), mask=border_img)

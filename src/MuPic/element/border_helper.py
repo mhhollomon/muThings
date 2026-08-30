@@ -15,7 +15,7 @@ _MULT_FACTOR : int = 4
 
 class BorderHelper(DebugBase):
     DBGCATEGORY = 'BorderHelper'
-    
+
     def __init__(self, settings : BorderSettings, name : str, mode : str = 'subtract', color:str='black') :
         self.settings = deepcopy(settings)
         self.mode = mode
@@ -155,15 +155,10 @@ class BorderHelper(DebugBase):
         return (img, alpha)
 
 
-    def generate(self, size_rect : rect) -> Image.Image | None :
-        logger.debug(f"--- Generating border - size_rect = {size_rect} mode = {self.mode}")
+    def generate(self) -> Image.Image | None :
+        logger.debug(f"--- Generating border - mode = {self.mode}")
 
         ws = self.settings.width
-
-        if not self.content_bbox :
-            self.layout(size_rect)
-        else :
-            self._debug("Layout already done")
 
         if ws.is_zero() :
             self._debug(f"width is zero")

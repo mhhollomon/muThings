@@ -6,7 +6,7 @@ from ..geometry import sizet, rect, point
 from ..position import position
 from ..settings import WidthSettings
 
-from PIL import Image
+from PIL import Image, ImageColor
 
 from ..utils import DebugBase
 
@@ -77,6 +77,21 @@ class ImageElement(DebugBase) :
         logger.debug(f"setting {self.name} {sub} bbox to {new_bbox}")
         self.bbox[sub] = new_bbox
 
+#-----------------------------------------------------------------------------
+    def _add_alpha(self, color : str, alpha : int) :
+        """Add an alpha value to a color reference"""
+
+        ct = ImageColor.getrgb(color)
+        return (*ct, alpha)
+    
+#-----------------------------------------------------------------------------
+    def layout(self) :
+        raise RuntimeError("Subclass needs to override `layout`")
+    
+#-----------------------------------------------------------------------------
+    def render(self, img : Image.Image) :
+        raise RuntimeError("Subclass needs to override `render`")
+    
 #-----------------------------------------------------------------------------
 
     def get_bbox(self, sub : str, piece : str | None = None) :
