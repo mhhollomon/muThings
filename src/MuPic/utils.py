@@ -59,7 +59,11 @@ class DebugBase() :
         if not dir.is_dir() :
             return
 
-        fname =  dir / f"dbg-{self.DBGCATEGORY.lower()}-{suffix}.png"
+        name = getattr(self, 'name', 'unknown').lower()
+        name = name.replace(' ', '_')
+        name = name.replace('/', '_')
+
+        fname =  dir / f"dbg-{self.DBGCATEGORY.lower()}-{name}-{suffix}.png"
 
         img.save(fname, format='png')
 

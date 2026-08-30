@@ -49,18 +49,18 @@ image rounded_img {
     position = "output(400, 400)"
 }
 
-# image straight_img {
-#     #color = #7777ff
-#     path = resources/portrait-mode.png
-#     fit = fill, mid
-#     mask = auto
-#     size = 200x200
-#     border {
-#         width = 20
-#         color = #77ff77
-#     }
-#     position = "output(100, 700)"
-# }
+image straight_img {
+    #color = #7777ff
+    path = resources/portrait-mode.png
+    fit = fill, mid
+    mask = auto
+    size = 200x200
+    border {
+        width = 20
+        color = #77ff77
+    }
+    position = "output(100, 700)"
+}
 
 image rounded_img_land {
     #color = #7777ff

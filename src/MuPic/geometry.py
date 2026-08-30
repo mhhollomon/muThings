@@ -60,6 +60,12 @@ class point :
         else :
             raise TypeError(f"Unsupported type for subtraction with point: {type(other)}")
 
+    def __mul__(self, other) -> 'point' :
+        if isinstance(other, (int, float)) :
+            return point(int(self.x * other), int(self.y * other))
+        else :
+            raise TypeError(f"Unsupported type for multiplication with point: {type(other)}")
+
     def __eq__(self, other) :
         return self.x == other.x and self.y == other.y
 

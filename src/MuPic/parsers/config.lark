@@ -32,6 +32,7 @@ image_stmt : "image" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" image_setting+ "}
     | "fit" "=" "stretch" -> fit_stretch
     | "fit" "=" "contain" "," MINMAX -> fit_contain
     | "fit" "=" "fill" "," MINMAX -> fit_fill
+    | "rotation" "=" INTEGER -> rotation_int_option
     | position_option
     | border_spec
     | color_option

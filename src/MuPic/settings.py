@@ -214,6 +214,7 @@ class ImageSettings(PathSetting) :
     color : str | None = None
     border : BorderSettings | None = None
     margin : int = 0
+    rotation : int = 0
 
     @classmethod
     def from_dict(cls, d : dict) -> 'ImageSettings' :

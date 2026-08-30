@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 from .element import ImageElement
 from .border_helper import BorderHelper
 from ..settings import ImageSettings
-from ..geometry import sizet, rect
+from ..geometry import point, sizet, rect
 
-from PIL import Image, ImageChops
+from PIL import Image
 
 import logging
 logger = logging.getLogger(__name__)
@@ -111,6 +111,7 @@ class GraphicElement(ImageElement):
         self._debug("LAYOUT end")
 
 
+    #-----------------------------------------------------
     def _compute_mask(self, img : Image.Image, mask : str, luminance_img : Image.Image | None = None) -> Image.Image | None :
         
         if luminance_img is None:
@@ -142,6 +143,7 @@ class GraphicElement(ImageElement):
 
         return gray_img
             
+    #-----------------------------------------------------
     def _build_image(self, needed_size : sizet) -> Image.Image :
 
         cfg = self.settings
@@ -222,6 +224,7 @@ class GraphicElement(ImageElement):
 
             return img_img
 
+    #-----------------------------------------------------
     def _calc_size(self, size : tuple[str, Any]) -> sizet :
         if size[0] == 'maxsquare' :
             pos = self.settings.position
@@ -249,6 +252,58 @@ class GraphicElement(ImageElement):
 
         raise ValueError(f"Invalid size {size}")
 
+
+    #-----------------------------------------------------
+    def _build(self, output_img : Image.Image, offsets : point | None = None) -> Image.Image :
+        """Offsets are treated as negative offsets (they are subtracted)"""
+
+        cfg = self.settings
+
+        full_bbox = self.get_bbox('full')
+        content_bbox = self.get_bbox('content')
+
+        if offsets is None :
+            offsets = point(0, 0)
+
+        full_origin = full_bbox.origin - offsets
+        content_origin = content_bbox.origin - offsets
+
+        ## Background color
+        if cfg.color :
+            # No mask since this is supposed to be a solid background color.
+            bg = Image.new("RGB", full_bbox.extent.to_tuple(), 
+                           color=cfg.color)
+            self._debug(f"pasting color bg at {full_origin.to_tuple()}")
+            output_img.paste(bg, full_origin.to_tuple())
+
+        ## Image file
+        if cfg.path is not None:   
+            self._debug(f"Loading image from {cfg.path}")
+            img_img = self._build_image(content_bbox.extent)
+            mask_img = self._compute_mask(img_img, cfg.mask)
+            self._debug(f"pasting image at {content_origin.to_tuple()}")
+            output_img.paste(img_img, content_origin.to_tuple(), mask=mask_img)
+
+        ## Border
+        if cfg.has_border() :
+            assert cfg.border is not None
+            assert self.bh is not None
+            border_img = self.bh.generate()
+            border_bbox = self.bh.get_border_rect()
+            border_origin = border_bbox.origin - offsets
+            if border_img is not None:
+                self._debug(f"pasting border at {border_origin.to_tuple()}")
+                output_img.paste(border_img, border_origin.to_tuple(), mask=border_img )
+            
+        return output_img
+
+    #-----------------------------------------------------
+
+    def _trim_image(self, image : Image.Image) -> Image.Image :
+
+        bbox_tuple = image.getbbox()
+        return image.crop(bbox_tuple)
+    
     #-----------------------------------------------------
     # RENDER
     #-----------------------------------------------------
@@ -263,34 +318,26 @@ class GraphicElement(ImageElement):
             raise RuntimeError(f"Layout not called before render on {self.name}")
 
         full_bbox = self.get_bbox('full')
-        content_bbox = self.get_bbox('content')
 
-        ## Background color
-        if cfg.color :
-            # No mask since this is supposed to be a solid background color.
-            bg = Image.new("RGB", full_bbox.extent.to_tuple(), 
-                           color=cfg.color)
-            self._debug(f"pasting color bg at {full_bbox.origin.to_tuple()}")
-            output_img.paste(bg, full_bbox.origin.to_tuple())
+        if cfg.rotation == 0 :
+            output_img = self._build(output_img)
+        else :
+            ele_img = Image.new("RGBA", full_bbox.extent.to_tuple())
+            ele_img = self._build(ele_img, full_bbox.origin)
+            self._dbgsave(ele_img, "before-rotate")
+            ele_img = ele_img.rotate(cfg.rotation, expand=1, resample=Image.Resampling.BICUBIC)
+            self._dbgsave(ele_img, "after-rotate")
 
-        ## Image file
-        if cfg.path is not None:   
-            self._debug(f"Loading image from {cfg.path}")
-            img_img = self._build_image(content_bbox.extent)
-            mask_img = self._compute_mask(img_img, cfg.mask)
-            self._debug(f"pasting image at {content_bbox.origin.to_tuple()}")
-            output_img.paste(img_img, content_bbox.origin.to_tuple(), mask=mask_img)
+            # `expand` in rotate makes the image way too big. So trim it down
+            ele_img = self._trim_image(ele_img)
+            self._dbgsave(ele_img, "after-trim")
+            #
+            # This rotates about the center. So, need to offset the origin so the middle
+            # stays put.
+            origin = full_bbox.origin - ((sizet(ele_img.size) - full_bbox.extent) // 2)
+            self._debug(f"Rotation - new origin = {origin}")
+            output_img.paste(ele_img, origin.to_tuple(), mask=ele_img)
 
-        ## Border
-        if cfg.has_border() :
-            assert cfg.border is not None
-            assert self.bh is not None
-            border_img = self.bh.generate()
-            border_bbox = self.bh.get_border_rect()
-            if border_img is not None:
-                self._debug(f"pasting border at {border_bbox.origin.to_tuple()}")
-                output_img.paste(border_img, border_bbox.origin.to_tuple(), mask=border_img )
-            
         self._debug(f"END Render")
 
         return output_img
