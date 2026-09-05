@@ -70,7 +70,7 @@ class point :
         return self.x == other.x and self.y == other.y
 
     def __repr__(self) -> str :
-        return f"point<{self.x}, {self.y}>"
+        return f"p<{self.x}, {self.y}>"
 
     def __setattr__(self, name: str, value: Any) -> None:
         if not self._done :
@@ -115,7 +115,7 @@ class sizet :
 
     def __getitem__(self, key) :
         return self.to_tuple()[key]
-    
+
     @classmethod
     def from_string(cls, s : str | None) -> 'sizet | None' :
         """ main reason to have this function is to be able to return None.
@@ -190,7 +190,7 @@ class sizet :
             raise TypeError(f"Unsupported type for comparison with sizet: {type(other)}")
 
     def __repr__(self) -> str :
-        return f"sizet<{self.width}, {self.height}>"
+        return f"st<{self.width}, {self.height}>"
 
     def __setattr__(self, name: str, value: Any) -> None:
         if not self._done :
@@ -208,6 +208,9 @@ class rect :
 
     def __post_init__(self) :
         self._done = True
+
+    def __repr__(self) -> str :
+        return f"rect({self.origin}, {self.extent})"
 
     def to_tuple(self) -> tuple :
         return (self.origin.to_tuple(), self.extent.to_tuple())

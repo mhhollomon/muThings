@@ -12,7 +12,7 @@ from .border_helper import BorderHelper
 from ..settings import ImageSettings
 from ..geometry import point, sizet, rect
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 import logging
 logger = logging.getLogger(__name__)
@@ -140,6 +140,18 @@ class GraphicElement(ImageElement):
                 gray_img = img.getchannel('A')
             else:
                 gray_img = self._compute_mask(img, 'black', luminance_img)
+
+        if gray_img and self.settings.has_border() and \
+                self.bh and not self.bh.is_piecewise() :
+            old_gray_size = gray_img.size
+            border_mask = self.bh.generate(True).getchannel('A')
+            self._dbgsave(border_mask, "border-mask")
+            mask_img = Image.new("L", border_mask.size, color=0 )
+            offset = (sizet(border_mask.size) - gray_img.size) // 2
+            mask_img.paste(gray_img, offset.to_tuple())
+            gray_img = ImageChops.darker(border_mask, mask_img)
+            end = offset + old_gray_size
+            gray_img = gray_img.crop((*offset, *end ))
 
         return gray_img
             

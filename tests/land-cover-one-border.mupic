@@ -4,18 +4,20 @@
 # but only one border side
 
 output {
-  size = 1920x1080
-  path = ../test-out/land-cover-one-border.png
+    size = 1920x1080
+    path = ../test-out/land-cover-one-border.png
+    color = white
 }
 
-cover {
-  fit = square
-  path = "resources/landscape-mode.png"
-  margin = 100
-  align = mid
-  crop = mid
+image cover {
+    position = "output(min, min)"
+    size = max
+    fit = fill, mid
+    path = "resources/landscape-mode.png"
+    margin = 100
+    mask = black
   border {
-    width { l=100 }
+    width {l=100}
     color = "blue"
     }
 }

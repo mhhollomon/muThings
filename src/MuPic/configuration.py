@@ -2,8 +2,9 @@ from argparse import Namespace
 from copy import deepcopy
 import re
 from typing import Any, NamedTuple
+from uuid import uuid4
 
-from lark import Lark, Transformer, v_args, Token, logger as lark_logger
+from lark import Transformer, v_args, Token, logger as lark_logger
 import logging
 
 from .paths import resolve_path
@@ -26,6 +27,8 @@ def _get_default_font() :
         return 'Arial'
 
 
+MINMAX_SETTINGS = ('min', 'mid', 'max')
+
 class OptionTuple(NamedTuple) :
     name : str
     value : Any
@@ -37,6 +40,18 @@ class DefaultOption(NamedTuple) :
 class SettingsOption(NamedTuple) :
     name : str
     value : Any
+
+class MuParseError(Exception) :
+    def __init__(self, msg) :
+        super().__init__(self, msg)
+
+_uuids : set[str] = set()
+def _random_name() :
+    while True :
+        u = '__' + uuid4().hex[:8]
+        if u not in _uuids :
+            _uuids.add(u)
+            return u
 
 #--------------------------------------------------------------------------
 
@@ -214,10 +229,15 @@ class Configuration(Transformer) :
 
     def mupic_config_file(self, children) -> dict:
         settings = {'defaults':{}, 'globals':{}, 'elements':[] }
-        for child in children :
+
+        queue = list(reversed(children))
+        while queue :
+            child = queue.pop()
             if child is None :
                 continue
-            if isinstance(child, OptionTuple) :
+            elif isinstance(child, list) :
+                queue.extend(child)
+            elif isinstance(child, OptionTuple) :
                 if child.name in ('text', 'image'):
                     settings['elements'].append(child.value)
                 else :
@@ -235,13 +255,15 @@ class Configuration(Transformer) :
     def default_stmt(self, name : Token, value : Token) :
         name = name.value
         dvalue = value.value
+        if name not in ('fill', 'font') :
+            raise MuParseError(f"Unknown default option `{name}`.")
         return DefaultOption(name, dvalue)
 
     @v_args(inline=True)
     def zorder_stmt(self, value : Token) :
         dvalue = value.value.lower()
         if dvalue not in ('asc', 'desc') :
-            raise ValueError(f"zorder setting must be one of 'asc' or 'desc' - invalid value `{dvalue}`")
+            raise MuParseError(f"zorder setting must be one of 'asc' or 'desc' - invalid value `{dvalue}`")
         return SettingsOption('zorder', dvalue)
 
     @v_args(inline=True)
@@ -263,19 +285,32 @@ class Configuration(Transformer) :
                 if isinstance(child, OptionTuple) :
                     settings[child.name] = int(child.value)
                 else :
-                    raise ValueError(f"Invalid width spec: {child}")
+                    raise MuParseError(f"Invalid width spec: {child}")
         return OptionTuple('width', settings)
 
+    #
+    # border = <color> , <width>
+    #
     @v_args(inline=True)
     def simple_border(self, color : Token, width : Token) -> OptionTuple:
         width_tuple = self.width_spec([width])
         color_tuple = OptionTuple('color', color.value)
-        return self._util_consolidate('border', [width_tuple, color_tuple])
+        return self._util_consolidate('border', (width_tuple, color_tuple))
 
+    #
+    # size = scale, <float>
+    #
     @v_args(inline=True)
     def scale_size(self, value : Token) -> OptionTuple:
-        return OptionTuple("size", ("scale", float(value.value)))
+        fvalue = float(value.value)
+        if fvalue <= 0 :
+            raise MuParseError(f"scale factor must be greater than zero (`{fvalue}`)")
+        return OptionTuple("size", ("scale", fvalue))
 
+    #
+    # size = max
+    # size = maxsquare
+    #
     @v_args(inline=True)
     def size_max(self, stype : Token) -> OptionTuple:
         type_str = stype.value.lower()
@@ -286,42 +321,67 @@ class Configuration(Transformer) :
         logger.debug(f"process image_stmt : {name_token}")
         settings = self._util_consolidate('image', children, extras={'type':'image'})
 
-        if name_token is not None : 
+        if name_token is None : 
+            name = _random_name()
+        else :
             name = name_token.value
             if name.startswith('"') :
                 name = name[1:-1]
-            settings.value['name'] = name
-            self.last_element_name = name
-        else :
-            self.last_element_name = None
+            if name.startswith('__') :
+                MuParseError(f"element name cannot start with __ `{name}`")
+        
+        settings.value['name'] = name
+        self.last_element_name = name
 
         if zorder_token is not None :
-            settings.value['zorder'] = int(zorder_token.value)
+            svalue = zorder_token.value.lower()
+            if '.' in svalue or 'e' in svalue :
+                MuParseError(f"zorder number must be a simple integer (`{svalue}`)")
+            settings.value['zorder'] = int(svalue)
         return settings
 
+    #
+    # fit = stretch
+    #
     def fit_stretch(self, children) -> OptionTuple :
         return OptionTuple('fit', ('stretch',))
 
+    #
+    # fit = contain, <alignment>
+    #
     @v_args(inline=True)
     def fit_contain(self, align : Token) -> OptionTuple :
-        return OptionTuple('fit', ('contain', align.value.lower()))
+        valign = align.value.lower()
+        if valign not in MINMAX_SETTINGS :
+            raise MuParseError(f"Invalid align setting for contain `{valign}`")
+        return OptionTuple('fit', ('contain', valign))
 
+    #
+    # fit = fill, <alignment>
+    #
     @v_args(inline=True)
     def fit_fill(self, align : Token) -> OptionTuple :
-        return OptionTuple('fit', ('fill', align.value.lower()))
+        valign = align.value.lower()
+        if valign not in MINMAX_SETTINGS :
+            raise MuParseError(f"Invalid align setting for fill `{valign}`")
+        return OptionTuple('fit', ('fill', valign))
 
     @v_args(inline=True)
     def text_stmt(self, name_token : Token, zorder_token : Token, *children) -> OptionTuple:
         settings = self._util_consolidate('text', children, extras={'type':'text'})
 
-        if name_token is not None : 
+        if name_token is None : 
+            name = _random_name()
+        else :
             name = name_token.value
             if name.startswith('"') :
                 name = name[1:-1]
-            settings.value['name'] = name
-            self.last_element_name = name
-        else :
-            self.last_element_name = None
+
+            if name.startswith('__') :
+                MuParseError(f"element name cannot start with __ `{name}`")
+        
+        settings.value['name'] = name
+        self.last_element_name = name
 
         if zorder_token is not None :
             settings.value['zorder'] = int(zorder_token.value)
@@ -337,7 +397,7 @@ class Configuration(Transformer) :
         full_path = resolve_path(path, self.context)
         logger.debug(f"=== include_stmt resolved path: '{full_path}'")
         if not full_path.is_file() :
-            raise ValueError(f"include file '{full_path}' does not exist")
+            raise MuParseError(f"include file '{full_path}' does not exist")
 
         xform = Configuration(full_path)
         cfg = xform._get_settings()
@@ -348,10 +408,10 @@ class Configuration(Transformer) :
         parms = [ c.value for c in children]
         pset = set(parms)
         if len(pset) != len(parms) :
-            raise ValueError(f"Duplicate parameters defined for template : {parms}")
+            raise MuParseError(f"Duplicate parameters defined for template : {parms}")
 
         if 'p' in pset :
-            raise ValueError(f"parameter `p` is reserved and cannot be in the parmater list")
+            raise MuParseError(f"parameter `p` is reserved and cannot be in the parameter list")
 
         return parms
 
@@ -359,7 +419,7 @@ class Configuration(Transformer) :
     def template_stmt(self, nameT : Token, parms : list, tbody : Token) :
         name = nameT.value
         if name in self.template :
-            raise ValueError(f"Duplicate template name `{name}`")
+            raise MuParseError(f"Duplicate template name `{name}`")
         body =  tbody.value.strip()[3:][:-3].strip()
 
         self.template[name] = (parms, body)
@@ -367,6 +427,10 @@ class Configuration(Transformer) :
         logger.debug(f"""New Template :
     parameters = {parms}
     body = ```{body}```""")
+
+    #
+    # RENDER
+    #
 
     def render_list(self, children : list[Token]) -> list[str] :
         parms = [ c.value for c in children]
@@ -376,11 +440,11 @@ class Configuration(Transformer) :
     def render_stmt(self, tname : Token, parms : list[str]) :
         name = tname.value
         if name not in self.template :
-            raise ValueError(f"No template named `{name}` exists in render statment")
+            raise MuParseError(f"No template named `{name}` exists in render statment")
 
         formals, body = self.template[name]
         if len(parms) != len(formals) :
-            raise ValueError(f"Incorrect number of arguments given for `{name}` - expecting {len(formals)} received {len(parms)}")
+            raise MuParseError(f"Incorrect number of arguments given for `{name}` - expecting {len(formals)} received {len(parms)}")
 
         data : dict = {}
 
@@ -396,13 +460,16 @@ class Configuration(Transformer) :
 
         tree = parser.parse(new_body)
         new_conf = Configuration(self.context, None)
+        new_conf.last_element_name = self.last_element_name
         settings = new_conf.transform(tree)
 
         ele = settings['elements']
         if not len(ele) :
             logger.warning(f"No elements generated from template `{name}` render")
 
-        self.last_element_name = ele[0].get('name')
+        self.last_element_name = ele[-1].get('name')
 
-        return OptionTuple(ele[0]['type'], ele[0])
+        optlist = list(reversed([OptionTuple(e['type'], e) for e in ele]))
+
+        return optlist
 

@@ -40,21 +40,20 @@ class BorderHelper(DebugBase):
         if self.mode == 'subtract':
             self.border_bbox = size_rect
             origin = self.border_bbox.origin + (ws.l, ws.t)
-            extent = self.border_bbox.extent - (ws.l + ws.r, ws.t + ws.b)
-            self.content_bbox = rect(origin, extent)
+            new_extent = self.border_bbox.extent - (ws.l + ws.r, ws.t + ws.b)
+            self.content_bbox = rect(origin, new_extent)
 
         elif self.mode == 'add':
-            origin = point(0, 0)
-            extent = size_rect.extent + (ws.l + ws.r, ws.t + ws.b)
+            new_extent = size_rect.extent + (ws.l + ws.r, ws.t + ws.b)
 
             new_content_origin = size_rect.origin + (ws.l, ws.t)
             self.content_bbox = rect(new_content_origin, size_rect.extent)
 
-            self.border_bbox = rect(origin, extent)
+            self.border_bbox = rect(size_rect.origin, new_extent)
         else :
             raise ValueError(f"Invalid BorderHelper mode {self.mode}")
 
-    def _draw_piecewise(self) -> tuple[Image.Image, Image.Image]:
+    def _draw_piecewise(self, clip:bool) -> tuple[Image.Image, Image.Image]:
 
         self._debug("using piecewise")
         ws = self.settings.width
@@ -118,7 +117,7 @@ class BorderHelper(DebugBase):
 
         return (img, alpha)
 
-    def _draw_rounded(self) -> tuple[Image.Image, Image.Image] :
+    def _draw_rounded(self, clip:bool) -> tuple[Image.Image, Image.Image] :
         self._debug(f"Using rounded_rectangle - bg_color = {self.bg_color}")
 
         ws = self.settings.width
@@ -126,6 +125,11 @@ class BorderHelper(DebugBase):
         big_extent = self.border_bbox.extent * _MULT_FACTOR
         img = Image.new("RGB", big_extent.to_tuple(), color=self.bg_color)
 
+        if clip :
+            alpha_params = {'fill' : 255}
+        else :
+            alpha_params = {'outline' : 255}
+        
         alpha = Image.new("L", big_extent.to_tuple(), color=0)
 
         border_draw = ImageDraw.ImageDraw(img)
@@ -147,7 +151,7 @@ class BorderHelper(DebugBase):
             (origin.to_tuple(), end.to_tuple()), 
             radius=radius,
             width=ws.l * _MULT_FACTOR, 
-            outline=255)
+            **alpha_params) # type: ignore
 
         img = img.resize(self.border_bbox.extent.to_tuple(),resample=Image.Resampling.LANCZOS)
         alpha = alpha.resize(self.border_bbox.extent.to_tuple(),resample=Image.Resampling.LANCZOS)
@@ -155,25 +159,25 @@ class BorderHelper(DebugBase):
         return (img, alpha)
 
 
-    def generate(self) -> Image.Image | None :
-        logger.debug(f"--- Generating border - mode = {self.mode}")
+    def generate(self, clip:bool=False) -> Image.Image :
+        logger.debug(f"--- Generating border - mode = {self.mode} clip = {clip}")
 
         ws = self.settings.width
 
-        if ws.is_zero() :
-            self._debug(f"width is zero")
-            return None
-
-
         if ws.all_sides_same() and  self.settings.round > 0 :
-            img, alpha = self._draw_rounded()
+            img, alpha = self._draw_rounded(clip)
         else :
-            img, alpha = self._draw_piecewise()
+            img, alpha = self._draw_piecewise(clip)
 
 
         img.putalpha(alpha)
 
         return img
+
+    def is_piecewise(self) :
+        ws = self.settings.width
+
+        return not (ws.all_sides_same() and  self.settings.round > 0 )
 
     def get_content_rect(self) -> rect :
         if self.content_bbox is None:
@@ -182,6 +186,13 @@ class BorderHelper(DebugBase):
     
     def get_border_rect(self) -> rect :
         if self.border_bbox is None:
-            raise ValueError("BorderHelper -- get_border_rect called before generate")
+            raise ValueError("BorderHelper -- get_border_rect called before layout")
         return self.border_bbox
+
+    def add_offsets(self, offsets : point) -> None :
+        self._debug(f"Adding offsets {offsets}")
+        assert self.border_bbox is not None
+        assert self.content_bbox is not None
+        self.border_bbox = self.border_bbox.add_offsets(offsets)
+        self.content_bbox = self.content_bbox.add_offsets(offsets)
         

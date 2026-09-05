@@ -6,13 +6,16 @@ _stmts : statement*
     | image_stmt  | text_stmt
     | template_stmt | render_stmt
 
-include_stmt : "include" ESCAPED_STRING
+// ---- INCLUDE ----------------------------------------------
+include_stmt : "include" STRING_VALUE
 
-setting_stmt : "set" "zorder" CNAME -> zorder_stmt
+// ---- SET ----------------------------------------------
+setting_stmt : "set" "zorder" WORD -> zorder_stmt
 
-default_stmt : "default" DEFLT_PROP STRING_VALUE
-DEFLT_PROP : "font" | "fill"
+// ---- DEFAULT ----------------------------------------------
+default_stmt : "default" WORD STRING_VALUE
 
+// ---- OUTPUT ----------------------------------------------
 output_stmt : "output" "{" output_setting+ "}"
 OUTPUT_FIT : "cover" | "contain"
 ?output_setting : path_option
@@ -23,16 +26,17 @@ OUTPUT_FIT : "cover" | "contain"
     | margin_int_option
     | border_spec
 
-image_stmt : "image" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" image_setting+ "}"
+// ---- IMAGE ----------------------------------------------
+image_stmt : "image" [(ESCAPED_STRING | CNAME) [SIGNED_NUMBER]] "{" image_setting+ "}"
 ?image_setting : path_option
     | "size" "=" /max(square)?/ -> size_max
-    | "size" "=" "scale" "," FLOAT -> scale_size
+    | "size" "=" "scale" "," SIGNED_NUMBER -> scale_size
     | size_2d_option
     | "mask" "=" WORD -> mask_option
     | "fit" "=" "stretch" -> fit_stretch
-    | "fit" "=" "contain" "," MINMAX -> fit_contain
-    | "fit" "=" "fill" "," MINMAX -> fit_fill
-    | "rotation" "=" INTEGER -> rotation_int_option
+    | "fit" "=" "contain" "," WORD -> fit_contain
+    | "fit" "=" "fill" "," WORD -> fit_fill
+    | "rotation" "=" SIGNED_NUMBER -> rotation_int_option
     | position_option
     | border_spec
     | color_option
@@ -40,6 +44,7 @@ image_stmt : "image" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" image_setting+ "}
     | border_spec
     | margin_int_option
 
+// ---- TEXT ----------------------------------------------
 text_stmt : "text" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" text_setting+ "}"
 ?text_setting : "text" "=" ESCAPED_STRING -> text_option
     | "size" "=" INTEGER -> size_int_option
@@ -52,18 +57,22 @@ text_stmt : "text" [(ESCAPED_STRING | CNAME) [ INTEGER]] "{" text_setting+ "}"
     | "gap" "=" INTEGER -> gap_int_option
     | border_spec
 
+// ---- TEMPLATE ----------------------------------------------
 template_stmt : "template" CNAME "(" parm_list ")" TBODY
 parm_list : /[a-zA-Z]/ ("," /[a-zA-Z]/)*
 TBODY.50 : /\{\{\{/ /.+?(?=}}})/s /\}\}\}/
 
+// ---- RENDER ----------------------------------------------
 render_stmt : "render" CNAME "(" render_list ")"
 render_list : STRING_VALUE ("," STRING_VALUE)*
 
+// ---- Common symbols ----------------------------------------
+
 border_spec : "border" "{" border_setting+ "}"
-    | "border" "=" (HEXCOLOR | RGBCOLOR | HSVCOLOR | HSLCOLOR | ESCAPED_STRING | CNAME) ","  INTEGER-> simple_border
+    | "border" "=" (HEXCOLOR | FUNCCOLOR | ESCAPED_STRING | CNAME) ","  INTEGER-> simple_border
 // Changing this to directly use color_option rule
 // causes a reduce/reduce conflict with stroke_setting
-?border_setting : "color" "=" (HEXCOLOR | RGBCOLOR | HSVCOLOR | HSLCOLOR | ESCAPED_STRING | CNAME) -> color_option
+?border_setting : "color" "=" (HEXCOLOR | FUNCCOLOR | ESCAPED_STRING | CNAME) -> color_option
     | width_spec
     | "round" "=" INTEGER -> round_int_option
 
@@ -80,7 +89,7 @@ path_option : "path" "=" STRING_VALUE
 margin_int_option : "margin" "=" INTEGER
 size_2d_option : "size" "=" SIZE
 position_option : "position" "=" STRING_VALUE
-color_option : "color" "=" (HEXCOLOR | RGBCOLOR | HSVCOLOR | HSLCOLOR | ESCAPED_STRING | CNAME)
+color_option : "color" "=" (HEXCOLOR | FUNCCOLOR | ESCAPED_STRING | CNAME)
 
 SIZE : /\d+(x\d+)?/
 INTEGER : /[-+]?\d+/
@@ -88,15 +97,16 @@ BARE_STRING : /[^)( \t,\n"']+/
 
 // Priority is to make it tried before SH_COMMENT
 HEXCOLOR.10 : /\#[a-fA-F0-9]+/
-RGBCOLOR.30 : /rgb\( *\d+ *, *\d+ *, *\d+ *\)/i
-HSVCOLOR.30 : /hsv\( *\d+ *, *\d+\% *, *\d+% *\)/i
-HSLCOLOR.30 : /hsl\( *\d+ *, *\d+\% *, *\d+% *\)/i
+FUNCCOLOR.30 : /(rgb|hsv|hsl) \( [^(]+ \)/ix
+//RGBCOLOR.30 : /rgb\( *\d+ *, *\d+ *, *\d+ *\)/i
+//HSVCOLOR.30 : /hsv\( *\d+ *, *\d+\% *, *\d+% *\)/i
+//HSLCOLOR.30 : /hsl\( *\d+ *, *\d+\% *, *\d+% *\)/i
 
 
 %import common.ESCAPED_STRING
 %import common.WORD
 %import common.CNAME
-%import common.FLOAT
+%import common.SIGNED_NUMBER
 
 STRING_VALUE : ESCAPED_STRING | BARE_STRING
 MINMAX.10 : /min\b|mid\b|max\b/i

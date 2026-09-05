@@ -70,7 +70,7 @@ class TextElement(ImageElement) :
 
             self.bh.layout(rect(point(0,0), final_text_size))
             content_rec = self.bh.get_content_rect()
-            self._debug("content_rec before offsets = {content_rec}")
+            self._debug(f"content_rec before offsets = {content_rec}")
             full_rec = self.bh.get_border_rect()
         else :
             content_rec = rect(point(0,0), final_text_size)
@@ -82,13 +82,16 @@ class TextElement(ImageElement) :
             )
         
         content_rec = content_rec.add_offsets(self.offsets)
-        logger.debug(f"Text -- content_rec after offsets = {content_rec}")
+        self._debug(f"content_rec after offsets = {content_rec}")
+
+        if self.bh :
+            self.bh.add_offsets(self.offsets)
 
         # --- CONTENT
         self.set_bbox('content', content_rec)
 
         full_rec = full_rec.add_offsets(self.offsets)
-        logger.debug(f"Text -- full_rec after offsets = {full_rec}")
+        self._debug(f"full_rec after offsets = {full_rec}")
 
         # --- FULL
         self.set_bbox('full', full_rec)

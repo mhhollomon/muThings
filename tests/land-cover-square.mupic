@@ -7,11 +7,11 @@ output {
   path = ../test-out/land-cover-square.png
 }
 
-cover {
-  fit = square
+image cover {
+  size = maxsquare
+  position = "output(max, max)"
+  fit = fill, mid
   path = resources/landscape-mode.png
   margin = 100
-  align = max
-  crop = mid
   border = blue, 100
 }
